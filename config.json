@@ -1,0 +1,24 @@
+{
+    "name": "User Rights History",
+    "namespace": "YaleREDCap\\UserRightsHistory",
+    "description": "Displays the user rights for a project at any point in time.",
+    "permissions": ["redcap_every_page_before_render", "redcap_user_rights"],
+    "authors": [{
+        "name": "Andrew Poppe",
+        "email": "andrew.poppe@yale.edu",
+        "institution": "Yale Center for Clinical Investigation"
+    }],
+    "project-settings": [],
+    "links": {
+        "project": [],
+        "control-center": []
+    },
+    "no-auth-pages": [],
+    "framework-version": 5,
+    "compatibility": {
+        "php-version-min": "7.3.31",
+        "php-version-max": "",
+        "redcap-version-min": "10.0.28",
+        "redcap-version-max": ""
+    }
+}
