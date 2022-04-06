@@ -47,8 +47,6 @@ include APP_PATH_DOCROOT . 'ProjectGeneral/header.php';
 if (isset($_GET["datetime"])) {
     $timestamp = intval($_GET["datetime"]);
     $permissions = $module->getAllInfoByTimestamp($timestamp);
-    var_dump($timestamp);
-    var_dump($permissions);
 
     $module->renderTable($permissions);
 

@@ -2,8 +2,9 @@
 
 namespace YaleREDCap\UserRightsHistory;
 
-use Exception;
 use ExternalModules\AbstractExternalModule;
+
+include_once "Renderer.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
@@ -19,9 +20,10 @@ class UserRightsHistory extends AbstractExternalModule
     function updateAllProjects($cronInfo = array())
     {
         foreach ($this->getProjectsWithModuleEnabled() as $localProjectId) {
-            $userChanges = $this->updateUserList($localProjectId);
+            $this->updateUserList($localProjectId);
             $this->updateProjectInfo($localProjectId);
             $this->updatePermissionsForAllUsers($localProjectId);
+            $this->updateAllRoles($localProjectId);
         }
         return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
     }
@@ -41,21 +43,15 @@ class UserRightsHistory extends AbstractExternalModule
 
     function getCurrentProjectInfo($localProjectId)
     {
-        $status = $this->getProjectStatus($localProjectId);
-        if ($status === "AC") {
-            $locked = $this->getLockedStatus($localProjectId);
+        try {
+            $sql = "select * from redcap_projects where project_id = ?";
+            $result = $this->query($sql, [$localProjectId]);
+            $result_array = $result->fetch_assoc();
+            unset($result_array["last_logged_event"]); // Prevent unncessary updates
+            return $result_array;
+        } catch (\Exception $e) {
+            $this->log('Error fetching project info', ['error' => $e->getMessage()]);
         }
-        return [
-            "status" => $status,
-            "locked" => $locked
-        ];
-    }
-
-    function getLockedStatus($localProjectId)
-    {
-        $sql = "select data_locked from redcap_projects where project_id = ?";
-        $result = $this->query($sql, [$localProjectId]);
-        return $result->fetch_assoc()["data_locked"] == 1;
     }
 
     function getLastProjectInfo($localProjectId)
@@ -68,8 +64,9 @@ class UserRightsHistory extends AbstractExternalModule
 
     function projectInfoChanged(array $oldProjectInfo, array $newProjectInfo)
     {
-        $difference = array_diff_assoc($oldProjectInfo, $newProjectInfo);
-        return count($difference) > 0;
+        $difference1 = array_diff_assoc($oldProjectInfo, $newProjectInfo);
+        $difference2 = array_diff_assoc($newProjectInfo, $oldProjectInfo);
+        return (count($difference1) + count($difference2)) > 0;
     }
 
     function saveProjectInfo($localProjectId, array $newProjectInfo)
@@ -137,6 +134,62 @@ class UserRightsHistory extends AbstractExternalModule
         ]);
     }
 
+    ///////////////////
+    // ROLES METHODS //
+    ///////////////////
+
+    function updateAllRoles($localProjectId)
+    {
+        $currentRoles = $this->getCurrentRoles($localProjectId);
+        $lastRoles = $this->getLastRoles($localProjectId);
+        if (($lastRoles == null && $currentRoles != null) || $this->rolesChanged($lastRoles, $currentRoles)) {
+            $this->saveRoles($localProjectId, $currentRoles);
+        }
+    }
+
+    function getCurrentRoles($localProjectId)
+    {
+        try {
+            $sql = "select * from redcap_user_roles where project_id = ?";
+            $result = $this->query($sql, [$localProjectId]);
+            $roles = array();
+            while ($role = $result->fetch_assoc()) {
+                $roles[$role["role_id"]] = $role;
+            }
+            return $roles;
+        } catch (\Exception $e) {
+            $this->log("Error updating roles",  [
+                "project_id" => $localProjectId,
+                "error" => $e->getMessage()
+            ]);
+        }
+    }
+
+    function getLastRoles($localProjectId)
+    {
+        $sql = "select roles where message = 'roles' and project_id = ? order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$localProjectId]);
+        $roles_gzip = $result->fetch_assoc()["roles"];
+        return json_decode(gzinflate(base64_decode($roles_gzip)), true);
+    }
+
+    function rolesChanged($lastRoles, $currentRoles)
+    {
+        $difference1 = array_diff_assoc($lastRoles, $currentRoles);
+        $difference2 = array_diff_assoc($currentRoles, $lastRoles);
+        return count($difference1) > 0 || count($difference2) > 0;
+    }
+
+    function saveRoles($localProjectId, $roles)
+    {
+        $this->log('roles', [
+            "project_id" => $localProjectId,
+            "roles" => base64_encode(gzdeflate(json_encode($roles), 9))
+        ]);
+    }
+
+
+
     /////////////////////////
     // USER RIGHTS METHODS //
     /////////////////////////
@@ -149,7 +202,7 @@ class UserRightsHistory extends AbstractExternalModule
             foreach ($users as $user) {
                 $this->updatePermissionsForUser($localProjectId, $user);
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->log("Error updating users",  [
                 "project_id" => $localProjectId,
                 "error" => $e->getMessage()
@@ -215,7 +268,7 @@ class UserRightsHistory extends AbstractExternalModule
             where username = ?";
             $result = $this->query($sql, [$username]);
             return $result->fetch_assoc()["name"];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->log("Error fetching name", ["error" => $e->getMessage()]);
         }
     }
@@ -228,7 +281,7 @@ class UserRightsHistory extends AbstractExternalModule
             where username = ?";
             $result = $this->query($sql, [$username]);
             return $result->fetch_assoc()["suspended"] === 1;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->log("Error fetching status", ["error" => $e->getMessage()]);
         }
     }
@@ -295,18 +348,33 @@ class UserRightsHistory extends AbstractExternalModule
         return json_decode(gzinflate(base64_decode($info_gzip)), true);
     }
 
+    function getAllRolesByTimestamp($timestamp_clean)
+    {
+        $sql = "select roles where message = 'roles'";
+        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $sql .= " order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$timestamp_clean]);
+        $roles_gzip = $result->fetch_assoc()["roles"];
+        return json_decode(gzinflate(base64_decode($roles_gzip)), true);
+    }
+
     function getAllInfoByTimestamp($timestamp = null)
     {
         $results = array();
         $results["timestamp"] = intval($timestamp) / 1000;
+
         $users = $this->getUsersByTimestamp($results["timestamp"]);
         $results["users"] = array();
         foreach ($users as $user) {
             $results["users"][$user] = $this->getUserPermissionsByTimestamp($user, $results["timestamp"]);
         }
+
+        $results["roles"] = $this->getAllRolesByTimestamp($results["timestamp"]);
         $results["project_status"] = $this->getProjectStatusByTimestamp($results["timestamp"]);
         return $results;
     }
+
+
 
     /////////////////////
     // Display Methods //
@@ -314,5 +382,12 @@ class UserRightsHistory extends AbstractExternalModule
 
     function renderTable(array $permissions)
     {
+        $Renderer = new Renderer($permissions);
+        try {
+            $Renderer->print();
+            $Renderer->renderTable();
+        } catch (\Exception $e) {
+            var_dump($e);
+        }
     }
 }
