@@ -9,29 +9,41 @@ class UserRightsHistory extends AbstractExternalModule
 {
     function redcap_every_page_before_render()
     {
-        $userChanges = $this->updateUserList();
-        $this->updateProjectInfo();
-        $this->updatePermissionsForAllUsers();
+    }
+
+    function redcap_user_rights()
+    {
+        var_dump($this->getUrl('history_viewer.php', true));
+    }
+
+    function updateAllProjects($cronInfo = array())
+    {
+        foreach ($this->getProjectsWithModuleEnabled() as $localProjectId) {
+            $userChanges = $this->updateUserList($localProjectId);
+            $this->updateProjectInfo($localProjectId);
+            $this->updatePermissionsForAllUsers($localProjectId);
+        }
+        return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
     }
 
     ////////////////////////////
     // PROJECT STATUS METHODS //
     ////////////////////////////
 
-    function updateProjectInfo()
+    function updateProjectInfo($localProjectId)
     {
-        $currentProjectInfo = $this->getCurrentProjectInfo();
-        $lastProjectInfo = $this->getLastProjectInfo();
+        $currentProjectInfo = $this->getCurrentProjectInfo($localProjectId);
+        $lastProjectInfo = $this->getLastProjectInfo($localProjectId);
         if ($lastProjectInfo == null || $this->projectInfoChanged($lastProjectInfo, $currentProjectInfo)) {
-            $this->saveProjectInfo($currentProjectInfo);
+            $this->saveProjectInfo($localProjectId, $currentProjectInfo);
         }
     }
 
-    function getCurrentProjectInfo()
+    function getCurrentProjectInfo($localProjectId)
     {
-        $status = $this->getProjectStatus();
+        $status = $this->getProjectStatus($localProjectId);
         if ($status === "AC") {
-            $locked = $this->getLockedStatus();
+            $locked = $this->getLockedStatus($localProjectId);
         }
         return [
             "status" => $status,
@@ -39,17 +51,17 @@ class UserRightsHistory extends AbstractExternalModule
         ];
     }
 
-    function getLockedStatus()
+    function getLockedStatus($localProjectId)
     {
         $sql = "select data_locked from redcap_projects where project_id = ?";
-        $result = $this->query($sql, [$this->getProjectId()]);
+        $result = $this->query($sql, [$localProjectId]);
         return $result->fetch_assoc()["data_locked"] == 1;
     }
 
-    function getLastProjectInfo()
+    function getLastProjectInfo($localProjectId)
     {
-        $sql = "select info where message = 'project_info' order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, []);
+        $sql = "select info where message = 'project_info' and project_id = ? order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$localProjectId]);
         $info_gzip = $result->fetch_assoc()["info"];
         return json_decode(gzinflate(base64_decode($info_gzip)), true);
     }
@@ -60,9 +72,10 @@ class UserRightsHistory extends AbstractExternalModule
         return count($difference) > 0;
     }
 
-    function saveProjectInfo(array $newProjectInfo)
+    function saveProjectInfo($localProjectId, array $newProjectInfo)
     {
         $this->log('project_info', [
+            "project_id" => $localProjectId,
             "info" => base64_encode(gzdeflate(json_encode($newProjectInfo), 9))
         ]);
     }
@@ -71,27 +84,38 @@ class UserRightsHistory extends AbstractExternalModule
     // USER LIST METHODS //
     ///////////////////////
 
-    function updateUserList()
+    function getCurrentUsers($localProjectId)
     {
-        $currentUsers = \REDCap::getUsers();
-        $lastUsers = $this->getLastUsers();
+        $project = $this->getProject($localProjectId);
+        $users = $project->getUsers();
+        $result = array();
+        foreach ($users as $user) {
+            $result[] = $user->getUsername();
+        }
+        return $result;
+    }
+
+    function updateUserList($localProjectId)
+    {
+        $currentUsers = $this->getCurrentUsers($localProjectId);
+        $lastUsers = $this->getLastUsers($localProjectId);
         if ($lastUsers == null) {
-            $this->saveUsers($currentUsers);
+            $this->saveUsers($localProjectId, $currentUsers);
             return null;
         }
         $userChanges = $this->usersChanged($lastUsers, $currentUsers);
         if ($userChanges["wereChanged"]) {
-            $this->saveUsers($currentUsers);
+            $this->saveUsers($localProjectId, $currentUsers);
         }
         if (count($userChanges["removed"]) > 0) {
-            $this->markUsersRemoved($userChanges["removed"]);
+            $this->markUsersRemoved($localProjectId, $userChanges["removed"]);
         }
     }
 
-    function getLastUsers()
+    function getLastUsers($localProjectId)
     {
-        $sql = "select users where message = 'users' order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, []);
+        $sql = "select users where message = 'users' and project_id = ? order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$localProjectId]);
         $users_json = $result->fetch_assoc()["users"];
         return json_decode($users_json, true);
     }
@@ -105,9 +129,10 @@ class UserRightsHistory extends AbstractExternalModule
         return $result;
     }
 
-    function saveUsers($users)
+    function saveUsers($localProjectId, $users)
     {
         $this->log('users', [
+            "project_id" => $localProjectId,
             "users" => json_encode($users)
         ]);
     }
@@ -116,16 +141,19 @@ class UserRightsHistory extends AbstractExternalModule
     // USER RIGHTS METHODS //
     /////////////////////////
 
-    function updatePermissionsForAllUsers()
+    function updatePermissionsForAllUsers($localProjectId)
     {
         try {
-            $project = $this->getProject();
+            $project = $this->getProject($localProjectId);
             $users = $project->getUsers();
             foreach ($users as $user) {
-                $this->updatePermissionsForUser($user);
+                $this->updatePermissionsForUser($localProjectId, $user);
             }
         } catch (Exception $e) {
-            $this->log("Error updating users",  ["error" => $e->getMessage()]);
+            $this->log("Error updating users",  [
+                "project_id" => $localProjectId,
+                "error" => $e->getMessage()
+            ]);
         }
     }
 
@@ -137,13 +165,13 @@ class UserRightsHistory extends AbstractExternalModule
      * 
      * @return void
      */
-    function updatePermissionsForUser($user)
+    function updatePermissionsForUser($localProjectId, $user)
     {
         $username = $user->getUsername();
-        $currentPermissions = $this->getCurrentUserPermissions($user);
-        $lastPermissions = $this->getLastUserPermissions($username);
+        $currentPermissions = $this->getCurrentUserPermissions($localProjectId, $user);
+        $lastPermissions = $this->getLastUserPermissions($localProjectId, $username);
         if ($lastPermissions == null || $this->permissionsChanged($lastPermissions, $currentPermissions)) {
-            $this->savePermissions($currentPermissions);
+            $this->savePermissions($localProjectId, $currentPermissions);
         }
     }
 
@@ -152,14 +180,14 @@ class UserRightsHistory extends AbstractExternalModule
      * 
      * @return array permissions, including name and account status
      */
-    function getCurrentUserPermissions($user)
+    function getCurrentUserPermissions($localProjectId, $user)
     {
 
         $username = $user->getUsername();
         $name = $this->getName($username);
         $email = $user->getEmail();
         $suspended = $this->getStatus($username);
-        $rights = $user->getRights();
+        $rights = $user->getRights($localProjectId);
         $isSuperUser = $user->isSuperUser();
 
         $rights["name"] = $name;
@@ -170,11 +198,11 @@ class UserRightsHistory extends AbstractExternalModule
         return $rights;
     }
 
-    function getLastUserPermissions(string $username)
+    function getLastUserPermissions($localProjectId, string $username)
     {
 
-        $sql = "select rights where message = 'rights' and user_name = ? order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, [$username]);
+        $sql = "select rights where message = 'rights' and user_name = ? and project_id = ? order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$username, $localProjectId]);
         $rights_gzip = $result->fetch_assoc()["rights"];
         return json_decode(gzinflate(base64_decode($rights_gzip)), true);
     }
@@ -212,22 +240,79 @@ class UserRightsHistory extends AbstractExternalModule
         return count($difference1) > 0 || count($difference2) > 0;
     }
 
-    function savePermissions(array $newPermissions)
+    function savePermissions($localProjectId, array $newPermissions)
     {
         $this->log('rights', [
             "user_name" => $newPermissions["username"],
+            "project_id" => $localProjectId,
             "rights" => base64_encode(gzdeflate(json_encode($newPermissions), 9))
         ]);
     }
 
-    function markUsersRemoved($removed_users)
+    function markUsersRemoved($localProjectId, $removed_users)
     {
         foreach ($removed_users as $username) {
             $this->log('rights', [
                 "user_name" => $username,
                 "rights" => null,
-                "status" => "removed"
+                "status" => "removed",
+                "project_id" => $localProjectId
             ]);
         }
+    }
+
+    ///////////////////////
+    // Filtering Methods //
+    ///////////////////////
+
+    function getUserPermissionsByTimestamp($username, $timestamp_clean)
+    {
+        $sql = "select rights where message = 'rights' and user_name = ?";
+        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $sql .= " order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$username, $timestamp_clean]);
+        $rights_gzip = $result->fetch_assoc()["rights"];
+        return json_decode(gzinflate(base64_decode($rights_gzip)), true);
+    }
+
+    function getUsersByTimestamp($timestamp_clean)
+    {
+        $sql = "select users where message = 'users'";
+        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $sql .= " order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$timestamp_clean]);
+        $users_json = $result->fetch_assoc()["users"];
+        return json_decode($users_json, true);
+    }
+
+    function getProjectStatusByTimestamp($timestamp_clean)
+    {
+        $sql = "select info where message = 'project_info'";
+        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $sql .= " order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$timestamp_clean]);
+        $info_gzip = $result->fetch_assoc()["info"];
+        return json_decode(gzinflate(base64_decode($info_gzip)), true);
+    }
+
+    function getAllInfoByTimestamp($timestamp = null)
+    {
+        $results = array();
+        $results["timestamp"] = intval($timestamp) / 1000;
+        $users = $this->getUsersByTimestamp($results["timestamp"]);
+        $results["users"] = array();
+        foreach ($users as $user) {
+            $results["users"][$user] = $this->getUserPermissionsByTimestamp($user, $results["timestamp"]);
+        }
+        $results["project_status"] = $this->getProjectStatusByTimestamp($results["timestamp"]);
+        return $results;
+    }
+
+    /////////////////////
+    // Display Methods //
+    /////////////////////
+
+    function renderTable(array $permissions)
+    {
     }
 }
