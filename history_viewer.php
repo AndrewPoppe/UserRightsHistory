@@ -46,11 +46,10 @@ include APP_PATH_DOCROOT . 'ProjectGeneral/header.php';
 
 if (isset($_GET["datetime"])) {
     $timestamp = intval($_GET["datetime"]);
-    $permissions = $module->getAllInfoByTimestamp($timestamp);
-
-    $module->renderTable($permissions);
-
     echo "<script>$(function() {const newDate = new Date($timestamp);$('#datetime').datetimepicker('setDate', newDate);});</script>";
+
+    $permissions = $module->getAllInfoByTimestamp($timestamp);
+    $module->renderTable($permissions);
 }
 
 include APP_PATH_DOCROOT . 'ProjectGeneral/footer.php';

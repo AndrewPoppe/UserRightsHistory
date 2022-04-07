@@ -24,6 +24,7 @@ class UserRightsHistory extends AbstractExternalModule
             $this->updateProjectInfo($localProjectId);
             $this->updatePermissionsForAllUsers($localProjectId);
             $this->updateAllRoles($localProjectId);
+            $this->updateAllDAGs($localProjectId);
         }
         return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
     }
@@ -140,10 +141,10 @@ class UserRightsHistory extends AbstractExternalModule
 
     function updateAllRoles($localProjectId)
     {
-        $currentRoles = $this->getCurrentRoles($localProjectId);
-        $lastRoles = $this->getLastRoles($localProjectId);
-        if (($lastRoles == null && $currentRoles != null) || $this->rolesChanged($lastRoles, $currentRoles)) {
-            $this->saveRoles($localProjectId, $currentRoles);
+        $currentRolesGzip = $this->getCurrentRoles($localProjectId);
+        $lastRolesGzip = $this->getLastRoles($localProjectId);
+        if ($this->rolesChanged($lastRolesGzip, $currentRolesGzip)) {
+            $this->saveRoles($localProjectId, $currentRolesGzip);
         }
     }
 
@@ -156,7 +157,8 @@ class UserRightsHistory extends AbstractExternalModule
             while ($role = $result->fetch_assoc()) {
                 $roles[$role["role_id"]] = $role;
             }
-            return $roles;
+            $roles_to_return = count($roles) > 0 ? base64_encode(gzdeflate(json_encode($roles), 9)) : null;
+            return $roles_to_return;
         } catch (\Exception $e) {
             $this->log("Error updating roles",  [
                 "project_id" => $localProjectId,
@@ -170,21 +172,19 @@ class UserRightsHistory extends AbstractExternalModule
         $sql = "select roles where message = 'roles' and project_id = ? order by timestamp desc limit 1";
         $result = $this->queryLogs($sql, [$localProjectId]);
         $roles_gzip = $result->fetch_assoc()["roles"];
-        return json_decode(gzinflate(base64_decode($roles_gzip)), true);
+        return $roles_gzip;
     }
 
-    function rolesChanged($lastRoles, $currentRoles)
+    function rolesChanged($lastRolesGzip, $currentRolesGzip)
     {
-        $difference1 = array_diff_assoc($lastRoles, $currentRoles);
-        $difference2 = array_diff_assoc($currentRoles, $lastRoles);
-        return count($difference1) > 0 || count($difference2) > 0;
+        return $lastRolesGzip !== $currentRolesGzip;
     }
 
-    function saveRoles($localProjectId, $roles)
+    function saveRoles($localProjectId, $rolesGzip)
     {
         $this->log('roles', [
             "project_id" => $localProjectId,
-            "roles" => base64_encode(gzdeflate(json_encode($roles), 9))
+            "roles" => $rolesGzip
         ]);
     }
 
@@ -314,6 +314,64 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
+
+    /////////////////
+    // DAG Methods //
+    /////////////////
+
+
+    function updateAllDAGs($localProjectId)
+    {
+        $currentDAGsGzip = $this->getCurrentDAGs($localProjectId);
+        $lastDAGsGzip = $this->getLastDAGs($localProjectId);
+        if ($this->dagsChanged($lastDAGsGzip, $currentDAGsGzip)) {
+            $this->saveDAGs($localProjectId, $currentDAGsGzip);
+        }
+    }
+
+    function getCurrentDAGs($localProjectId)
+    {
+        try {
+            $sql = "select * from redcap_data_access_groups where project_id = ?";
+            $result = $this->query($sql, [$localProjectId]);
+            $dags = array();
+            while ($dag = $result->fetch_assoc()) {
+                $dags[$dag["group_id"]] = $dag;
+            }
+            $dags_to_return = count($dags) > 0 ? base64_encode(gzdeflate(json_encode($dags), 9)) : null;
+            return $dags_to_return;
+        } catch (\Exception $e) {
+            $this->log("Error updating dags",  [
+                "project_id" => $localProjectId,
+                "error" => $e->getMessage()
+            ]);
+        }
+    }
+
+    function getLastDAGs($localProjectId)
+    {
+        $sql = "select dags where message = 'dags' and project_id = ? order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$localProjectId]);
+        $dags_gzip = $result->fetch_assoc()["dags"];
+        return $dags_gzip;
+    }
+
+    function dagsChanged($lastDAGsGzip, $currentDAGsGzip)
+    {
+        return $lastDAGsGzip !== $currentDAGsGzip;
+    }
+
+    function saveDAGs($localProjectId, $dagsGzip)
+    {
+        $this->log('dags', [
+            "project_id" => $localProjectId,
+            "dags" => $dagsGzip
+        ]);
+    }
+
+
+
+
     ///////////////////////
     // Filtering Methods //
     ///////////////////////
@@ -327,6 +385,8 @@ class UserRightsHistory extends AbstractExternalModule
         $rights_gzip = $result->fetch_assoc()["rights"];
         return json_decode(gzinflate(base64_decode($rights_gzip)), true);
     }
+
+    // TODO: clean up these repetitive methods
 
     function getUsersByTimestamp($timestamp_clean)
     {
@@ -358,6 +418,16 @@ class UserRightsHistory extends AbstractExternalModule
         return json_decode(gzinflate(base64_decode($roles_gzip)), true);
     }
 
+    function getAllDAGsByTimestamp($timestamp_clean)
+    {
+        $sql = "select dags where message = 'dags'";
+        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $sql .= " order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$timestamp_clean]);
+        $dags_gzip = $result->fetch_assoc()["dags"];
+        return json_decode(gzinflate(base64_decode($dags_gzip)), true);
+    }
+
     function getAllInfoByTimestamp($timestamp = null)
     {
         $results = array();
@@ -369,6 +439,7 @@ class UserRightsHistory extends AbstractExternalModule
             $results["users"][$user] = $this->getUserPermissionsByTimestamp($user, $results["timestamp"]);
         }
 
+        $results["dags"] = $this->getAllDAGsByTimestamp($results["timestamp"]);
         $results["roles"] = $this->getAllRolesByTimestamp($results["timestamp"]);
         $results["project_status"] = $this->getProjectStatusByTimestamp($results["timestamp"]);
         return $results;
