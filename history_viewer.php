@@ -7,10 +7,10 @@ include APP_PATH_DOCROOT . 'ProjectGeneral/header.php';
 <script type="text/javascript">
     $.ui = null;
 </script>
-<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('jquery-ui.min.css') ?>" />
-<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('jquery-ui-timepicker-addon.css') ?>" />
-<script src="<?= $module->getUrl('jquery-ui.min.js') ?>"></script>
-<script src="<?= $module->getUrl('jquery-ui-timepicker-addon.js') ?>"></script>
+<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui.min.css') ?>" />
+<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.css') ?>" />
+<script src="<?= $module->getUrl('lib/jquery-ui.min.js') ?>"></script>
+<script src="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.js') ?>"></script>
 <script type="text/javascript">
     $(function() {
         $('#datetime').datetimepicker({

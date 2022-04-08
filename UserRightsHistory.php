@@ -19,6 +19,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function updateAllProjects($cronInfo = array())
     {
+        // TODO: there were like 6 or 7 repeated logs when initially enabling the module in a project. how and why?
         foreach ($this->getProjectsWithModuleEnabled() as $localProjectId) {
             $this->updateUserList($localProjectId);
             $this->updateProjectInfo($localProjectId);
@@ -457,6 +458,7 @@ class UserRightsHistory extends AbstractExternalModule
         try {
             $Renderer->print();
             $Renderer->renderTable();
+            var_dump($Renderer->getColumns());
         } catch (\Exception $e) {
             var_dump($e);
         }
