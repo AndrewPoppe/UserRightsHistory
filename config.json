@@ -13,7 +13,8 @@
         "project": [{
             "name": "User Rights History",
             "icon": "fas fa-history",
-            "url": "history_viewer.php"
+            "url": "history_viewer.php",
+            "show-header-and-footer": true
         }],
         "control-center": []
     },

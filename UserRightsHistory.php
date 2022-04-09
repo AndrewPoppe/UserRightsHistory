@@ -27,6 +27,7 @@ class UserRightsHistory extends AbstractExternalModule
             $this->updateAllRoles($localProjectId);
             $this->updateAllDAGs($localProjectId);
         }
+        $this->updateAllSystem();
         return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
     }
 
@@ -370,8 +371,58 @@ class UserRightsHistory extends AbstractExternalModule
         ]);
     }
 
+    ////////////////////
+    // System Methods //
+    ////////////////////
 
+    function updateAllSystem()
+    {
+        $currentSystemGzip = $this->getCurrentSystem();
+        $lastSystemGzip = $this->getLastSystem();
+        if ($this->systemChanged($lastSystemGzip, $currentSystemGzip)) {
+            $this->saveSystem($currentSystemGzip);
+        }
+    }
 
+    function getCurrentSystem()
+    {
+        try {
+            $sql = "select * from redcap_config";
+            $result = $this->query($sql, []);
+            $fields = ["enable_plotting", "dts_enabled_global", "api_enabled", "mobile_app_enabled"];
+            $system_info = array();
+            while ($row = $result->fetch_assoc()) {
+                if (in_array($row["field_name"], $fields, true)) {
+                    $system_info[$row["field_name"]] = $row["value"];
+                }
+            }
+            return base64_encode(gzdeflate(json_encode($system_info), 9));
+        } catch (\Exception $e) {
+            $this->log("Error updating system",  [
+                "error" => $e->getMessage()
+            ]);
+        }
+    }
+
+    function getLastSystem()
+    {
+        $sql = "select info where message = 'system' order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, []);
+        $system_gzip = $result->fetch_assoc()["info"];
+        return $system_gzip;
+    }
+
+    function systemChanged($lastSystemGzip, $currentSystemGzip)
+    {
+        return $lastSystemGzip !== $currentSystemGzip;
+    }
+
+    function saveSystem($system_gzip)
+    {
+        $this->log('system', [
+            "info" => $system_gzip
+        ]);
+    }
 
     ///////////////////////
     // Filtering Methods //
@@ -429,6 +480,17 @@ class UserRightsHistory extends AbstractExternalModule
         return json_decode(gzinflate(base64_decode($dags_gzip)), true);
     }
 
+    function getAllSystemByTimestamp($timestamp_clean)
+    {
+        $sql = "select info where message = 'system' and project_id is null";
+        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $sql .= " order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$timestamp_clean]);
+        $system_gzip = $result->fetch_assoc()["info"];
+        var_dump($system_gzip);
+        return json_decode(gzinflate(base64_decode($system_gzip)), true);
+    }
+
     function getAllInfoByTimestamp($timestamp = null)
     {
         $results = array();
@@ -443,6 +505,7 @@ class UserRightsHistory extends AbstractExternalModule
         $results["dags"] = $this->getAllDAGsByTimestamp($results["timestamp"]);
         $results["roles"] = $this->getAllRolesByTimestamp($results["timestamp"]);
         $results["project_status"] = $this->getProjectStatusByTimestamp($results["timestamp"]);
+        $results["system"] = $this->getAllSystemByTimestamp($results["timestamp"]);
         return $results;
     }
 
@@ -456,6 +519,7 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $Renderer = new Renderer($permissions);
         try {
+            $Renderer->parsePermissions();
             $Renderer->print();
             $Renderer->renderTable();
             var_dump($Renderer->getColumns());

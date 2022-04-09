@@ -1,11 +1,6 @@
-<?php
-// Header
-include APP_PATH_DOCROOT . 'ProjectGeneral/header.php';
-
-?>
 <input id="datetime" onclick="$(this).next('img').click();">
 <script type="text/javascript">
-    $.ui = null;
+    //$.ui = null;
 </script>
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui.min.css') ?>" />
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.css') ?>" />
@@ -42,6 +37,7 @@ include APP_PATH_DOCROOT . 'ProjectGeneral/header.php';
         window.location.href = `<?= $module->getUrl('history_viewer.php') ?>&datetime=${datetime}`;
     }
 </script>
+
 <?php
 
 if (isset($_GET["datetime"])) {
@@ -51,5 +47,3 @@ if (isset($_GET["datetime"])) {
     $permissions = $module->getAllInfoByTimestamp($timestamp);
     $module->renderTable($permissions);
 }
-
-include APP_PATH_DOCROOT . 'ProjectGeneral/footer.php';

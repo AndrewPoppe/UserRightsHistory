@@ -61,51 +61,82 @@ class Renderer
 
     private function hasDAGs()
     {
-        return true;
+        return count($this->permissions["dags"]) > 0;
     }
 
     private function graphicalEnabled()
     {
-        return true;
+        return boolval($this->permissions["system"]["enable_plotting"]);
     }
 
     private function surveysEnabled()
     {
-        return true;
+        return boolval($this->permissions["project_status"]["surveys_enabled"]);
     }
 
     private function ddeEnabled()
     {
-        return true;
+        return boolval($this->permissions["project_status"]["double_data_entry"]);
     }
 
     private function randomizationEnabled()
     {
-        return true;
+        return boolval($this->permissions["project_status"]["randomization"]);
     }
 
     private function dataResolutionWorkflowEnabled()
     {
-        return true;
+        return $this->permissions["project_status"]["data_resolution_enabled"] == 2;
     }
 
     private function apiEnabled()
     {
-        return true;
+        return boolval($this->permissions["system"]["api_enabled"]);
     }
 
     private function mobileAppEnabled()
     {
-        return true;
+        $apiEnabled = $this->apiEnabled();
+        $mobileAppEnabled = $this->permissions["system"]["mobile_app_enabled"];
+        return $apiEnabled && $mobileAppEnabled;
     }
 
     private function cdpEnabled()
     {
-        return true;
+        $enabledSystem = $this->permissions["system"]["fhir_ddp_enabled"];
+        $enabledProject = $this->permissions["project_status"]["realtime_webservice_enabled"];
+        return $enabledProject && $enabledProject;
     }
 
     private function dtsEnabled()
     {
-        return true;
+        $enabledSystem = $this->permissions["system"]["dts_enabled_global"];
+        $enabledProject = $this->permissions["project_status"]["dts_enabled"];
+        return $enabledSystem && $enabledProject;
+    }
+
+
+
+    private function insertCheck()
+    { ?>
+        <img src="<?= APP_PATH_IMAGES . "tick.png" ?>"></img>
+    <?php }
+
+    private function insertX()
+    { ?>
+        <img src="<?= APP_PATH_IMAGES . "cross.png" ?>"></img>
+    <?php
+    }
+
+    private function insertCheckShield()
+    {
+    ?>
+        <img src="<?= APP_PATH_IMAGES . "tick_shield.png" ?>"></img>
+<?php
+    }
+
+    function parsePermissions()
+    {
     }
 }
+?>
