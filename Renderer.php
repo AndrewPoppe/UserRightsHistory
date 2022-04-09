@@ -17,6 +17,33 @@ class Renderer
 
     function renderTable()
     {
+        $columns = $this->getColumns();
+?>
+        <style>
+            table {
+                border-collapse: collapse;
+            }
+
+            td,
+            th {
+                border-right: solid 1px #f0f0f0;
+                border-left: solid 1px #f0f0f0;
+            }
+        </style>
+        <table class="table">
+            <thead>
+                <tr>
+                    <?php foreach ($columns as $column) {
+                        $this->makeHeader($column);
+                    }
+                    ?>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    <?php
     }
 
     // TODO: instead of having methods in this class for determining whether features are enabled, should that happen elsewhere?
@@ -115,6 +142,38 @@ class Renderer
         return $enabledSystem && $enabledProject;
     }
 
+
+    private function makeHeader($column)
+    {
+        if (!$column["show"]) {
+            return;
+        }
+    ?>
+        <th style="min-width:<?= $column["width"] ?>px; text-align:center; vertical-align:middle;">
+            <?= $column["title"] ?>
+        </th>
+    <?php
+    }
+
+    private function makeCell(array $content)
+    {
+    ?>
+        <td>
+            <?php foreach ($content as $item) {
+                if ($item === "check") {
+                    $this->insertCheck();
+                } elseif ($item === "X") {
+                    $this->insertX();
+                } elseif ($item === "checkshield") {
+                    $this->insertCheckShield();
+                } else {
+            ?>
+                    <p><?= $item ?></p>
+            <?php }
+            } ?>
+        </td>
+    <?php
+    }
 
 
     private function insertCheck()
