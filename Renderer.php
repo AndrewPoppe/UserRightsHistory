@@ -18,6 +18,7 @@ class Renderer
     function renderTable()
     {
         $columns = $this->getColumns();
+        $this->parsePermissions();
 ?>
         <style>
             table {
@@ -40,20 +41,40 @@ class Renderer
                 </tr>
             </thead>
             <tbody>
-
+                <?php foreach ($this->permissions["users"] as $user) {
+                    echo "<tr>";
+                    foreach ($columns as $column_id => $column) {
+                        $data = $user["row"][$column_id];
+                        if (!$column["show"] || is_null($data)) {
+                            continue;
+                        }
+                        $this->makeCell($data);
+                    }
+                    echo "</tr>";
+                }
+                foreach ($this->permissions["roles"] as $role) {
+                    echo "<tr>";
+                    foreach ($columns as $column_id => $column) {
+                        $data = $role["row"][$column_id];
+                        if (!$column["show"] || is_null($data)) {
+                            continue;
+                        }
+                        $this->makeCell($data);
+                    }
+                    echo "</tr>";
+                } ?>
             </tbody>
         </table>
     <?php
     }
 
     // TODO: instead of having methods in this class for determining whether features are enabled, should that happen elsewhere?
-    // TODO: Are there system settings that determine whether these should be shown that are not currently being stored?
 
     function getColumns()
     {
         return [
-            "role"                    => array("title" => "Role", "show" => true, "width" => 50),
-            "user"                    => array("title" => "User", "show" => true, "width" => 50),
+            "role"                    => array("title" => "Role", "show" => true, "width" => 100),
+            "user"                    => array("title" => "User", "show" => true, "width" => 200),
             "expiration"              => array("title" => "Expiration Date", "show" => true, "width" => 50),                                                // maybe this should be status (expired, suspended, active?)
             "group"                   => array("title" => "Group (DAG)", "show" => $this->hasDAGs(), "width" => 50),
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
@@ -152,50 +173,121 @@ class Renderer
         <th style="min-width:<?= $column["width"] ?>px; text-align:center; vertical-align:middle;">
             <?= $column["title"] ?>
         </th>
-    <?php
+<?php
     }
 
     private function makeCell(array $content)
     {
-    ?>
-        <td>
-            <?php foreach ($content as $item) {
-                if ($item === "check") {
-                    $this->insertCheck();
-                } elseif ($item === "X") {
-                    $this->insertX();
-                } elseif ($item === "checkshield") {
-                    $this->insertCheckShield();
-                } else {
-            ?>
-                    <p><?= $item ?></p>
-            <?php }
-            } ?>
-        </td>
-    <?php
+        echo "<td>";
+        foreach ($content as $item) {
+            if ($item === "check") {
+                $this->insertCheck();
+            } elseif ($item === "X") {
+                $this->insertX();
+            } elseif ($item === "checkshield") {
+                $this->insertCheckShield();
+            } else {
+                echo "<p>${item}</p>";
+            }
+        }
+        echo "</td>";
     }
 
 
     private function insertCheck()
-    { ?>
-        <img src="<?= APP_PATH_IMAGES . "tick.png" ?>"></img>
-    <?php }
+    {
+        echo "<img src='" . APP_PATH_IMAGES . "tick.png'></img>";
+    }
 
     private function insertX()
-    { ?>
-        <img src="<?= APP_PATH_IMAGES . "cross.png" ?>"></img>
-    <?php
+    {
+        echo "<img src='" . APP_PATH_IMAGES . "cross.png'></img>";
     }
 
     private function insertCheckShield()
     {
-    ?>
-        <img src="<?= APP_PATH_IMAGES . "tick_shield.png" ?>"></img>
-<?php
+        echo "<img src='" . APP_PATH_IMAGES . "tick_shield.png'></img>";
     }
 
     function parsePermissions()
     {
+        $roles = &$this->permissions["roles"];
+        $users = &$this->permissions["users"];
+
+        foreach ($users as &$user) {
+            $role_id = $user["role_id"];
+            if ($role_id !== null) {
+                if ($roles[$role_id]["users"] === null) {
+                    $roles[$role_id]["users"] = array();
+                }
+                $roles[$role_id]["users"][$user["username"]] = $user;
+                unset($users[$user["username"]]);
+                continue;
+            }
+            $user["row"] = $this->parseRow($user, true);
+        }
+
+        foreach ($roles as &$role) {
+            $role["row"] = $this->parseRow($role, false);
+        }
+    }
+
+    /**
+     * @param array $data user or role permissions raw data
+     * @param bool $isUser Whether the data is from a user. False is for role.
+     * 
+     * @return array parsed row for table
+     */
+    private function parseRow(array $data, bool $isUser): array
+    {
+
+        $row = array();
+
+        // Role
+        $row["role"] = $isUser ? ["-"] : ["<strong>" . $data["role_name"] . "</strong> (" . $data["role_id"] . ")"];
+
+        // User
+        if ($isUser) {
+            $userData =  ["<span title='" . $data["email"] . "'><strong>" . $data["username"] . "</strong> (" . $data["name"] . ")</span>"];
+        } else {
+            $userData = array();
+            foreach ($data["users"] as $thisUser) {
+                $userData[] = "<span title='" . $thisUser["email"] . "'><strong>" . $thisUser["username"] . "</strong> (" . $thisUser["name"] . ")</span>";
+            }
+            if (count($userData) === 0) {
+                $userData[] = "<span style='color:lightgrey;'>[No users assigned]</span>";
+            }
+        }
+        $row["user"] = $userData;
+
+        // expiration
+        if ($isUser) {
+            $expirationData = [$this->createExpirationDate($data["expiration"])];
+        } else {
+            $expirationData = array();
+            foreach ($data["users"] as $thisUser) {
+                $expirationData[] = $this->createExpirationDate($thisUser["expiration"]);
+            }
+        }
+        $row["expiration"] = $expirationData;
+
+        return $row;
+    }
+
+
+    private function createExpirationDate($date_string)
+    {
+        if (is_null($date_string)) {
+            return "<span style='font-size:x-small; color:lightgrey;'>never</span>";
+        }
+        $date = date_create($date_string);
+        $now_string = date("Y-m-d", $this->permissions["timestamp"]);
+        $now = date_create($now_string);
+        var_dump($date, $now);
+        $diff = date_diff($now, $date);
+        var_dump($diff);
+
+        $color = (!$diff->invert) ? "black" : "tomato";
+        return "<span style='color:${color};'>${date_string}</span>";
     }
 }
-?>

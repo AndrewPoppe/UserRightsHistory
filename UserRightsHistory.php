@@ -519,10 +519,8 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $Renderer = new Renderer($permissions);
         try {
-            $Renderer->parsePermissions();
             $Renderer->print();
             $Renderer->renderTable();
-            var_dump($Renderer->getColumns());
         } catch (\Exception $e) {
             var_dump($e);
         }
