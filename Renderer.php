@@ -33,7 +33,7 @@ class Renderer
                 border-left: solid 1px #f0f0f0;
             }
         </style>
-        <table class="table stripe hover">
+        <table class="table stripe hover display compact">
             <thead>
                 <tr>
                     <?php foreach ($columns as $column) {
@@ -43,25 +43,29 @@ class Renderer
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($this->permissions["users"] as $user) {
+                <?php
+                $nonCentered = array("user", "expiration", "group", "randomization");
+                foreach ($this->permissions["users"] as $user) {
                     echo "<tr>";
                     foreach ($columns as $column_id => $column) {
+                        $center = !in_array($column_id, $nonCentered, true);
                         $data = $user["row"][$column_id];
                         if (!$column["show"] || is_null($data)) {
                             continue;
                         }
-                        $this->makeCell($data);
+                        $this->makeCell($data, $center);
                     }
                     echo "</tr>";
                 }
                 foreach ($this->permissions["roles"] as $role) {
                     echo "<tr>";
                     foreach ($columns as $column_id => $column) {
+                        $center = !in_array($column_id, $nonCentered, true);
                         $data = $role["row"][$column_id];
                         if (!$column["show"] || is_null($data)) {
                             continue;
                         }
-                        $this->makeCell($data);
+                        $this->makeCell($data, $center);
                     }
                     echo "</tr>";
                 } ?>
@@ -77,8 +81,8 @@ class Renderer
         return [
             "role"                    => array("title" => "Role", "show" => true, "width" => 100),
             "user"                    => array("title" => "User", "show" => true, "width" => 200),
-            "expiration"              => array("title" => "Expiration Date", "show" => true, "width" => 50),                                                // maybe this should be status (expired, suspended, active?)
-            "group"                   => array("title" => "Group (DAG)", "show" => $this->hasDAGs(), "width" => 150),
+            "expiration"              => array("title" => "Expiration", "show" => true, "width" => 50),                                                // maybe this should be status (expired, suspended, active?)
+            "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 150),
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
             "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
             "data_access_groups"      => array("title" => "Data Access Groups", "show" => true, "width" => 50),
@@ -178,9 +182,11 @@ class Renderer
 <?php
     }
 
-    private function makeCell(array $content)
+    private function makeCell(array $content, bool $center = true)
     {
         echo "<td style='vertical-align:middle;'>";
+        echo !$center ? "" : "<div style='display:flex; align-items:center; justify-content:center;'>";
+        $pCenter = $center ? "text-align:center;" : "";
         foreach ($content as $item) {
             if ($item === "check") {
                 $this->insertCheck();
@@ -189,10 +195,10 @@ class Renderer
             } elseif ($item === "checkshield") {
                 $this->insertCheckShield();
             } else {
-                echo "<p>${item}</p>";
+                echo "<p style='${pCenter}'>${item}</p>";
             }
         }
-        echo "</td>";
+        echo ($center ? "</div>" : "") . "</td>";
     }
 
 
@@ -267,8 +273,8 @@ class Renderer
             }
             $userData[] = $user->getUserText();
         }
-        if ($isUser && empty($userData)) {
-            $userData[] = "<span style='color:lightgrey;'>[No users assigned]</span>";
+        if (!$isUser && empty($userData)) {
+            $userData[] = "<span style='color:lightgrey; font-size:75%;'>[No users assigned]</span>";
         }
         $row["user"] = $userData;
 
@@ -293,6 +299,64 @@ class Renderer
         }
         $row["group"] = $dagData;
 
+        // Project Design and Setup
+        $row["design"] = [$data["design"] ? "check" : "X"];
+
+        // User Rights
+        $row["user_rights"] = [$data["user_rights"] ? "check" : "X"];
+
+        // Data Access Groups
+        $row["data_access_groups"] = [$data["data_access_groups"] ? "check" : "X"];
+
+        // Data Export Tool
+        $row["export"] = [$this->getDataExportText($data["data_export_tool"])];
+
+        // Reports & Report Builder
+        $row["reports"] = [$data["reports"] ? "check" : "X"];
+
+        // Graphical Data View & Stats
+        $row["graphical"] = [$data["graphical"] ? "check" : "X"];
+
+        // Survey Distribution Tools
+        $row["surveys"] = [$data["participants"] ? "check" : "X"];
+
+        // Calendar & Scheduling
+        $row["calendar"] = [$data["calendar"] ? "check" : "X"];
+
+        // Data Import Tool
+        $row["import"] = [$data["data_import_tool"] ? "check" : "X"];
+
+        // Data Comparison Tool
+        $row["comparison"] = [$data["data_comparison_tool"] ? "check" : "X"];
+
+        // Logging
+        $row["logging"] = [$data["data_logging"] ? "check" : "X"];
+
+        // File Repository
+        $row["file_repository"] = [$data["file_repository"] ? "check" : "X"];
+
+        // Double Data Entry
+        $row["dde"] = [$this->getDDEText($data["double_data"])];
+
+        // Record Locking Customization
+        $row["lock_record_customize"] = [$data["lock_record_customize"] ? "check" : "X"];
+
+        // Lock/Unlock Records
+        $row["lock_record"] = [$this->getLockRecordText($data["lock_record"])];
+
+        // Randomization
+        $row["randomization"] = array();
+        if ($data["random_dashboard"]) {
+            $row["randomization"][] = "Dashboard";
+        }
+        if ($data["random_setup"]) {
+            $row["randomization"][] = "Setup";
+        }
+        if ($data["random_perform"]) {
+            $row["randomization"][] = "Randomize";
+        }
+
+
         return $row;
     }
 
@@ -309,5 +373,65 @@ class Renderer
         $formatted_date = $date->format("m/d/Y");
         $color = (!$diff->invert) ? "black" : "tomato";
         return "<div style='display:flex; align-items:center; justify-content:center;'><span style='color:${color};'>${formatted_date}</span></div>";
+    }
+
+    private function getDataExportText($value)
+    {
+        $result = "";
+        switch (strval($value)) {
+            case "0":
+                $result = "X";
+                break;
+            case "1":
+                $result = "Full Data Set";
+                break;
+            case "2":
+                $result = "De-identified";
+                break;
+            case "3":
+                $result = "Remove all tagged Identifier fields";
+                break;
+            default:
+                $result = "X";
+        }
+        return $result;
+    }
+
+    private function getDDEText($value)
+    {
+        $result = "";
+        switch (strval($value)) {
+            case "0":
+                $result = "Reviewer";
+                break;
+            case "1":
+                $result = "DDE Person #1";
+                break;
+            case "2":
+                $result = "DDE Person #2";
+                break;
+            default:
+                $result = "X";
+        }
+        return $result;
+    }
+
+    private function getLockRecordText($value)
+    {
+        $result = "";
+        switch (strval($value)) {
+            case "0":
+                $result = "X";
+                break;
+            case "1":
+                $result = "check";
+                break;
+            case "2":
+                $result = "checkshield";
+                break;
+            default:
+                $result = "X";
+        }
+        return $result;
     }
 }
