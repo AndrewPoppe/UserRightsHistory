@@ -244,11 +244,13 @@ class UserRightsHistory extends AbstractExternalModule
         $suspended = $this->getStatus($username);
         $rights = $user->getRights($localProjectId);
         $isSuperUser = $user->isSuperUser();
+        $possibleDags = $this->getPossibleDags($localProjectId, $username);
 
         $rights["name"] = $name;
         $rights["email"] = $email;
         $rights["suspended"] = $suspended;
         $rights["isSuperUser"] = $isSuperUser;
+        $rights["possibleDags"] = $possibleDags;
 
         return $rights;
     }
@@ -272,6 +274,21 @@ class UserRightsHistory extends AbstractExternalModule
             return $result->fetch_assoc()["name"];
         } catch (\Exception $e) {
             $this->log("Error fetching name", ["error" => $e->getMessage()]);
+        }
+    }
+
+    function getPossibleDags($localProjectId, string $username)
+    {
+        try {
+            $sql = "select group_id from redcap_data_access_groups_users where project_id = ? and username = ?";
+            $result = $this->query($sql, [$localProjectId, $username]);
+            $possibleDags = array();
+            while ($row = $result->fetch_assoc()) {
+                $possibleDags[] = $row["group_id"];
+            }
+            return $possibleDags;
+        } catch (\Exception $e) {
+            $this->log("Error fetching possible dags", ["error" => $e->getMessage()]);
         }
     }
 

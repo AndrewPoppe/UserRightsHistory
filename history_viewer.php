@@ -1,7 +1,4 @@
 <input id="datetime" onclick="$(this).next('img').click();">
-<script type="text/javascript">
-    //$.ui = null;
-</script>
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui.min.css') ?>" />
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.css') ?>" />
 <script src="<?= $module->getUrl('lib/jquery-ui.min.js') ?>"></script>
@@ -26,6 +23,15 @@
             maxDate: new Date(),
             constrainInput: false
         });
+
+        $('[data-toggle="popover"]').popover({
+            html: true,
+            trigger: 'hover',
+            container: 'body',
+            placement: 'right'
+        });
+
+        $('table').DataTable();
     });
 
     function pageLoad(event) {
@@ -37,6 +43,11 @@
         window.location.href = `<?= $module->getUrl('history_viewer.php') ?>&datetime=${datetime}`;
     }
 </script>
+<style>
+    span.popoverspan {
+        cursor: help;
+    }
+</style>
 
 <?php
 

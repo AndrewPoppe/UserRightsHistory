@@ -2,6 +2,8 @@
 
 namespace YaleREDCap\UserRightsHistory;
 
+include_once "User.php";
+
 class Renderer
 {
     function __construct($permissions)
@@ -31,7 +33,7 @@ class Renderer
                 border-left: solid 1px #f0f0f0;
             }
         </style>
-        <table class="table">
+        <table class="table stripe hover">
             <thead>
                 <tr>
                     <?php foreach ($columns as $column) {
@@ -76,7 +78,7 @@ class Renderer
             "role"                    => array("title" => "Role", "show" => true, "width" => 100),
             "user"                    => array("title" => "User", "show" => true, "width" => 200),
             "expiration"              => array("title" => "Expiration Date", "show" => true, "width" => 50),                                                // maybe this should be status (expired, suspended, active?)
-            "group"                   => array("title" => "Group (DAG)", "show" => $this->hasDAGs(), "width" => 50),
+            "group"                   => array("title" => "Group (DAG)", "show" => $this->hasDAGs(), "width" => 150),
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
             "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
             "data_access_groups"      => array("title" => "Data Access Groups", "show" => true, "width" => 50),
@@ -178,7 +180,7 @@ class Renderer
 
     private function makeCell(array $content)
     {
-        echo "<td>";
+        echo "<td style='vertical-align:middle;'>";
         foreach ($content as $item) {
             if ($item === "check") {
                 $this->insertCheck();
@@ -244,32 +246,52 @@ class Renderer
         $row = array();
 
         // Role
-        $row["role"] = $isUser ? ["-"] : ["<strong>" . $data["role_name"] . "</strong> (" . $data["role_id"] . ")"];
+        $roleText = $isUser ? "<span style='color:lightgray;'>—</span>" : "<span style='font-weight:bold; color:#800000;'>" . $data["role_name"] . "</span>&nbsp;[" . $data["role_id"] . "]";
+        $wrappedRoleText = ['<div style="display:flex; align-items:center; justify-content:center;">' . $roleText . '</div>'];
+        $row["role"] = $wrappedRoleText;
+
+        $users = array();
+        if ($isUser) {
+            $users[] = new User($data, $this);
+        } else {
+            foreach ($data["users"] as $thisUserData) {
+                $users[] = new User($thisUserData, $this);
+            }
+        }
 
         // User
-        if ($isUser) {
-            $userData =  ["<span title='" . $data["email"] . "'><strong>" . $data["username"] . "</strong> (" . $data["name"] . ")</span>"];
-        } else {
-            $userData = array();
-            foreach ($data["users"] as $thisUser) {
-                $userData[] = "<span title='" . $thisUser["email"] . "'><strong>" . $thisUser["username"] . "</strong> (" . $thisUser["name"] . ")</span>";
+        $userData = array();
+        foreach ($users as $index => $user) {
+            if ($index !== array_key_first($users)) {
+                $userData[] = "<hr>";
             }
-            if (count($userData) === 0) {
-                $userData[] = "<span style='color:lightgrey;'>[No users assigned]</span>";
-            }
+            $userData[] = $user->getUserText();
+        }
+        if ($isUser && empty($userData)) {
+            $userData[] = "<span style='color:lightgrey;'>[No users assigned]</span>";
         }
         $row["user"] = $userData;
 
-        // expiration
-        if ($isUser) {
-            $expirationData = [$this->createExpirationDate($data["expiration"])];
-        } else {
-            $expirationData = array();
-            foreach ($data["users"] as $thisUser) {
-                $expirationData[] = $this->createExpirationDate($thisUser["expiration"]);
+        // Expiration
+        $expirationData = array();
+        foreach ($users as $index => $user) {
+            if ($index !== array_key_first($users)) {
+                $expirationData[] = "<hr>";
             }
+            $expiration_string = $user->getExpirationDate();
+            $expirationData[] = $this->createExpirationDate($expiration_string);
         }
         $row["expiration"] = $expirationData;
+
+        // Data Access Group
+        $dagData = array();
+        foreach ($users as $index => $user) {
+            if ($index !== array_key_first($users)) {
+                $dagData[] = "<hr>";
+            }
+            $dagData[] = $user->getDagText();
+        }
+        $row["group"] = $dagData;
 
         return $row;
     }
@@ -278,16 +300,14 @@ class Renderer
     private function createExpirationDate($date_string)
     {
         if (is_null($date_string)) {
-            return "<span style='font-size:x-small; color:lightgrey;'>never</span>";
+            return "<div style='display:flex; align-items:center; justify-content:center;'><span style='font-size:small; color:lightgrey;'>never</span></div>";
         }
         $date = date_create($date_string);
         $now_string = date("Y-m-d", $this->permissions["timestamp"]);
         $now = date_create($now_string);
-        var_dump($date, $now);
         $diff = date_diff($now, $date);
-        var_dump($diff);
-
+        $formatted_date = $date->format("m/d/Y");
         $color = (!$diff->invert) ? "black" : "tomato";
-        return "<span style='color:${color};'>${date_string}</span>";
+        return "<div style='display:flex; align-items:center; justify-content:center;'><span style='color:${color};'>${formatted_date}</span></div>";
     }
 }
