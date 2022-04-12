@@ -1,8 +1,10 @@
 <input id="datetime" onclick="$(this).next('img').click();">
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui.min.css') ?>" />
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.css') ?>" />
+<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/datatables.min.css') ?>" />
 <script src="<?= $module->getUrl('lib/jquery-ui.min.js') ?>"></script>
 <script src="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.js') ?>"></script>
+<script src="<?= $module->getUrl('lib/datatables.min.js') ?>"></script>
 <script type="text/javascript">
     $(function() {
         $('#datetime').datetimepicker({
@@ -31,7 +33,9 @@
             placement: 'right'
         });
 
-        $('table').DataTable();
+        $('table').DataTable({
+
+        });
     });
 
     function pageLoad(event) {
@@ -46,6 +50,38 @@
 <style>
     span.popoverspan {
         cursor: help;
+    }
+
+    table,
+    table p {
+        font-size: 12px;
+    }
+
+    tbody tr:hover {
+        background-color: #d9ebf5 !important;
+    }
+
+    tbody td {
+        background: transparent !important;
+    }
+
+    tr.even {
+        background-color: #f3f3f3 !important;
+    }
+
+    tr.odd {
+        background-color: white !important;
+    }
+
+    thead th {
+        background-color: #ececec !important;
+    }
+
+    hr {
+        height: 1px;
+        border-width: 0;
+        color: #eee;
+        background-color: #eee
     }
 </style>
 

@@ -29,11 +29,11 @@ class Renderer
 
             td,
             th {
-                border-right: solid 1px #f0f0f0;
-                border-left: solid 1px #f0f0f0;
+                border-right: solid 1px #dddddd;
+                border-left: solid 1px #dddddd;
             }
         </style>
-        <table class="table stripe hover display compact">
+        <table class="stripe hover display compact">
             <thead>
                 <tr>
                     <?php foreach ($columns as $column) {
@@ -44,7 +44,7 @@ class Renderer
             </thead>
             <tbody>
                 <?php
-                $nonCentered = array("user", "expiration", "group", "randomization");
+                $nonCentered = array("user", "expiration", "group", "randomization", "api");
                 foreach ($this->permissions["users"] as $user) {
                     echo "<tr>";
                     foreach ($columns as $column_id => $column) {
@@ -204,17 +204,17 @@ class Renderer
 
     private function insertCheck()
     {
-        echo "<img src='" . APP_PATH_IMAGES . "tick.png'></img>";
+        echo "<div style='text-align:center;'><img src='" . APP_PATH_IMAGES . "tick.png'></img></div>";
     }
 
     private function insertX()
     {
-        echo "<img src='" . APP_PATH_IMAGES . "cross.png'></img>";
+        echo "<div style='text-align:center;'><img src='" . APP_PATH_IMAGES . "cross.png'></img></div>";
     }
 
     private function insertCheckShield()
     {
-        echo "<img src='" . APP_PATH_IMAGES . "tick_shield.png'></img>";
+        echo "<div style='text-align:center;'><img src='" . APP_PATH_IMAGES . "tick_shield.png'></img></div>";
     }
 
     function parsePermissions()
@@ -347,15 +347,47 @@ class Renderer
         // Randomization
         $row["randomization"] = array();
         if ($data["random_dashboard"]) {
-            $row["randomization"][] = "Dashboard";
+            $row["randomization"][] = "<div style='text-align:center;'>Dashboard</div>";
         }
         if ($data["random_setup"]) {
-            $row["randomization"][] = "Setup";
+            $row["randomization"][] = "<div style='text-align:center;'>Setup</div>";
         }
         if ($data["random_perform"]) {
-            $row["randomization"][] = "Randomize";
+            $row["randomization"][] = "<div style='text-align:center;'>Randomize</div>";
         }
 
+        // Data Quality (create/edit rules)
+        $row["data_quality_design"] = [$data["data_quality_design"] ? "check" : "X"];
+
+        // Data Quality (execute rules)
+        $row["data_quality_execute"] = [$data["data_quality_execute"] ? "check" : "X"];
+
+        // Data Resolution Workflow
+        $row["data_quality_resolution"] = [$this->getDataResolutionText($data["data_quality_resolution"])];
+
+        // API
+        $row["api"] = $this->getAPIText($data);
+
+        // REDCap Mobile App
+        $row["mobile_app"] = [$data["mobile_app"] ? "check" : "X"];
+
+        // Clinical Data Pull from EHR (Setup / Mapping)
+        $row["cdp_mapping"] = [$data["realtime_webservice_mapping"] ? "check" : "X"];
+
+        // Clinical Data Pull from EHR (Adjudicate Data)
+        $row["cdp_adjudicate"] = [$data["realtime_webservice_adjudicate"] ? "check" : "X"];
+
+        // DTS (Data Transfer Services)
+        $row["dts"] = [$data["dts"] ? "check" : "X"];
+
+        // Create Records
+        $row["record_create"] = [$data["record_create"] ? "check" : "X"];
+
+        // Rename Records
+        $row["record_rename"] = [$data["record_rename"] ? "check" : "X"];
+
+        // Delete Records
+        $row["record_delete"] = [$data["record_delete"] ? "check" : "X"];
 
         return $row;
     }
@@ -431,6 +463,53 @@ class Renderer
                 break;
             default:
                 $result = "X";
+        }
+        return $result;
+    }
+
+    private function getDataResolutionText($value)
+    {
+        $result = "";
+        switch (strval($value)) {
+            case "0":
+                $result = "X";
+                break;
+            case "1":
+                $result = "View only";
+                break;
+            case "2":
+                $result = "Respond only to opened queries";
+                break;
+            case "3":
+                $result = "Open, close, and respond to queries";
+                break;
+            case "4":
+                $result = "Open queries only";
+                break;
+            case "5":
+                $result = "Open and respond to queries";
+                break;
+            default:
+                $result = "X";
+        }
+        return $result;
+    }
+
+    private function getAPIText($data)
+    {
+        $import = $data["api_import"];
+        $export = $data["api_export"];
+        if ($import && $export) {
+            $result = [
+                "<div style='text-align:center;'>Export</div>",
+                "<div style='text-align:center;'>Import</div>",
+            ];
+        } elseif ($import) {
+            $result = ["<div style='text-align:center;'>Import</div>"];
+        } elseif ($export) {
+            $result = ["<div style='text-align:center;'>Export</div>"];
+        } else {
+            $result = ["X"];
         }
         return $result;
     }
