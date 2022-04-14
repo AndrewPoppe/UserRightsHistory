@@ -22,55 +22,46 @@ class Renderer
         $columns = $this->getColumns();
         $this->parsePermissions();
 ?>
-        <style>
-            table {
-                border-collapse: collapse;
-            }
-
-            td,
-            th {
-                border-right: solid 1px #dddddd;
-                border-left: solid 1px #dddddd;
-            }
-        </style>
-        <table class="stripe hover display compact">
-            <thead>
-                <tr>
-                    <?php foreach ($columns as $column) {
-                        $this->makeHeader($column);
-                    }
-                    ?>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                $nonCentered = array("user", "expiration", "group", "randomization", "api");
-                foreach ($this->permissions["users"] as $user) {
-                    echo "<tr>";
-                    foreach ($columns as $column_id => $column) {
-                        $center = !in_array($column_id, $nonCentered, true);
-                        $data = $user["row"][$column_id];
-                        if (!$column["show"] || is_null($data)) {
-                            continue;
+        <div style="margin-right: 20px;">
+            <table id="userrights" class="cell-border stripe compact noOrderIcon">
+                <thead>
+                    <tr>
+                        <?php foreach ($columns as $column) {
+                            $this->makeHeader($column);
                         }
-                        $this->makeCell($data, $center);
-                    }
-                    echo "</tr>";
-                }
-                foreach ($this->permissions["roles"] as $role) {
-                    echo "<tr>";
-                    foreach ($columns as $column_id => $column) {
-                        $center = !in_array($column_id, $nonCentered, true);
-                        $data = $role["row"][$column_id];
-                        if (!$column["show"] || is_null($data)) {
-                            continue;
+                        ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $nonCentered = array("user", "expiration", "group", "randomization", "api", "mobile_app");
+                    foreach ($this->permissions["users"] as $user) {
+                        echo "<tr>";
+                        foreach ($columns as $column_id => $column) {
+                            $center = !in_array($column_id, $nonCentered, true);
+                            $data = $user["row"][$column_id];
+                            if (!$column["show"] || is_null($data)) {
+                                continue;
+                            }
+                            $this->makeCell($data, $center);
                         }
-                        $this->makeCell($data, $center);
+                        echo "</tr>";
                     }
-                    echo "</tr>";
-                } ?>
-            </tbody>
-        </table>
+                    foreach ($this->permissions["roles"] as $role) {
+                        echo "<tr>";
+                        foreach ($columns as $column_id => $column) {
+                            $center = !in_array($column_id, $nonCentered, true);
+                            $data = $role["row"][$column_id];
+                            if (!$column["show"] || is_null($data)) {
+                                continue;
+                            }
+                            $this->makeCell($data, $center);
+                        }
+                        echo "</tr>";
+                    } ?>
+                </tbody>
+            </table>
+        </div>
     <?php
     }
 
@@ -81,7 +72,7 @@ class Renderer
         return [
             "role"                    => array("title" => "Role", "show" => true, "width" => 100),
             "user"                    => array("title" => "User", "show" => true, "width" => 200),
-            "expiration"              => array("title" => "Expiration", "show" => true, "width" => 50),                                                // maybe this should be status (expired, suspended, active?)
+            "expiration"              => array("title" => "Expiration", "show" => true, "width" => 50),                                                     // maybe this should be status (expired, suspended, active?)
             "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 150),
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
             "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
@@ -110,6 +101,8 @@ class Renderer
             "record_create"           => array("title" => "Create Records", "show" => true, "width" => 50),
             "record_rename"           => array("title" => "Rename Records", "show" => true, "width" => 50),
             "record_delete"           => array("title" => "Delete Records", "show" => true, "width" => 50),
+            "record_level_locking"    => array("title" => "Record-Level Locking", "show" => true, "width" => 50),
+            "data_entry_rights"       => array("title" => "Data Entry Rights", "show" => true, "width" => 50)
         ];
     }
 
@@ -369,7 +362,7 @@ class Renderer
         $row["api"] = $this->getAPIText($data);
 
         // REDCap Mobile App
-        $row["mobile_app"] = [$data["mobile_app"] ? "check" : "X"];
+        $row["mobile_app"] = $this->getMobileAppText($data);
 
         // Clinical Data Pull from EHR (Setup / Mapping)
         $row["cdp_mapping"] = [$data["realtime_webservice_mapping"] ? "check" : "X"];
@@ -388,6 +381,12 @@ class Renderer
 
         // Delete Records
         $row["record_delete"] = [$data["record_delete"] ? "check" : "X"];
+
+        // Record Level Locking
+        $row["record_level_locking"] = [$data["lock_record_multiform"] ? "check" : "X"];
+
+        // Data Entry Rights
+        $row["data_entry_rights"] = $this->getDataEntryRightsText($data);
 
         return $row;
     }
@@ -495,22 +494,101 @@ class Renderer
         return $result;
     }
 
-    private function getAPIText($data)
+    private function getAPIText(array $data): array
     {
         $import = $data["api_import"];
         $export = $data["api_export"];
+        $exportText = "<div style='text-align:center;'>Export</div>";
+        $importText = "<div style='text-align:center;'>Import</div>";
         if ($import && $export) {
             $result = [
-                "<div style='text-align:center;'>Export</div>",
-                "<div style='text-align:center;'>Import</div>",
+                $exportText,
+                $importText,
             ];
         } elseif ($import) {
-            $result = ["<div style='text-align:center;'>Import</div>"];
+            $result = [$importText];
         } elseif ($export) {
-            $result = ["<div style='text-align:center;'>Export</div>"];
+            $result = [$exportText];
         } else {
             $result = ["X"];
         }
         return $result;
+    }
+
+    private function getMobileAppText(array $data): array
+    {
+        $app = $data["mobile_app"];
+        $download = $data["mobile_app_download_data"];
+        $appText = "check";
+        $downloadText = "<div style='text-align:center;'>Download all data</div>";
+        if ($app && $download) {
+            $result = [$appText, $downloadText];
+        } else if ($app) {
+            $result = [$appText];
+        } else if ($download) {
+            $result = [$downloadText];
+        } else {
+            $result = ["X"];
+        }
+        return $result;
+    }
+
+    private function parseDataEntryString(string $string): array
+    {
+        $trimmed = preg_replace("/^[\[]|[\]]$/", "", trim($string));
+        $forms = explode("][", $trimmed);
+        $result = [
+            "by_permission" => [
+                "0" => [],
+                "1" => [],
+                "2" => [],
+                "3" => []
+            ],
+            "by_instrument" => []
+        ];
+        foreach ($forms as $index => $form) {
+            $split = explode(",", $form);
+            $result["by_permission"][strval($split[1])][] = $split[0];
+            $result["by_instrument"][$split[0]] = $split[1];
+        }
+        return $result;
+    }
+
+    private function hasSurveys()
+    {
+        $hasSurveys = false;
+        foreach ($this->permissions["instruments"] as $instrument) {
+            if (!is_null($instrument["survey_id"])) {
+                $hasSurveys = true;
+            }
+        }
+        return $hasSurveys;
+    }
+
+    private function getDataEntryRightsText(array $data): array
+    {
+        $string = $data["data_entry"];
+        $instruments = $this->parseDataEntryString($string);
+        $surveysHeader = $this->hasSurveys() ? "<th>Edit survey responses</th>" : "";
+        $cell = "<span  style='text-decoration:underline;' class='popoverspan'data-toggle='popover' title='Data Entry Rights' data-content='<div><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        foreach ($instruments["by_instrument"] as $instrument => $permission) {
+            $isSurvey = !is_null($this->permissions["instruments"][$instrument]["survey_id"]);
+            $instrumentTitle = $this->permissions["instruments"][$instrument]["title"];
+            $instrumentText = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
+            $cell .= "<tr><th>${instrumentText}</th>";
+            $cell .= "<td><input type=\"radio\" " . ($permission == 0 ? "checked>" : ">") . "</td>";
+            $cell .= "<td><input type=\"radio\" " . ($permission == 2 ? "checked>" : ">") . "</td>";
+            $cell .= "<td><input type=\"radio\" " . (($permission == 1 || $permission == 3) ? "checked>" : ">") . "</td>";
+
+            if ($isSurvey) {
+                $cell .= "<td><input type=\"checkbox\"" . ($permission == 3 ? " checked>" : ">") . "</td>";
+            } else {
+                $cell .= "<td></td>";
+            }
+            $cell .= "</tr>";
+        }
+        $cell .= "</tbody></table></div>'>Rights</span>";
+
+        return [$cell];
     }
 }

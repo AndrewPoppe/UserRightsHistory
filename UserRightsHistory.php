@@ -14,7 +14,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_user_rights()
     {
-        var_dump($this->getUrl('history_viewer.php', true));
+        //var_dump($this->getUrl('history_viewer.php', true));
     }
 
     function updateAllProjects($cronInfo = array())
@@ -26,6 +26,7 @@ class UserRightsHistory extends AbstractExternalModule
             $this->updatePermissionsForAllUsers($localProjectId);
             $this->updateAllRoles($localProjectId);
             $this->updateAllDAGs($localProjectId);
+            $this->updateAllInstruments($localProjectId);
         }
         $this->updateAllSystem();
         return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
@@ -441,6 +442,61 @@ class UserRightsHistory extends AbstractExternalModule
         ]);
     }
 
+    ////////////////////////
+    // Instrument Methods //
+    ////////////////////////
+
+    function updateAllInstruments($localProjectId)
+    {
+        $currentInstrumentsGzip = $this->getCurrentInstruments($localProjectId);
+        $lastInstrumentsGzip = $this->getLastInstruments();
+        if ($this->instrumentsChanged($lastInstrumentsGzip, $currentInstrumentsGzip)) {
+            $this->saveInstruments($localProjectId, $currentInstrumentsGzip);
+        }
+    }
+
+    function getCurrentInstruments($localProjectId)
+    {
+        try {
+            $sql = "select m.form_name id,max(m.form_menu_description) title, s.survey_id from redcap_metadata m
+            left join redcap_surveys s
+            on m.form_name = s.form_name
+            and m.project_id = s.project_id
+            where m.project_id = ?
+            group by m.project_id, m.form_name";
+            $result = $this->query($sql, [$localProjectId]);
+            $instruments = [];
+            while ($instrument = $result->fetch_assoc()) {
+                $instruments[$instrument["id"]] = $instrument;
+            }
+            return base64_encode(gzdeflate(json_encode($instruments), 9));
+        } catch (\Exception $e) {
+            $this->log("Error updating instruments",  [
+                "error" => $e->getMessage()
+            ]);
+        }
+    }
+
+    function getLastInstruments()
+    {
+        $sql = "select instruments where message = 'instruments' order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, []);
+        return $result->fetch_assoc()["instruments"];
+    }
+
+    function instrumentsChanged($lastInstrumentsGzip, $currentInstrumentsGzip)
+    {
+        return $lastInstrumentsGzip !== $currentInstrumentsGzip;
+    }
+
+    function saveInstruments($localProjectId, $instruments_gzip)
+    {
+        $this->log('instruments', [
+            "project_id" => $localProjectId,
+            "instruments" => $instruments_gzip
+        ]);
+    }
+
     ///////////////////////
     // Filtering Methods //
     ///////////////////////
@@ -504,8 +560,17 @@ class UserRightsHistory extends AbstractExternalModule
         $sql .= " order by timestamp desc limit 1";
         $result = $this->queryLogs($sql, [$timestamp_clean]);
         $system_gzip = $result->fetch_assoc()["info"];
-        var_dump($system_gzip);
         return json_decode(gzinflate(base64_decode($system_gzip)), true);
+    }
+
+    function getAllInstrumentsByTimestamp($timestamp_clean)
+    {
+        $sql = "select instruments where message = 'instruments'";
+        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $sql .= " order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$timestamp_clean]);
+        $instruments_gzip = $result->fetch_assoc()["instruments"];
+        return json_decode(gzinflate(base64_decode($instruments_gzip)), true);
     }
 
     function getAllInfoByTimestamp($timestamp = null)
@@ -523,6 +588,7 @@ class UserRightsHistory extends AbstractExternalModule
         $results["roles"] = $this->getAllRolesByTimestamp($results["timestamp"]);
         $results["project_status"] = $this->getProjectStatusByTimestamp($results["timestamp"]);
         $results["system"] = $this->getAllSystemByTimestamp($results["timestamp"]);
+        $results["instruments"] = $this->getAllInstrumentsByTimestamp($results["timestamp"]);
         return $results;
     }
 

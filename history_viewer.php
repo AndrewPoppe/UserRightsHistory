@@ -2,6 +2,7 @@
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui.min.css') ?>" />
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.css') ?>" />
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/datatables.min.css') ?>" />
+<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('userRightsTable.css') ?>" />
 <script src="<?= $module->getUrl('lib/jquery-ui.min.js') ?>"></script>
 <script src="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.js') ?>"></script>
 <script src="<?= $module->getUrl('lib/datatables.min.js') ?>"></script>
@@ -26,17 +27,80 @@
             constrainInput: false
         });
 
+        let myDefaultWhiteList = $.fn.popover.Constructor.Default.whiteList;
+        myDefaultWhiteList.table = ["style", "class"];
+        myDefaultWhiteList.tr = ["class"];
+        myDefaultWhiteList.th = ["style"];
+        myDefaultWhiteList.td = [];
+        myDefaultWhiteList.input = ["type", "checked"];
+        myDefaultWhiteList.thead = [];
+        myDefaultWhiteList.tbody = [];
+        myDefaultWhiteList.span = ["style"];
+
+
         $('[data-toggle="popover"]').popover({
             html: true,
             trigger: 'hover',
             container: 'body',
-            placement: 'right'
+            //placement: 'right',
+            whiteList: myDefaultWhiteList
         });
 
-        $('table').DataTable({
-
+        const table = $('table#userrights').DataTable({
+            paging: false,
+            buttons: ['colvis'],
+            scrollX: true,
+            fixedColumns: {
+                left: 2
+            },
+            stateSave: true,
+            dom: "t",
+            "order": [
+                [0, 'desc']
+            ],
+            columnDefs: [{
+                "targets": 0,
+                "data": function(row, type, val, meta) {
+                    if (type === "set") {
+                        row.orig = val;
+                        row.text = strip(val);
+                    } else if (type === "display") {
+                        return row.orig;
+                    }
+                    return row.orig;
+                }
+            }]
         });
+
+        table.on('draw', function() {
+            $('.dataTable tbody tr').each((i, row) => {
+                row.onmouseenter = hover;
+                row.onmouseleave = dehover;
+            });
+        });
+        table.rows().every(function() {
+            const rowNode = this.node();
+            const rowIndex = this.index();
+            $(rowNode).attr('data-dt-row', rowIndex);
+        });
+        $('.dataTable tbody tr').each((i, row) => {
+            row.onmouseenter = hover;
+            row.onmouseleave = dehover;
+        });
+
     });
+
+    function hover() {
+        const thisNode = $(this);
+        const rowIdx = thisNode.attr('data-dt-row');
+        $("tr[data-dt-row='" + rowIdx + "'] td").addClass("highlight"); // shade only the hovered row
+    }
+
+    function dehover() {
+        const thisNode = $(this);
+        const rowIdx = thisNode.attr('data-dt-row');
+        $("tr[data-dt-row='" + rowIdx + "'] td").removeClass("highlight"); // shade only the hovered row
+    }
 
     function pageLoad(event) {
         if (event != null && event.keyCode != 13) {
@@ -46,45 +110,43 @@
         const datetime = $('#datetime').val() === '' ? Date.now() : new Date($('#datetime').datetimepicker('getDate')).getTime();
         window.location.href = `<?= $module->getUrl('history_viewer.php') ?>&datetime=${datetime}`;
     }
+
+    function strip(html) {
+        let doc = new DOMParser().parseFromString(html, 'text/html');
+        return doc.body.textContent || "";
+    }
+
+    function customizeCsv(csv) {
+        //Split the csv to get the rows
+        const split_csv = csv.split("\n");
+
+        //For each row except the first one (header)
+        $.each(split_csv.slice(1), function(index, csv_row) {
+            //Split on quotes and comma to get each cell
+            let csv_cell_array = csv_row.split('","');
+
+            //Remove replace the two quotes which are left at the beginning and the end (first and last cell)
+            csv_cell_array[0] = csv_cell_array[0].replace(/"/g, '');
+            csv_cell_array[5] = csv_cell_array[5].replace(/"/g, '');
+
+            csv_cell_array = csv_cell_array.map(function(cell) {
+                const doc = new DOMParser().parseFromString(cell, 'text/html');
+                return doc.body.textContent || "";
+            });
+
+            //Join the table on the quotes and comma; add back the quotes at the beginning and end
+            csv_cell_array_quotes = '"' + csv_cell_array.join('","') + '"';
+
+            //Insert the new row into the rows array at the previous index (index +1 because the header was sliced)
+            split_csv[index + 1] = csv_cell_array_quotes;
+        });
+
+        //Join the rows with line breck and return the final csv (datatables will take the returned csv and process it)
+        csv = split_csv.join("\n");
+        return csv;
+
+    }
 </script>
-<style>
-    span.popoverspan {
-        cursor: help;
-    }
-
-    table,
-    table p {
-        font-size: 12px;
-    }
-
-    tbody tr:hover {
-        background-color: #d9ebf5 !important;
-    }
-
-    tbody td {
-        background: transparent !important;
-    }
-
-    tr.even {
-        background-color: #f3f3f3 !important;
-    }
-
-    tr.odd {
-        background-color: white !important;
-    }
-
-    thead th {
-        background-color: #ececec !important;
-    }
-
-    hr {
-        height: 1px;
-        border-width: 0;
-        color: #eee;
-        background-color: #eee
-    }
-</style>
-
 <?php
 
 if (isset($_GET["datetime"])) {
