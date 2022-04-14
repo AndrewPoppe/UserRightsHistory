@@ -568,12 +568,15 @@ class Renderer
     private function getDataEntryRightsText(array $data): array
     {
         $string = $data["data_entry"];
+        $allInstruments = $this->permissions["instruments"];
         $instruments = $this->parseDataEntryString($string);
         $surveysHeader = $this->hasSurveys() ? "<th>Edit survey responses</th>" : "";
         $cell = "<span  style='text-decoration:underline;' class='popoverspan'data-toggle='popover' title='Data Entry Rights' data-content='<div><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
-        foreach ($instruments["by_instrument"] as $instrument => $permission) {
-            $isSurvey = !is_null($this->permissions["instruments"][$instrument]["survey_id"]);
-            $instrumentTitle = $this->permissions["instruments"][$instrument]["title"];
+        foreach ($allInstruments as $thisInstrument) {
+            $instrument = $thisInstrument["id"];
+            $permission = $instruments["by_instrument"][$instrument] ?? "1";
+            $isSurvey = !is_null($thisInstrument["survey_id"]);
+            $instrumentTitle = $thisInstrument["title"];
             $instrumentText = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
             $cell .= "<tr><th>${instrumentText}</th>";
             $cell .= "<td><input type=\"radio\" " . ($permission == 0 ? "checked>" : ">") . "</td>";
@@ -582,7 +585,7 @@ class Renderer
 
             if ($isSurvey) {
                 $cell .= "<td><input type=\"checkbox\"" . ($permission == 3 ? " checked>" : ">") . "</td>";
-            } else {
+            } elseif ($this->hasSurveys()) {
                 $cell .= "<td></td>";
             }
             $cell .= "</tr>";
