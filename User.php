@@ -15,7 +15,14 @@ class User
         $email = $this->userPermissions["email"];
         $username = $this->userPermissions["username"];
         $name = $this->userPermissions["name"];
-        return "<span class='popoverspan' data-toggle='popover' data-content='${email}' title='Email Address'><strong>${username}</strong> (${name})</span>";
+        $suspended = $this->userPermissions["suspended"];
+        $isSuperUser = $this->userPermissions["isSuperUser"];
+
+        $suspendedText = $suspended ? "<span class='nowrap' style='color:red;font-size:11px;margin-left:8px;'>[account suspended]</span>" : "";
+        $superUserText = $isSuperUser ? "<span class='nowrap' style='color:#009000;font-size:11px;margin-left:8px;'>[super user]</span>" : "";
+
+        $nameText = "<span class='popoverspan' data-toggle='popover' data-content='${email}' title='Email Address'><strong>${username}</strong> (${name})</span>";
+        return $nameText . $suspendedText . $superUserText;
     }
 
     function getExpirationDate()

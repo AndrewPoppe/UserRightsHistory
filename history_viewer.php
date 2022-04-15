@@ -149,22 +149,30 @@
 
     }
 </script>
+<div class="projhdr">
+    <div style="float:left;">
+        <i class="fas fa-history"></i>
+        User Rights History
+    </div>
+    <br>
+</div>
 <p>
     This page may be used for investigating which users had access to this project and what permissions those users had.
     You may select a date and time, and the user rights at that point in time will be displayed below. You can only
 </p>
-<div style="margin:20px 0;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
+<div style=" margin:20px 0;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
     <div style="color:#444;"><span style="color:#000;font-weight:bold;font-size:13px;margin-right:5px;">Choose a date and time:</span> The user rights at that point in time will be displayed below.</div>
     <div style="margin:8px 0 0 0px;">
         <input id="datetime" onclick="$(this).next('img').click();">
     </div>
 </div>
-
 <?php
 if (isset($_GET["datetime"])) {
     $timestamp = intval($_GET["datetime"]);
-    echo "<script>$(function() {const newDate = new Date($timestamp);$('#datetime').datetimepicker('setDate', newDate);});</script>";
-
-    $permissions = $module->getAllInfoByTimestamp($timestamp);
-    $module->renderTable($permissions);
+} else {
+    $timestamp = microtime(true) * 1000;
 }
+echo "<script>$(function() {const newDate = new Date($timestamp);$('#datetime').datetimepicker('setDate', newDate);});</script>";
+
+$permissions = $module->getAllInfoByTimestamp($timestamp);
+$module->renderTable($permissions);
