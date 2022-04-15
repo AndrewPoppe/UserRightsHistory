@@ -80,6 +80,15 @@ span.popoverspan {
     cursor: help;
 }
 
+a.popoverspan {
+    cursor: pointer;
+}
+
+a.popoverspan:hover {
+    font-size: inherit;
+    font-family: inherit;
+}
+
 .popover {
     max-width: 1000px;
 }
@@ -116,4 +125,14 @@ span.popoverspan {
     font-size: 12px;
     border: 1px solid #aaa !important;
     border-collapse: collapse !important;
+}
+
+.popover th {
+    padding: .25rem;
+}
+
+.popover div.popover-table {
+    display: block;
+    overflow-y: auto;
+    max-height: 90vh;
 }

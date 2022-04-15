@@ -22,7 +22,7 @@ class Renderer
         $columns = $this->getColumns();
         $this->parsePermissions();
 ?>
-        <div style="margin-right: 20px; margin-top:20px;">
+        <div class="userrights-table-container" style="margin-right: 20px; margin-top:20px;">
             <div style="margin-bottom: 10px;">
                 <?= $this->getProjectStatus() ?>
             </div>
@@ -574,7 +574,7 @@ class Renderer
         $allInstruments = $this->permissions["instruments"];
         $instruments = $this->parseDataEntryString($string);
         $surveysHeader = $this->hasSurveys() ? "<th>Edit survey responses</th>" : "";
-        $cell = "<span  style='text-decoration:underline;' class='popoverspan'data-toggle='popover' title='Data Entry Rights' data-content='<div><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $cell = "<a tabindex='0' style='text-decoration:underline;' class='popoverspan' data-toggle='popover' data-trigger='click' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
         foreach ($allInstruments as $thisInstrument) {
             $instrument = $thisInstrument["id"];
             $permission = $instruments["by_instrument"][$instrument] ?? "1";
@@ -582,18 +582,18 @@ class Renderer
             $instrumentTitle = $thisInstrument["title"];
             $instrumentText = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
             $cell .= "<tr><th>${instrumentText}</th>";
-            $cell .= "<td><input type=\"radio\" " . ($permission == 0 ? "checked>" : ">") . "</td>";
-            $cell .= "<td><input type=\"radio\" " . ($permission == 2 ? "checked>" : ">") . "</td>";
-            $cell .= "<td><input type=\"radio\" " . (($permission == 1 || $permission == 3) ? "checked>" : ">") . "</td>";
+            $cell .= "<td><i style=\"color:#666;\" class=\"" . ($permission == 0 ? "fas" : "far") . " fa-circle\"></i></td>";
+            $cell .= "<td><i style=\"color:#666;\" class=\"" . ($permission == 2 ? "fas" : "far") . " fa-circle\"></i></td>";
+            $cell .= "<td><i style=\"color:#666;\" class=\"" . (($permission == 1 || $permission == 3) ? "fas" : "far") . " fa-circle\"></i></td>";
 
             if ($isSurvey) {
-                $cell .= "<td><input type=\"checkbox\"" . ($permission == 3 ? " checked>" : ">") . "</td>";
+                $cell .= "<td><i style=\"color:#666;\" class=" . ($permission == 3 ? "\"fas fa-check-square\"" : "\"far fa-square\"") . "></i></td>";
             } elseif ($this->hasSurveys()) {
                 $cell .= "<td></td>";
             }
             $cell .= "</tr>";
         }
-        $cell .= "</tbody></table></div>'>Rights</span>";
+        $cell .= "</tbody></table></div>'>Rights</a>";
 
         return [$cell];
     }

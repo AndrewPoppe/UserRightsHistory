@@ -21,7 +21,7 @@ class User
         $suspendedText = $suspended ? "<span class='nowrap' style='color:red;font-size:11px;margin-left:8px;'>[account suspended]</span>" : "";
         $superUserText = $isSuperUser ? "<span class='nowrap' style='color:#009000;font-size:11px;margin-left:8px;'>[super user]</span>" : "";
 
-        $nameText = "<span class='popoverspan' data-toggle='popover' data-content='${email}' title='Email Address'><strong>${username}</strong> (${name})</span>";
+        $nameText = "<span class='popoverspan' data-toggle='popover' data-trigger='hover' data-content='${email}' title='Email Address'><strong>${username}</strong> (${name})</span>";
         return $nameText . $suspendedText . $superUserText;
     }
 
@@ -39,7 +39,7 @@ class User
         $result = is_null($currentDag) ? "<span style='color:lightgray;'>—</span>" : "<span style='color:#008000;'>" . $currentDag["group_name"] . "</span>&nbsp;[" . $currentDag["group_id"] . "]";
         $username = $this->userPermissions["username"];
         if (is_array($additionalDagIds) && !empty($additionalDagIds)) {
-            $additionalDagText = " <span  class=\"popoverspan\" style='font-size:75%; color:gray;' data-toggle='popover' title='<i class=\"fas fa-cube mr-1\"></i>DAG Switcher' data-content='<div>User <span class=\"text-primary\">${username}</span> may switch to DAGs:<ul>";
+            $additionalDagText = " <span  class=\"popoverspan\" style='font-size:75%; color:gray;' data-toggle='popover' data-trigger='hover' title='<i class=\"fas fa-cube mr-1\"></i>DAG Switcher' data-content='<div>User <span class=\"text-primary\">${username}</span> may switch to DAGs:<ul>";
             $additionalDagIds = array_diff($additionalDagIds, array($currentDagId));
             foreach ($additionalDagIds as $additionalDagId) {
                 $additionalDag = $dags[$additionalDagId];

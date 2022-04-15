@@ -38,13 +38,15 @@
         myDefaultWhiteList.thead = [];
         myDefaultWhiteList.tbody = [];
         myDefaultWhiteList.span = ["style"];
+        myDefaultWhiteList.i = ["style", "class"];
 
 
         $('[data-toggle="popover"]').popover({
             html: true,
-            trigger: 'hover',
+            //trigger: 'hover',
             container: 'body',
-            //placement: 'right',
+            placement: 'right',
+            boundary: 'window',
             whiteList: myDefaultWhiteList
         });
 
