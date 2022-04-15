@@ -2,7 +2,7 @@
     "name": "User Rights History",
     "namespace": "YaleREDCap\\UserRightsHistory",
     "description": "Displays the user rights for a project at any point in time.",
-    "permissions": ["redcap_every_page_before_render", "redcap_user_rights"],
+    "permissions": [],
     "authors": [{
         "name": "Andrew Poppe",
         "email": "andrew.poppe@yale.edu",

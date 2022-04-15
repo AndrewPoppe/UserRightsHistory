@@ -1,4 +1,3 @@
-<input id="datetime" onclick="$(this).next('img').click();">
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui.min.css') ?>" />
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.css') ?>" />
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/datatables.min.css') ?>" />
@@ -8,6 +7,8 @@
 <script src="<?= $module->getUrl('lib/datatables.min.js') ?>"></script>
 <script type="text/javascript">
     $(function() {
+        console.log(<?= $module->getEarliestLogTimestamp() ?>)
+        console.log(new Date(<?= $module->getEarliestLogTimestamp() ?>))
         $('#datetime').datetimepicker({
             onClose: function() {
                 pageLoad()
@@ -24,6 +25,7 @@
             buttonImageOnly: true,
             timeFormat: 'hh:mm tt',
             maxDate: new Date(),
+            minDateTime: new Date(<?= $module->getEarliestLogTimestamp() ?>),
             constrainInput: false
         });
 
@@ -147,8 +149,18 @@
 
     }
 </script>
-<?php
+<p>
+    This page may be used for investigating which users had access to this project and what permissions those users had.
+    You may select a date and time, and the user rights at that point in time will be displayed below. You can only
+</p>
+<div style="margin:20px 0;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
+    <div style="color:#444;"><span style="color:#000;font-weight:bold;font-size:13px;margin-right:5px;">Choose a date and time:</span> The user rights at that point in time will be displayed below.</div>
+    <div style="margin:8px 0 0 0px;">
+        <input id="datetime" onclick="$(this).next('img').click();">
+    </div>
+</div>
 
+<?php
 if (isset($_GET["datetime"])) {
     $timestamp = intval($_GET["datetime"]);
     echo "<script>$(function() {const newDate = new Date($timestamp);$('#datetime').datetimepicker('setDate', newDate);});</script>";

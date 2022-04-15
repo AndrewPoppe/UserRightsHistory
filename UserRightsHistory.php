@@ -8,14 +8,6 @@ include_once "Renderer.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
-    function redcap_every_page_before_render()
-    {
-    }
-
-    function redcap_user_rights()
-    {
-        //var_dump($this->getUrl('history_viewer.php', true));
-    }
 
     function updateAllProjects($cronInfo = array())
     {
@@ -593,6 +585,15 @@ class UserRightsHistory extends AbstractExternalModule
     }
 
 
+    function getEarliestLogTimestamp()
+    {
+        $sql = "select UNIX_TIMESTAMP(timestamp) t order by t limit 1";
+        $result = $this->queryLogs($sql, []);
+        $timestamp = $result->fetch_assoc()["t"];
+        return $timestamp * 1000 + 60000;
+    }
+
+
 
     /////////////////////
     // Display Methods //
@@ -602,7 +603,7 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $Renderer = new Renderer($permissions);
         try {
-            $Renderer->print();
+            //$Renderer->print();
             $Renderer->renderTable();
         } catch (\Exception $e) {
             var_dump($e);

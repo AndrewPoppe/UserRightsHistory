@@ -22,7 +22,10 @@ class Renderer
         $columns = $this->getColumns();
         $this->parsePermissions();
 ?>
-        <div style="margin-right: 20px;">
+        <div style="margin-right: 20px; margin-top:20px;">
+            <div style="margin-bottom: 10px;">
+                <?= $this->getProjectStatus() ?>
+            </div>
             <table id="userrights" class="cell-border stripe compact noOrderIcon">
                 <thead>
                     <tr>
@@ -70,10 +73,10 @@ class Renderer
     function getColumns()
     {
         return [
-            "role"                    => array("title" => "Role", "show" => true, "width" => 100),
-            "user"                    => array("title" => "User", "show" => true, "width" => 200),
+            "role"                    => array("title" => "Role", "show" => true, "width" => 125),
+            "user"                    => array("title" => "User", "show" => true, "width" => 225),
             "expiration"              => array("title" => "Expiration", "show" => true, "width" => 50),                                                     // maybe this should be status (expired, suspended, active?)
-            "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 150),
+            "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 50),
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
             "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
             "data_access_groups"      => array("title" => "Data Access Groups", "show" => true, "width" => 50),
@@ -533,7 +536,7 @@ class Renderer
         return $result;
     }
 
-    private function parseDataEntryString(string $string): array
+    private function parseDataEntryString(?string $string): array
     {
         $trimmed = preg_replace("/^[\[]|[\]]$/", "", trim($string));
         $forms = explode("][", $trimmed);
@@ -593,5 +596,32 @@ class Renderer
         $cell .= "</tbody></table></div>'>Rights</span>";
 
         return [$cell];
+    }
+
+    private function getProjectStatus(): string
+    {
+        $project_data = $this->permissions["project_status"];
+        $status = $project_data["status"];
+        $statusText = "<span><span style='color:#000; font-weight: bold;'>Project Status:</span>&nbsp; ";
+        switch ($status) {
+            case 0:
+                $statusText .= "<span style='color:#666;'><i class='fas fa-wrench'></i> Development</span></span>";
+                break;
+            case 1:
+                $statusText .= "<span style='color:#00A000;'><i class='far fa-check-square'></i> Production</span></span>";
+                break;
+            case 2:
+                if (!empty($project_data["completed_time"])) {
+                    $statusText .= "<i class='fas fa-archive' style='color:#dc3545;'></i>&nbsp; <span style='color: #dc3545; background-color:#f0f0f0; border:1px solid #ddd; border-radius: 5px; border-collapse: collapse; font-family:Menlo,Monaco,Consolas,\"Courier New\",monospace; padding: 2px 3px 2px 3px;'>Completed</span></span>";
+                } elseif ($project_data["data_locked"]) {
+                    $statusText .= "<span style='color:#A00000; font-weight:bold;'>Analysis/Cleanup - </span> <span style='font-weight:bold; color: #C00000;'><i class='fas fa-lock'></i> Read-only / Locked</span></span>";
+                } else {
+                    $statusText .= "<span style='color:#A00000; font-weight:bold;'>Analysis/Cleanup - </span> <span style='font-weight:bold; color: #05a005;'><i class='fas fa-edit'></i> Editable (existing records only)</span></span>";
+                }
+                break;
+            default:
+                $statusText = " unknown</span>";
+        }
+        return $statusText;
     }
 }
