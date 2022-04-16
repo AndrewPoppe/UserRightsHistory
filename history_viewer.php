@@ -92,8 +92,6 @@
             row.onmouseleave = dehover;
         });
 
-        $('div.userrights-table-container').width($('div.mainwindow').width() - $('#west').width() - 11);
-
     });
 
     function hover() {

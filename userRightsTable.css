@@ -2,6 +2,10 @@ td.highlight {
     background-color: #d9ebf5 !important;
 }
 
+div.userrights-table-container {
+    width: calc(100vw - 305px - 58px);
+}
+
 table.dataTable.cell-border tbody th,
 table.dataTable.cell-border tbody td {
     border-top: none;
