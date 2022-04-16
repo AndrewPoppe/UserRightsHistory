@@ -160,7 +160,8 @@
 </div>
 <p>
     This page may be used for investigating which users had access to this project and what permissions those users had.
-    You may select a date and time, and the user rights at that point in time will be displayed below. You can only
+    You may select a date and time, and the user rights at that point in time will be displayed below. You can only select dates
+    following the moment this module was installed in the project.
 </p>
 <div style=" margin:20px 0;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
     <div style="color:#444;"><span style="color:#000;font-weight:bold;font-size:13px;margin-right:5px;">Choose a date and time:</span> The user rights at that point in time will be displayed below.</div>
