@@ -574,7 +574,7 @@ class Renderer
         $allInstruments = $this->permissions["instruments"];
         $instruments = $this->parseDataEntryString($string);
         $surveysHeader = $this->hasSurveys() ? "<th>Edit survey responses</th>" : "";
-        $cell = "<a tabindex='0' style='text-decoration:underline;' class='popoverspan' data-toggle='popover' data-trigger='click' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $cell = "<a tabindex='0' style='text-decoration:underline;' class='popoverspan' data-toggle='popover' data-trigger='focus' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
         foreach ($allInstruments as $thisInstrument) {
             $instrument = $thisInstrument["id"];
             $permission = $instruments["by_instrument"][$instrument] ?? "1";

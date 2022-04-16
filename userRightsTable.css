@@ -108,12 +108,27 @@ a.popoverspan:hover {
 
 .popover thead th {
     background-color: #ececec;
-    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #aaa;
     border-top: 1px solid #aaa;
 }
 
-.popover thead th:nth-child(1) {
+.popover th:nth-child(1) {
     border-left: 1px solid #aaa;
+}
+
+.popover tbody tr:nth-child(1) td,
+.popover tbody tr:nth-child(1) th {
+    border-top: none;
+}
+
+.popover tbody tr:last-child td,
+.popover tbody tr:last-child th {
+    border-bottom: 1px solid #aaa;
+}
+
+.popover td:last-child,
+.popover th:last-child {
+    border-right: 1px solid #aaa;
 }
 
 .popover tbody tr:nth-child(even) td,
@@ -123,16 +138,26 @@ a.popoverspan:hover {
 
 .popover table {
     font-size: 12px;
-    border: 1px solid #aaa !important;
-    border-collapse: collapse !important;
+    border-collapse: separate !important;
+    border-spacing: 0;
+    margin-right: 20px;
 }
 
 .popover th {
     padding: .25rem;
+    border-left: 1px solid #ddd;
 }
 
 .popover div.popover-table {
     display: block;
     overflow-y: auto;
+    overflow-x: hidden;
     max-height: 90vh;
+}
+
+.popover thead {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    inset-block-start: 0;
 }
