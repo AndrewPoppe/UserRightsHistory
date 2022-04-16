@@ -111,7 +111,8 @@ class Renderer
 
     private function hasDAGs()
     {
-        return count($this->permissions["dags"]) > 0;
+        $dags = $this->permissions["dags"];
+        return !is_null($dags) && count($dags) > 0;
     }
 
     private function graphicalEnabled()
@@ -220,8 +221,8 @@ class Renderer
 
         foreach ($users as &$user) {
             $role_id = $user["role_id"];
-            if ($role_id !== null) {
-                if ($roles[$role_id]["users"] === null) {
+            if ($role_id != null) {
+                if ($roles[$role_id]["users"] == null) {
                     $roles[$role_id]["users"] = array();
                 }
                 $roles[$role_id]["users"][$user["username"]] = $user;
@@ -397,7 +398,7 @@ class Renderer
 
     private function createExpirationDate($date_string)
     {
-        if (is_null($date_string)) {
+        if (!$date_string) {
             return "<div style='display:flex; align-items:center; justify-content:center;'><span style='font-size:small; color:lightgrey;'>never</span></div>";
         }
         $date = date_create($date_string);
