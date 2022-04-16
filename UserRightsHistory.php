@@ -587,9 +587,9 @@ class UserRightsHistory extends AbstractExternalModule
 
     function getEarliestLogTimestamp()
     {
-        $sql = "select UNIX_TIMESTAMP(timestamp) t order by t limit 1";
+        $sql = "select UNIX_TIMESTAMP(timestamp) order by timestamp limit 1";
         $result = $this->queryLogs($sql, []);
-        $timestamp = $result->fetch_assoc()["t"];
+        $timestamp = $result->fetch_assoc()["UNIX_TIMESTAMP(redcap_external_modules_log.timestamp)"];
         return $timestamp * 1000 + 60000;
     }
 
