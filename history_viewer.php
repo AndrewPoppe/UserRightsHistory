@@ -43,7 +43,6 @@
 
         $('[data-toggle="popover"]').popover({
             html: true,
-            //trigger: 'hover',
             container: 'body',
             placement: 'right',
             boundary: 'window',
