@@ -580,7 +580,7 @@ class Renderer
 
     private function parseDataEntryString(?string $string): array
     {
-        $trimmed = preg_replace("/^[\[]|[\]]$/", "", trim($string));
+        $trimmed = substr(trim($string), 1, -1);
         $forms = explode("][", $trimmed);
         $result = [
             "by_permission" => [
