@@ -406,7 +406,7 @@ class Renderer
         $now = date_create($now_string);
         $diff = date_diff($now, $date);
         $formatted_date = $date->format("m/d/Y");
-        $color = (!$diff->invert) ? "black" : "tomato";
+        $color = (!$diff->invert) ? "black" : "red";
         return "<div style='display:flex; align-items:center; justify-content:center;'><span style='color:${color};'>${formatted_date}</span></div>";
     }
 
