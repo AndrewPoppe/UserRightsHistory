@@ -53,4 +53,3 @@ class User
         return '<div style="display:flex; align-items:center; justify-content:center;">' . $result . '</div>';
     }
 }
-//<div class="popover fade bs-popover-right" role="tooltip" id="popover785046" style="position: absolute; transform: translate3d(941px, 551px, 0px); top: 0px; left: 0px; will-change: transform;" x-placement="right"><div class="arrow" style="top: 53px;"></div><h3 class="popover-header"><i class="fas fa-cube mr-1"></i>DAG Switcher</h3><div class="popover-body"><div>User <span class="text-primary">alice</span> may switch to DAGs:<ul><li><span class="text-info">dag2</span></li></ul></div></div></div>
