@@ -76,7 +76,7 @@ class Renderer
             "role"                    => array("title" => "Role", "show" => true, "width" => 125),
             "user"                    => array("title" => "User", "show" => true, "width" => 225),
             "expiration"              => array("title" => "Expiration", "show" => true, "width" => 50),                                                     // maybe this should be status (expired, suspended, active?)
-            "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 50),
+            "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 100),
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
             "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
             "data_access_groups"      => array("title" => "Data Access Groups", "show" => true, "width" => 50),
@@ -111,7 +111,8 @@ class Renderer
 
     private function hasDAGs()
     {
-        return count($this->permissions["dags"]) > 0;
+        $dags = $this->permissions["dags"];
+        return !is_null($dags) && count($dags) > 0;
     }
 
     private function graphicalEnabled()
@@ -220,8 +221,8 @@ class Renderer
 
         foreach ($users as &$user) {
             $role_id = $user["role_id"];
-            if ($role_id !== null) {
-                if ($roles[$role_id]["users"] === null) {
+            if ($role_id != null) {
+                if ($roles[$role_id]["users"] == null) {
                     $roles[$role_id]["users"] = array();
                 }
                 $roles[$role_id]["users"][$user["username"]] = $user;
@@ -270,7 +271,7 @@ class Renderer
             $userData[] = $user->getUserText();
         }
         if (!$isUser && empty($userData)) {
-            $userData[] = "<span style='color:lightgrey; font-size:75%;'>[No users assigned]</span>";
+            $userData[] = "<span style='color:#999; font-size:75%;'>[No users assigned]</span>";
         }
         $row["user"] = $userData;
 
@@ -397,15 +398,15 @@ class Renderer
 
     private function createExpirationDate($date_string)
     {
-        if (is_null($date_string)) {
-            return "<div style='display:flex; align-items:center; justify-content:center;'><span style='font-size:small; color:lightgrey;'>never</span></div>";
+        if (!$date_string) {
+            return "<div style='display:flex; align-items:center; justify-content:center;'><span style='font-size:11px; color:#999;'>never</span></div>";
         }
         $date = date_create($date_string);
         $now_string = date("Y-m-d", $this->permissions["timestamp"]);
         $now = date_create($now_string);
         $diff = date_diff($now, $date);
         $formatted_date = $date->format("m/d/Y");
-        $color = (!$diff->invert) ? "black" : "tomato";
+        $color = (!$diff->invert) ? "black" : "red";
         return "<div style='display:flex; align-items:center; justify-content:center;'><span style='color:${color};'>${formatted_date}</span></div>";
     }
 
