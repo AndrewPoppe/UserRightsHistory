@@ -156,7 +156,7 @@ class Renderer
     {
         $enabledSystem = $this->permissions["system"]["fhir_ddp_enabled"];
         $enabledProject = $this->permissions["project_status"]["realtime_webservice_enabled"];
-        return $enabledProject && $enabledProject;
+        return $enabledSystem && $enabledProject;
     }
 
     private function dtsEnabled()
@@ -201,17 +201,22 @@ class Renderer
 
     private function insertCheck()
     {
-        echo "<div style='text-align:center;'><img src='" . APP_PATH_IMAGES . "tick.png'></img></div>";
+        $this->insertImage("tick.png");
     }
 
     private function insertX()
     {
-        echo "<div style='text-align:center;'><img src='" . APP_PATH_IMAGES . "cross.png'></img></div>";
+        $this->insertImage("cross.png");
     }
 
     private function insertCheckShield()
     {
-        echo "<div style='text-align:center;'><img src='" . APP_PATH_IMAGES . "tick_shield.png'></img></div>";
+        $this->insertImage("tick_shield.png");
+    }
+
+    private function insertImage(string $filename)
+    {
+        echo "<div style='text-align:center;'><img src='" . APP_PATH_IMAGES . $filename . "'></img></div>";
     }
 
     function parsePermissions()
@@ -249,10 +254,123 @@ class Renderer
         $row = array();
 
         // Role
-        $roleText = $isUser ? "<span style='color:lightgray;'>—</span>" : "<span style='font-weight:bold; color:#800000;'>" . $data["role_name"] . "</span>&nbsp;[" . $data["role_id"] . "]";
-        $wrappedRoleText = ['<div style="display:flex; align-items:center; justify-content:center;">' . $roleText . '</div>'];
-        $row["role"] = $wrappedRoleText;
+        $row["role"] = $this->getRoleText($data, $isUser);
 
+        // user array
+        $users = $this->getUserArray($data, $isUser);
+
+        // User
+        $row["user"] = $this->getUserText($users, $isUser);
+
+        // Expiration
+        $row["expiration"] = $this->getExpirationText($users);
+
+        // Data Access Group
+        $row["group"] = $this->getDAGText($users);
+
+        // Project Design and Setup
+        $row["design"] = $this->getCheckOrX($data["design"]);
+
+        // User Rights
+        $row["user_rights"] = $this->getCheckOrX($data["user_rights"]);
+
+        // Data Access Groups
+        $row["data_access_groups"] = $this->getCheckOrX($data["data_access_groups"]);
+
+        // Data Export Tool
+        $row["export"] = $this->getDataExportText($data["data_export_tool"]);
+
+        // Reports & Report Builder
+        $row["reports"] = $this->getCheckOrX($data["reports"]);
+
+        // Graphical Data View & Stats
+        $row["graphical"] = $this->getCheckOrX($data["graphical"]);
+
+        // Survey Distribution Tools
+        $row["surveys"] = $this->getCheckOrX($data["participants"]);
+
+        // Calendar & Scheduling
+        $row["calendar"] = $this->getCheckOrX($data["calendar"]);
+
+        // Data Import Tool
+        $row["import"] = $this->getCheckOrX($data["data_import_tool"]);
+
+        // Data Comparison Tool
+        $row["comparison"] = $this->getCheckOrX($data["data_comparison_tool"]);
+
+        // Logging
+        $row["logging"] = $this->getCheckOrX($data["data_logging"]);
+
+        // File Repository
+        $row["file_repository"] = $this->getCheckOrX($data["file_repository"]);
+
+        // Double Data Entry
+        $row["dde"] = $this->getDDEText($data["double_data"]);
+
+        // Record Locking Customization
+        $row["lock_record_customize"] = $this->getCheckOrX($data["lock_record_customize"]);
+
+        // Lock/Unlock Records
+        $row["lock_record"] = $this->getLockRecordText($data["lock_record"]);
+
+        // Randomization
+        $row["randomization"] = $this->getRandomizationText($data);
+
+        // Data Quality (create/edit rules)
+        $row["data_quality_design"] = $this->getCheckOrX($data["data_quality_design"]);
+
+        // Data Quality (execute rules)
+        $row["data_quality_execute"] = $this->getCheckOrX($data["data_quality_execute"]);
+
+        // Data Resolution Workflow
+        $row["data_quality_resolution"] = $this->getDataResolutionText($data["data_quality_resolution"]);
+
+        // API
+        $row["api"] = $this->getAPIText($data);
+
+        // REDCap Mobile App
+        $row["mobile_app"] = $this->getMobileAppText($data);
+
+        // Clinical Data Pull from EHR (Setup / Mapping)
+        $row["cdp_mapping"] = $this->getCheckOrX($data["realtime_webservice_mapping"]);
+
+        // Clinical Data Pull from EHR (Adjudicate Data)
+        $row["cdp_adjudicate"] = $this->getCheckOrX($data["realtime_webservice_adjudicate"]);
+
+        // DTS (Data Transfer Services)
+        $row["dts"] = $this->getCheckOrX($data["dts"]);
+
+        // Create Records
+        $row["record_create"] = $this->getCheckOrX($data["record_create"]);
+
+        // Rename Records
+        $row["record_rename"] = $this->getCheckOrX($data["record_rename"]);
+
+        // Delete Records
+        $row["record_delete"] = $this->getCheckOrX($data["record_delete"]);
+
+        // Record Level Locking
+        $row["record_level_locking"] = $this->getCheckOrX($data["lock_record_multiform"]);
+
+        // Data Entry Rights
+        $row["data_entry_rights"] = $this->getDataEntryRightsText($data);
+
+        return $row;
+    }
+
+    private function getCheckOrX($test)
+    {
+        return [$test ? "check" : "X"];
+    }
+
+    private function getRoleText(array $data, bool $isUser)
+    {
+        $roleText = $isUser ? "<span style='color:lightgray;'>—</span>" : "<span style='font-weight:bold; color:#800000;'>" . $data["role_name"] . "</span>&nbsp;[" . $data["role_id"] . "]";
+        return ['<div style="display:flex; align-items:center; justify-content:center;">' . $roleText . '</div>'];
+    }
+
+    private function getUserArray(array $data, bool $isUser)
+    {
         $users = array();
         if ($isUser) {
             $users[] = new User($data, $this);
@@ -261,8 +379,11 @@ class Renderer
                 $users[] = new User($thisUserData, $this);
             }
         }
+        return $users;
+    }
 
-        // User
+    private function getUserText(array $users, bool $isUser)
+    {
         $userData = array();
         foreach ($users as $index => $user) {
             if ($index !== array_key_first($users)) {
@@ -273,9 +394,11 @@ class Renderer
         if (!$isUser && empty($userData)) {
             $userData[] = "<span style='color:#999; font-size:75%;'>[No users assigned]</span>";
         }
-        $row["user"] = $userData;
+        return $userData;
+    }
 
-        // Expiration
+    private function getExpirationText(array $users)
+    {
         $expirationData = array();
         foreach ($users as $index => $user) {
             if ($index !== array_key_first($users)) {
@@ -284,9 +407,11 @@ class Renderer
             $expiration_string = $user->getExpirationDate();
             $expirationData[] = $this->createExpirationDate($expiration_string);
         }
-        $row["expiration"] = $expirationData;
+        return $expirationData;
+    }
 
-        // Data Access Group
+    private function getDAGText(array $users)
+    {
         $dagData = array();
         foreach ($users as $index => $user) {
             if ($index !== array_key_first($users)) {
@@ -294,107 +419,23 @@ class Renderer
             }
             $dagData[] = $user->getDagText();
         }
-        $row["group"] = $dagData;
-
-        // Project Design and Setup
-        $row["design"] = [$data["design"] ? "check" : "X"];
-
-        // User Rights
-        $row["user_rights"] = [$data["user_rights"] ? "check" : "X"];
-
-        // Data Access Groups
-        $row["data_access_groups"] = [$data["data_access_groups"] ? "check" : "X"];
-
-        // Data Export Tool
-        $row["export"] = [$this->getDataExportText($data["data_export_tool"])];
-
-        // Reports & Report Builder
-        $row["reports"] = [$data["reports"] ? "check" : "X"];
-
-        // Graphical Data View & Stats
-        $row["graphical"] = [$data["graphical"] ? "check" : "X"];
-
-        // Survey Distribution Tools
-        $row["surveys"] = [$data["participants"] ? "check" : "X"];
-
-        // Calendar & Scheduling
-        $row["calendar"] = [$data["calendar"] ? "check" : "X"];
-
-        // Data Import Tool
-        $row["import"] = [$data["data_import_tool"] ? "check" : "X"];
-
-        // Data Comparison Tool
-        $row["comparison"] = [$data["data_comparison_tool"] ? "check" : "X"];
-
-        // Logging
-        $row["logging"] = [$data["data_logging"] ? "check" : "X"];
-
-        // File Repository
-        $row["file_repository"] = [$data["file_repository"] ? "check" : "X"];
-
-        // Double Data Entry
-        $row["dde"] = [$this->getDDEText($data["double_data"])];
-
-        // Record Locking Customization
-        $row["lock_record_customize"] = [$data["lock_record_customize"] ? "check" : "X"];
-
-        // Lock/Unlock Records
-        $row["lock_record"] = [$this->getLockRecordText($data["lock_record"])];
-
-        // Randomization
-        $row["randomization"] = array();
-        if ($data["random_dashboard"]) {
-            $row["randomization"][] = "<div style='text-align:center;'>Dashboard</div>";
-        }
-        if ($data["random_setup"]) {
-            $row["randomization"][] = "<div style='text-align:center;'>Setup</div>";
-        }
-        if ($data["random_perform"]) {
-            $row["randomization"][] = "<div style='text-align:center;'>Randomize</div>";
-        }
-
-        // Data Quality (create/edit rules)
-        $row["data_quality_design"] = [$data["data_quality_design"] ? "check" : "X"];
-
-        // Data Quality (execute rules)
-        $row["data_quality_execute"] = [$data["data_quality_execute"] ? "check" : "X"];
-
-        // Data Resolution Workflow
-        $row["data_quality_resolution"] = [$this->getDataResolutionText($data["data_quality_resolution"])];
-
-        // API
-        $row["api"] = $this->getAPIText($data);
-
-        // REDCap Mobile App
-        $row["mobile_app"] = $this->getMobileAppText($data);
-
-        // Clinical Data Pull from EHR (Setup / Mapping)
-        $row["cdp_mapping"] = [$data["realtime_webservice_mapping"] ? "check" : "X"];
-
-        // Clinical Data Pull from EHR (Adjudicate Data)
-        $row["cdp_adjudicate"] = [$data["realtime_webservice_adjudicate"] ? "check" : "X"];
-
-        // DTS (Data Transfer Services)
-        $row["dts"] = [$data["dts"] ? "check" : "X"];
-
-        // Create Records
-        $row["record_create"] = [$data["record_create"] ? "check" : "X"];
-
-        // Rename Records
-        $row["record_rename"] = [$data["record_rename"] ? "check" : "X"];
-
-        // Delete Records
-        $row["record_delete"] = [$data["record_delete"] ? "check" : "X"];
-
-        // Record Level Locking
-        $row["record_level_locking"] = [$data["lock_record_multiform"] ? "check" : "X"];
-
-        // Data Entry Rights
-        $row["data_entry_rights"] = $this->getDataEntryRightsText($data);
-
-        return $row;
+        return $dagData;
     }
 
+    private function getRandomizationText(array $data)
+    {
+        $result = array();
+        if ($data["random_setup"]) {
+            $result[] = "<div style='text-align:center;'>Setup</div>";
+        }
+        if ($data["random_dashboard"]) {
+            $result[] = "<div style='text-align:center;'>Dashboard</div>";
+        }
+        if ($data["random_perform"]) {
+            $result[] = "<div style='text-align:center;'>Randomize</div>";
+        }
+        return $result;
+    }
 
     private function createExpirationDate($date_string)
     {
@@ -429,7 +470,7 @@ class Renderer
             default:
                 $result = "X";
         }
-        return $result;
+        return [$result];
     }
 
     private function getDDEText($value)
@@ -448,7 +489,7 @@ class Renderer
             default:
                 $result = "X";
         }
-        return $result;
+        return [$result];
     }
 
     private function getLockRecordText($value)
@@ -467,7 +508,7 @@ class Renderer
             default:
                 $result = "X";
         }
-        return $result;
+        return [$result];
     }
 
     private function getDataResolutionText($value)
@@ -495,7 +536,7 @@ class Renderer
             default:
                 $result = "X";
         }
-        return $result;
+        return [$result];
     }
 
     private function getAPIText(array $data): array
@@ -574,8 +615,10 @@ class Renderer
         $string = $data["data_entry"];
         $allInstruments = $this->permissions["instruments"];
         $instruments = $this->parseDataEntryString($string);
-        $surveysHeader = $this->hasSurveys() ? "<th>Edit survey responses</th>" : "";
+        $surveysHeader = $this->getSurveyHeader();
         $cell = "<a tabindex='0' style='color:#333; text-decoration:underline;' class='popoverspan' data-toggle='popover' data-trigger='focus' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $tdStart = "<td><i style=\"color:#666;\" class=\"";
+        $tdEnd = " fa-circle\"></i></td>";
         foreach ($allInstruments as $thisInstrument) {
             $instrument = $thisInstrument["id"];
             $permission = $instruments["by_instrument"][$instrument] ?? "1";
@@ -583,20 +626,33 @@ class Renderer
             $instrumentTitle = $thisInstrument["title"];
             $instrumentText = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
             $cell .= "<tr><th>${instrumentText}</th>";
-            $cell .= "<td><i style=\"color:#666;\" class=\"" . ($permission == 0 ? "fas" : "far") . " fa-circle\"></i></td>";
-            $cell .= "<td><i style=\"color:#666;\" class=\"" . ($permission == 2 ? "fas" : "far") . " fa-circle\"></i></td>";
-            $cell .= "<td><i style=\"color:#666;\" class=\"" . (($permission == 1 || $permission == 3) ? "fas" : "far") . " fa-circle\"></i></td>";
+            $cell .= $tdStart . ($permission == 0 ? "fas" : "far") . $tdEnd;
+            $cell .= $tdStart . ($permission == 2 ? "fas" : "far") . $tdEnd;
+            $cell .= $tdStart . (($permission == 1 || $permission == 3) ? "fas" : "far") . $tdEnd;
 
-            if ($isSurvey) {
-                $cell .= "<td><i style=\"color:#666;\" class=" . ($permission == 3 ? "\"fas fa-check-square\"" : "\"far fa-square\"") . "></i></td>";
-            } elseif ($this->hasSurveys()) {
-                $cell .= "<td></td>";
-            }
+            $cell .= $this->getSurveyTD($isSurvey, $permission);
+
             $cell .= "</tr>";
         }
         $cell .= "</tbody></table></div>'>Rights</a>";
 
         return [$cell];
+    }
+
+    private function getSurveyHeader()
+    {
+        return $this->hasSurveys() ? "<th>Edit survey responses</th>" : "";
+    }
+
+    private function getSurveyTD($isSurvey, $permission)
+    {
+        $result = "";
+        if ($isSurvey) {
+            $result .= "<td><i style=\"color:#666;\" class=" . ($permission == 3 ? "\"fas fa-check-square\"" : "\"far fa-square\"") . "></i></td>";
+        } elseif ($this->hasSurveys()) {
+            $result .= "<td></td>";
+        }
+        return $result;
     }
 
     private function getProjectStatus(): string
