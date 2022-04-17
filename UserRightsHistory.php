@@ -497,8 +497,6 @@ class UserRightsHistory extends AbstractExternalModule
         return json_decode(gzinflate(base64_decode($rights_gzip)), true);
     }
 
-    // TODO: clean up these repetitive methods
-
     function getUsersByTimestamp($timestamp_clean)
     {
         $sql = "select users where message = 'users'";
