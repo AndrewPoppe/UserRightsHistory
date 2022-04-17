@@ -76,7 +76,7 @@ class Renderer
             "role"                    => array("title" => "Role", "show" => true, "width" => 125),
             "user"                    => array("title" => "User", "show" => true, "width" => 225),
             "expiration"              => array("title" => "Expiration", "show" => true, "width" => 50),                                                     // maybe this should be status (expired, suspended, active?)
-            "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 50),
+            "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 100),
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
             "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
             "data_access_groups"      => array("title" => "Data Access Groups", "show" => true, "width" => 50),
@@ -271,7 +271,7 @@ class Renderer
             $userData[] = $user->getUserText();
         }
         if (!$isUser && empty($userData)) {
-            $userData[] = "<span style='color:lightgrey; font-size:75%;'>[No users assigned]</span>";
+            $userData[] = "<span style='color:#999; font-size:75%;'>[No users assigned]</span>";
         }
         $row["user"] = $userData;
 
@@ -399,7 +399,7 @@ class Renderer
     private function createExpirationDate($date_string)
     {
         if (!$date_string) {
-            return "<div style='display:flex; align-items:center; justify-content:center;'><span style='font-size:small; color:lightgrey;'>never</span></div>";
+            return "<div style='display:flex; align-items:center; justify-content:center;'><span style='font-size:11px; color:#999;'>never</span></div>";
         }
         $date = date_create($date_string);
         $now_string = date("Y-m-d", $this->permissions["timestamp"]);
