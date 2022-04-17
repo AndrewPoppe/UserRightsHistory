@@ -591,7 +591,7 @@ class Renderer
             ],
             "by_instrument" => []
         ];
-        foreach ($forms as $index => $form) {
+        foreach ($forms as $form) {
             $split = explode(",", $form);
             $result["by_permission"][strval($split[1])][] = $split[0];
             $result["by_instrument"][$split[0]] = $split[1];

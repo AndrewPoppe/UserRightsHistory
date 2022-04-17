@@ -152,8 +152,7 @@ class UserRightsHistory extends AbstractExternalModule
             while ($role = $result->fetch_assoc()) {
                 $roles[$role["role_id"]] = $role;
             }
-            $roles_to_return = count($roles) > 0 ? base64_encode(gzdeflate(json_encode($roles), 9)) : null;
-            return $roles_to_return;
+            return !empty($roles) ? base64_encode(gzdeflate(json_encode($roles), 9)) : null;
         } catch (\Exception $e) {
             $this->log("Error updating roles",  [
                 "project_id" => $localProjectId,
@@ -166,8 +165,7 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $sql = "select roles where message = 'roles' and project_id = ? order by timestamp desc limit 1";
         $result = $this->queryLogs($sql, [$localProjectId]);
-        $roles_gzip = $result->fetch_assoc()["roles"];
-        return $roles_gzip;
+        return $result->fetch_assoc()["roles"];
     }
 
     function rolesChanged($lastRolesGzip, $currentRolesGzip)
@@ -350,8 +348,7 @@ class UserRightsHistory extends AbstractExternalModule
             while ($dag = $result->fetch_assoc()) {
                 $dags[$dag["group_id"]] = $dag;
             }
-            $dags_to_return = count($dags) > 0 ? base64_encode(gzdeflate(json_encode($dags), 9)) : null;
-            return $dags_to_return;
+            return !empty($dags) ? base64_encode(gzdeflate(json_encode($dags), 9)) : null;
         } catch (\Exception $e) {
             $this->log("Error updating dags",  [
                 "project_id" => $localProjectId,
@@ -363,9 +360,7 @@ class UserRightsHistory extends AbstractExternalModule
     function getLastDAGs($localProjectId)
     {
         $sql = "select dags where message = 'dags' and project_id = ? order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, [$localProjectId]);
-        $dags_gzip = $result->fetch_assoc()["dags"];
-        return $dags_gzip;
+        return $this->queryLogs($sql, [$localProjectId]);
     }
 
     function dagsChanged($lastDAGsGzip, $currentDAGsGzip)
@@ -418,8 +413,7 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $sql = "select info where message = 'system' order by timestamp desc limit 1";
         $result = $this->queryLogs($sql, []);
-        $system_gzip = $result->fetch_assoc()["info"];
-        return $system_gzip;
+        return $result->fetch_assoc()["info"];
     }
 
     function systemChanged($lastSystemGzip, $currentSystemGzip)
@@ -515,54 +509,40 @@ class UserRightsHistory extends AbstractExternalModule
         return json_decode($users_json, true);
     }
 
-    function getProjectStatusByTimestamp($timestamp_clean)
+    private function getValueByTimestamp($timestamp_clean, $message, $column, $system = false)
     {
-        $sql = "select info where message = 'project_info'";
+        $sql = "select $column where message = ?";
+        $sql .= $system ? " and project_id is null" : "";
         $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
         $sql .= " order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, [$timestamp_clean]);
-        $info_gzip = $result->fetch_assoc()["info"];
-        return json_decode(gzinflate(base64_decode($info_gzip)), true);
+        $result = $this->queryLogs($sql, [$message, $timestamp_clean]);
+        $gzip = $result->fetch_assoc()[$column];
+        return json_decode(gzinflate(base64_decode($gzip)), true);
+    }
+
+    function getProjectStatusByTimestamp($timestamp_clean)
+    {
+        return $this->getValueByTimestamp($timestamp_clean, 'project_info', 'info');
     }
 
     function getAllRolesByTimestamp($timestamp_clean)
     {
-        $sql = "select roles where message = 'roles'";
-        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
-        $sql .= " order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, [$timestamp_clean]);
-        $roles_gzip = $result->fetch_assoc()["roles"];
-        return json_decode(gzinflate(base64_decode($roles_gzip)), true);
+        return $this->getValueByTimestamp($timestamp_clean, 'roles', 'roles');
     }
 
     function getAllDAGsByTimestamp($timestamp_clean)
     {
-        $sql = "select dags where message = 'dags'";
-        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
-        $sql .= " order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, [$timestamp_clean]);
-        $dags_gzip = $result->fetch_assoc()["dags"];
-        return json_decode(gzinflate(base64_decode($dags_gzip)), true);
+        return $this->getValueByTimestamp($timestamp_clean, 'dags', 'dags');
     }
 
     function getAllSystemByTimestamp($timestamp_clean)
     {
-        $sql = "select info where message = 'system' and project_id is null";
-        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
-        $sql .= " order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, [$timestamp_clean]);
-        $system_gzip = $result->fetch_assoc()["info"];
-        return json_decode(gzinflate(base64_decode($system_gzip)), true);
+        return $this->getValueByTimestamp($timestamp_clean, 'system', 'info', true);
     }
 
     function getAllInstrumentsByTimestamp($timestamp_clean)
     {
-        $sql = "select instruments where message = 'instruments'";
-        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
-        $sql .= " order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, [$timestamp_clean]);
-        $instruments_gzip = $result->fetch_assoc()["instruments"];
-        return json_decode(gzinflate(base64_decode($instruments_gzip)), true);
+        return $this->getValueByTimestamp($timestamp_clean, 'instruments', 'instruments');
     }
 
     function getAllInfoByTimestamp($timestamp = null)
@@ -603,7 +583,6 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $Renderer = new Renderer($permissions);
         try {
-            //$Renderer->print();
             $Renderer->renderTable();
         } catch (\Exception $e) {
             var_dump($e);
