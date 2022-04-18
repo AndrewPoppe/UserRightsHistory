@@ -1,6 +1,7 @@
 # UserRightsHistory
 
-
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=AndrewPoppe_UserRightsHistory&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AndrewPoppe_UserRightsHistory)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=AndrewPoppe_UserRightsHistory&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=AndrewPoppe_UserRightsHistory)
 ## Overview
 This REDCap External Module allows users to track user access, rights, and permissions in a project over time. 
 
