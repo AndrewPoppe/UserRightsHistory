@@ -45,7 +45,7 @@
             html: true,
             container: 'body',
             placement: 'right',
-            boundary: 'window',
+            boundary: 'viewport',
             whiteList: myDefaultWhiteList
         });
 
@@ -72,7 +72,9 @@
                     }
                     return row.orig;
                 }
-            }]
+            }],
+            scrollY: 'calc(100vh - 220px)',
+            scrollCollapse: true,
         });
 
         table.on('draw', function() {

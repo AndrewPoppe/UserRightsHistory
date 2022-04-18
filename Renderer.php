@@ -440,7 +440,7 @@ class Renderer
     private function createExpirationDate($date_string)
     {
         if (!$date_string) {
-            return "<div style='display:flex; align-items:center; justify-content:center;'><span style='font-size:11px; color:#999;'>never</span></div>";
+            return "<div style='display:flex; align-items:center; justify-content:center;'>&nbsp;<span style='font-size:11px; color:#999;'>never</span>&nbsp;</div>";
         }
         $date = date_create($date_string);
         $now_string = date("Y-m-d", $this->permissions["timestamp"]);

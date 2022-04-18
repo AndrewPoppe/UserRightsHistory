@@ -21,11 +21,13 @@ table.dataTable.cell-border thead td {
     border-left: none;
 }
 
-table#userrights tbody th:last-child,
-table#userrights tbody td:last-child,
-table#userrights thead th:last-child,
-table#userrights thead td:last-child {
-    border-right: none !important;
+div.dataTables_scrollHead {
+    background-color: #ececec;
+}
+
+div.dtfc-right-top-blocker {
+    background-color: transparent !important;
+    border-top: 1px solid #ccc;
 }
 
 .DTFC_ScrollWrapper {
@@ -164,4 +166,11 @@ a.popoverspan:hover {
     position: sticky;
     top: 0;
     inset-block-start: 0;
+}
+
+table#userrights tbody th:last-child,
+table#userrights tbody td:last-child,
+table#userrights thead th:last-child,
+table#userrights thead td:last-child {
+    border-right: none !important;
 }
