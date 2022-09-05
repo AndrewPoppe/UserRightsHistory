@@ -3,7 +3,6 @@ The following pieces of information are tracked by this module.
 
 ___
 ## Users
-___
 ### System-Level attributes
 | **Attribute**    | **Description**  | **Values/Options** |
 | ---------------- | ---------------- | ------------------ |
@@ -14,13 +13,47 @@ ___
 | suspended status |                  |                    |
 
 ### Project-Level Rights and Attributes
-1. expiration date (and expiration status at a given point in time)
-2. data access group
-3. **project design and setup** right
-4. **user rights** right
-5. **data access groups** right
-6. **data export tool** right (if REDCap version is < XXX at a given point)
-7. **instrument-level data export** rights (if REDCap version is >= XXX at a 
-given point)
-8. 
+| **Attribute**                                     | **Description**                                  | **Values/Options** |
+| ------------------------------------------------- | ------------------------------------------------ | ------------------ |
+| expiration date                                   | (and expiration status at a given point in time) |                    |
+| data access group                                 |                                                  |                    |
+| **project design and setup** right                |                                                  |                    |
+| **user rights** right                             |                                                  |                    |
+| **data access groups** right                      |                                                  |                    |
+| **data export tool** right                        |                                                  |                    |
+| **instrument-level data export** rights           |                                                  |                    |
+| **Reports & Report Builder**                      |                                                  |                    |
+| **Graphical Data View & Stats**                   |                                                  |                    |
+| **Survey Distribution Tools**                     |                                                  |                    |
+| **Calendar & Scheduling**                         |                                                  |                    |
+| **Data Import Tool**                              |                                                  |                    |
+| **Data Comparison Tool**                          |                                                  |                    |
+| **Logging**                                       |                                                  |                    |
+| **File Repository**                               |                                                  |                    |
+| **Double Data Entry**                             |                                                  |                    |
+| **Record Locking Customization**                  |                                                  |                    |
+| **Lock/Unlock Records**                           |                                                  |                    |
+| **Randomization**                                 |                                                  |                    |
+| **Data Quality (create/edit rules)**              |                                                  |                    |
+| **Data Quality (execute rules)**                  |                                                  |                    |
+| **Data Resolution Workflow**                      |                                                  |                    |
+| **API**                                           |                                                  |                    |
+| **REDCap Mobile App**                             |                                                  |                    |
+| **Clinical Data Pull from EHR (Setup / Mapping)** |                                                  |                    |
+| **Clinical Data Pull from EHR (Adjudicate Data)** |                                                  |                    |
+| **DTS (Data Transfer Services)**                  |                                                  |                    |
+| **Create Records**                                |                                                  |                    |
+| **Rename Records**                                |                                                  |                    |
+| **Delete Records**                                |                                                  |                    |
+| **Record-Level Locking**                          |                                                  |                    |
+| **Data Entry Rights**                             |                                                  |                    |
+
+
+---
+## Project
+### Project Attributes and Settings
+| **Attribute**      | **Description** | **Values/Options** |
+| ------------------ | --------------- | ------------------ |
+| Project Status     |                 |                    |
+| Data Access Groups |                 |                    |
 
