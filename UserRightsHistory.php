@@ -5,6 +5,7 @@ namespace YaleREDCap\UserRightsHistory;
 use ExternalModules\AbstractExternalModule;
 
 include_once "Renderer.php";
+include_once "Project.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
@@ -588,6 +589,7 @@ class UserRightsHistory extends AbstractExternalModule
         $Renderer = new Renderer($permissions);
         try {
             $Renderer->renderTable();
+            $Project = new Project($this, 18);
         } catch (\Exception $e) {
             var_dump($e);
         }
