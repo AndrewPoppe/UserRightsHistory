@@ -599,7 +599,6 @@ class UserRightsHistory extends AbstractExternalModule
         $dag = $User->getAssignedDag();
         $possible_dags = $User->getPossibleDags();
         $rights = $User->getRights();
-        var_dump($User->getExpiration());
         $bob_permissions = array_merge(
             $rights,
             [
@@ -612,13 +611,14 @@ class UserRightsHistory extends AbstractExternalModule
                 "unique_role_name" => "",
                 "name" => "bob2", //$User->getName(),
                 "email" => $User->getEmail(),
-                "suspended" => false,
+                "suspended" => $User->isSuspended(),
                 "isSuperUser" => false,
                 "possibleDags" => [4, 5],
             ]
         );
 
         $permissions["users"]["bob2"] = $bob_permissions;
+        var_dump($User->isSuspended());
         var_dump($permissions);
 
         $Renderer = new Renderer($permissions);

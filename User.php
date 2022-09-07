@@ -148,6 +148,8 @@ class User
 
             // don't split array of instrument-permission mappings
             // for data entry and data export rights
+            // REGEX captures commas within square brackets and replaces with 
+            // semicolons. Could be done more simply
             $permission_string = preg_replace_callback(
                 '/(\[[a-z_0-9]+)(,)([0-9]+\])/',
                 function ($new_matches) {
@@ -171,6 +173,33 @@ class User
             return $permissions;
         } catch (\Exception $e) {
             $this->module->log('Error fetching possible dag', [
+                "username" => $this->username,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    function isSuspended(): ?bool
+    {
+        $data_value_parameter = "%'" . $this->info["ui_id"] . "'%";
+        $SQL = "SELECT description FROM redcap_log_event" .
+            " WHERE log_event_id IN (" .
+            " SELECT max(log_event_id) log_event_id FROM redcap_log_event" .
+            " WHERE object_type = 'redcap_user_information'" .
+            " AND ts <= ?" .
+            " AND description LIKE '%suspend%'" .
+            " AND (pk = ? OR sql_log LIKE ?))";
+        try {
+            $result = $this->module->query($SQL, [$this->timestamp, $this->username, $data_value_parameter]);
+            $description = $result->fetch_assoc()["description"];
+            if (empty($description) || strpos(strtolower($description), "unsuspend") !== false) {
+                return false;
+            } else {
+                return true;
+            }
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching suspended status', [
                 "username" => $this->username,
                 "error_message" => $e->getMessage()
             ]);
