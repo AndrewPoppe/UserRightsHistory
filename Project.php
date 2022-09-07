@@ -2,20 +2,21 @@
 
 namespace YaleREDCap\UserRightsHistory;
 
+include_once "User.php";
+
 class Project
 {
-
-    private $log_event_table;
-    function __construct(UserRightsHistory $module, int $pid)
+    function __construct(UserRightsHistory $module, int $pid, ?int $timestamp)
     {
         $this->pid = $pid;
         $this->module = $module;
+        $this->timestamp = $timestamp ?? date("YmdHis");
         $this->project = $module->getProject($pid);
         $this->log_event_table = $this->project->getLogTable($pid);
-        $this->getStatus(date("YmdHis"));
+        $this->dags = $this->getDags();
     }
 
-    function getStatus(int $timestamp)
+    function getStatus()
     {
         $sql = "SELECT * FROM " . $this->log_event_table .
             " WHERE project_id = ?" .
@@ -64,5 +65,73 @@ class Project
 
         //$result = $this->module->query($sql, [$this->pid, $timestamp]);
         //var_dump($result->fetch_assoc());
+
+    }
+
+    /**
+     * Get array of users with access to the project at the specified $timestamp.
+     * 
+     * This includes users currently expired/suspended from the project
+     * 
+     * @return array users in the project at that time
+     */
+    function getUsers(): ?array
+    {
+        $SQL = "SELECT pk FROM " . $this->log_event_table .
+            " WHERE log_event_id IN (" .
+            " SELECT max(log_event_id) log_event_id FROM " . $this->log_event_table .
+            " WHERE project_id = ?" .
+            " AND ts <= ?" .
+            " AND object_type = 'redcap_user_rights'" .
+            " AND event in ('INSERT', 'DELETE')" .
+            " GROUP BY pk)" .
+            " AND event = 'INSERT'";
+        try {
+            $result = $this->module->query($SQL, [$this->pid, $this->timestamp]);
+            while ($row = $result->fetch_assoc()) {
+                $users[] = $row['pk'];
+            }
+            return  $users;
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching users', [
+                "pid" => $this->pid,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * 
+     * 
+     * @return array|null
+     */
+    function getDAGs(): ?array
+    {
+        $SQL = "SELECT pk,sql_log FROM " . $this->log_event_table .
+            " WHERE log_event_id in (" .
+            " SELECT max(log_event_id) log_event_id FROM "  . $this->log_event_table .
+            " WHERE project_id = ?" .
+            " AND ts <= ?" .
+            " AND object_type = 'redcap_data_access_groups'" .
+            " GROUP BY pk)" .
+            " AND description IN ('Create data access group', 'Rename data access group')";
+        try {
+            $result = $this->module->query($SQL, [$this->pid, $this->timestamp]);
+            while ($row = $result->fetch_assoc()) {
+                preg_match("/'(?:[^']|'')+'/", $row['sql_log'], $matches);
+                $dags[] = [
+                    "dag" => $row['pk'],
+                    "label" => str_replace("'", "", $matches[0])
+                ];
+            }
+            return $dags;
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching dags', [
+                "pid" => $this->pid,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 }

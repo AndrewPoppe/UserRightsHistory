@@ -12,9 +12,16 @@ class UserRightsHistory extends AbstractExternalModule
 
     function updateAllProjects($cronInfo = array())
     {
-        // TODO: there were like 6 or 7 repeated logs when initially enabling the module in a project. how and why?
+
         try {
-            foreach ($this->getProjectsWithModuleEnabled() as $localProjectId) {
+            $projects = $this->getProjectsWithModuleEnabled();
+            if (empty($projects)) {
+                $this->log('PROBLEM GETTING ENABLED PROJECTS');
+            }
+
+            // TODO: there were like 6 or 7 repeated logs when initially enabling the module in a project. how and why?
+
+            foreach ($projects as $localProjectId) {
                 $this->updateUserList($localProjectId);
                 $this->updateProjectInfo($localProjectId);
                 $this->updatePermissionsForAllUsers($localProjectId);
@@ -586,10 +593,37 @@ class UserRightsHistory extends AbstractExternalModule
 
     function renderTable(array $permissions)
     {
+
+        $Project = new Project($this, 18, date('YmdHis'));
+        $User = new User($this, $Project, 'bob');
+        $dag = $User->getAssignedDag();
+        $possible_dags = $User->getPossibleDags();
+        $rights = $User->getRights();
+        var_dump($User->getExpiration());
+        $bob_permissions = array_merge(
+            $rights,
+            [
+                "project_id" => $Project->pid,
+                "username" => $User->username,
+                "expiration" => $User->getExpiration(),
+                "role_id" => "",
+                "group_id" => $dag["dag"],
+                "role_name" => "",
+                "unique_role_name" => "",
+                "name" => "bob2", //$User->getName(),
+                "email" => $User->getEmail(),
+                "suspended" => false,
+                "isSuperUser" => false,
+                "possibleDags" => [4, 5],
+            ]
+        );
+
+        $permissions["users"]["bob2"] = $bob_permissions;
+        var_dump($permissions);
+
         $Renderer = new Renderer($permissions);
         try {
             $Renderer->renderTable();
-            $Project = new Project($this, 18);
         } catch (\Exception $e) {
             var_dump($e);
         }

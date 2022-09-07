@@ -4,52 +4,177 @@ namespace YaleREDCap\UserRightsHistory;
 
 class User
 {
-    function __construct(array $userPermissions, Renderer $renderer)
+    function __construct(UserRightsHistory &$module, Project &$project, string $username)
     {
-        $this->userPermissions = $userPermissions;
-        $this->renderer = $renderer;
+        $this->module = $module;
+        $this->project = $project;
+        $this->username = $username;
+        $this->timestamp = $project->timestamp;
+        $this->info = $this->getInfo();
     }
 
-    function getUserText()
+    function getInfo(): ?array
     {
-        $email = $this->userPermissions["email"];
-        $username = $this->userPermissions["username"];
-        $name = $this->userPermissions["name"];
-        $suspended = $this->userPermissions["suspended"];
-        $isSuperUser = $this->userPermissions["isSuperUser"];
-
-        $suspendedText = $suspended ? "<span class='nowrap' style='color:red;font-size:11px;margin-left:8px;'>[account suspended]</span>" : "";
-        $superUserText = $isSuperUser ? "<span class='nowrap' style='color:#009000;font-size:11px;margin-left:8px;'>[super user]</span>" : "";
-
-        $nameText = "<span class='popoverspan' data-toggle='popover' data-trigger='hover' data-content='${email}' title='Email Address' style='color: #0059ad;'><strong>${username}</strong> (${name})</span>";
-        return $nameText . $suspendedText . $superUserText;
-    }
-
-    function getExpirationDate()
-    {
-        return $this->userPermissions["expiration"];
-    }
-
-    function getDagText()
-    {
-        $dags = $this->renderer->permissions["dags"];
-        $currentDagId = $this->userPermissions["group_id"];
-        $currentDag = $dags[$currentDagId];
-        $additionalDagIds = $this->userPermissions["possibleDags"];
-        $result = is_null($currentDag) ? "<span style='color:lightgray;'>—</span>" : "<span style='color:#008000;'>" . $currentDag["group_name"] . "</span>&nbsp;[" . $currentDag["group_id"] . "]";
-        $username = $this->userPermissions["username"];
-        if (is_array($additionalDagIds) && !empty($additionalDagIds)) {
-            $additionalDagText = " <span  class=\"popoverspan\" style='font-size:75%; color:gray;' data-toggle='popover' data-trigger='hover' title='<i class=\"fas fa-cube mr-1\"></i>DAG Switcher' data-content='<div>User <span class=\"text-primary\">${username}</span> may switch to DAGs:<ul>";
-            $additionalDagIds = array_diff($additionalDagIds, array($currentDagId));
-            foreach ($additionalDagIds as $additionalDagId) {
-                $additionalDag = $dags[$additionalDagId];
-                $additionalDagName = $additionalDag["group_name"];
-                $additionalDagText .= "<li><span><span class=\"text-info\">$additionalDagName</span> [$additionalDagId]</span></li>";
-            }
-            $nAdditionalDags = count($additionalDagIds);
-            $additionalDagText .= "</ul></div>'>&nbsp;&nbsp;(+${nAdditionalDags})</span>";
-            $result .= $additionalDagText;
+        $SQL = "SELECT * FROM redcap_user_information WHERE username = ?";
+        try {
+            $result = $this->module->query($SQL, [$this->username]);
+            return $result->fetch_assoc();
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching user info', [
+                "username" => $this->username,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
         }
-        return '<div style="display:flex; align-items:center; justify-content:center;">' . $result . '</div>';
+    }
+
+    function getName(): ?string
+    {
+        return empty($this->info) ? "[user deleted]" : $this->info["user_firstname"] . " " . $this->info["user_lastname"];
+    }
+
+    function getEmail(): ?string
+    {
+        return empty($this->info) ? "[user deleted]" : $this->info["user_email"];
+    }
+
+    function getExpiration(): ?string
+    {
+        $SQL = "SELECT sql_log FROM " . $this->project->log_event_table .
+            " WHERE log_event_id IN (" .
+            " SELECT max(log_event_id) log_event_id FROM " . $this->project->log_event_table .
+            " WHERE project_id = ?" .
+            " AND ts <= ?" .
+            " AND object_type = 'redcap_user_rights'" .
+            " AND description = 'Edit user expiration'" .
+            " AND pk = ?)";
+        try {
+            $result = $this->module->query($SQL, [$this->project->pid, $this->timestamp, $this->username]);
+            $sql_log = $result->fetch_assoc()["sql_log"];
+            preg_match("/expiration = (.*)\n/", $sql_log, $matches);
+            $expiration = trim(str_replace("'", "", $matches[1]));
+            return $expiration == 'NULL' ? "" : $expiration;
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching user expiration', [
+                "username" => $this->username,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    function getAssignedDag(): ?array
+    {
+        $SQL = "SELECT sql_log FROM " . $this->project->log_event_table .
+            " WHERE log_event_id IN (" .
+            " SELECT max(log_event_id) log_event_id FROM " . $this->project->log_event_table .
+            " WHERE project_id = ?" .
+            " AND ts <= ?" .
+            " AND object_type = 'redcap_user_rights'" .
+            " AND description in ('Assign user to data access group', 'Remove user from data access group')" .
+            " AND pk = ?)" .
+            " AND description = 'Assign user to data access group'";
+        try {
+            $result = $this->module->query($SQL, [$this->project->pid, $this->timestamp, $this->username]);
+            $sql_log = $result->fetch_assoc()["sql_log"];
+            preg_match("/group_id = (.*) where/", $sql_log, $matches);
+            $this_dag = str_replace("'", "", $matches[1]);
+
+            foreach ($this->project->dags as $dag) {
+                if ($dag["dag"] == $this_dag) return $dag;
+            }
+            return null;
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching user assigned dag', [
+                "username" => $this->username,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    function getPossibleDags(): ?array
+    {
+        $data_value_parameter = "user = '" . $this->username . "',\n%";
+        $SQL = "SELECT sql_log FROM " . $this->project->log_event_table .
+            " WHERE log_event_id IN (" .
+            " SELECT max(log_event_id) log_event_id FROM " . $this->project->log_event_table .
+            " WHERE project_id = ?" .
+            " AND ts <= ?" .
+            " AND object_type = 'redcap_data_access_groups_users'" .
+            " AND data_values like ?" .
+            " GROUP BY data_values)" .
+            " AND description = 'DAG Switcher: Assign user to additional DAGs'";
+        try {
+            $result = $this->module->query($SQL, [$this->project->pid, $this->timestamp, $data_value_parameter]);
+            $possible_dags = [];
+            while ($row = $result->fetch_assoc()) {
+                $sql_log = $row["sql_log"];
+                preg_match("/values \(\'" . $this->project->pid . "\', \'(.*)\',/", $sql_log, $matches);
+                $this_dag =  str_replace("'", "", $matches[1]);
+                foreach ($this->project->dags as $dag) {
+                    if ($dag["dag"] == $this_dag) {
+                        $possible_dags[] = $dag;
+                        continue;
+                    }
+                }
+            }
+            return $possible_dags;
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching possible dags', [
+                "username" => $this->username,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    function getRights(): ?array
+    {
+        $SQL = "SELECT sql_log FROM " . $this->project->log_event_table .
+            " WHERE log_event_id IN (" .
+            " SELECT max(log_event_id) log_event_id FROM " . $this->project->log_event_table .
+            " WHERE project_id = ?" .
+            " AND ts <= ?" .
+            " AND object_type = 'redcap_user_rights'" .
+            " AND description IN ('Add user', 'Edit user')" .
+            " AND pk = ?)";
+        try {
+            $result = $this->module->query($SQL, [$this->project->pid, $this->timestamp, $this->username]);
+            $sql_log = $result->fetch_assoc()["sql_log"];
+            $sql_log = str_replace("\n", " ", $sql_log);
+
+            preg_match("/SET (.*) WHERE username/", $sql_log, $matches);
+
+            // don't split array of instrument-permission mappings
+            // for data entry and data export rights
+            $permission_string = preg_replace_callback(
+                '/(\[[a-z_0-9]+)(,)([0-9]+\])/',
+                function ($new_matches) {
+                    return $new_matches[1] . ';' . $new_matches[3];
+                },
+                $matches[1]
+            );
+
+            $permissions_raw = explode(',', $permission_string);
+            $permissions = [];
+            foreach ($permissions_raw as $permission_raw) {
+                $pr = trim($permission_raw);
+                $prs = explode('=', $pr, 2);
+                $title = trim($prs[0]);
+                $value = trim($prs[1], " \t\n\r\0\x0B'");
+                if ($title === "data_entry" || $title === "data_export_instruments") {
+                    $value = str_replace(";", ",", $value);
+                }
+                $permissions[$title] = $value;
+            }
+            return $permissions;
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching possible dag', [
+                "username" => $this->username,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace YaleREDCap\UserRightsHistory;
 
-include_once "User.php";
+include_once "UserOld.php";
 
 class Renderer
 {
@@ -373,10 +373,10 @@ class Renderer
     {
         $users = array();
         if ($isUser) {
-            $users[] = new User($data, $this);
+            $users[] = new UserOld($data, $this);
         } else {
             foreach ($data["users"] as $thisUserData) {
-                $users[] = new User($thisUserData, $this);
+                $users[] = new UserOld($thisUserData, $this);
             }
         }
         return $users;
