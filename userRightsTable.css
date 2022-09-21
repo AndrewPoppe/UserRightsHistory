@@ -165,3 +165,7 @@ a.popoverspan:hover {
     top: 0;
     inset-block-start: 0;
 }
+
+th.dtfc-fixed-left {
+    z-index: 1000;
+}
