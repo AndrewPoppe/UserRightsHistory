@@ -39,21 +39,25 @@ installs and functions correctly given the combination of REDCap and PHP version
         <th>PHP version</th>
         <th>10.0.28</th>
         <th>12.1.2</th>
+        <th>12.5.x</th>
     </tr>
     <tr>
         <th>7.3.32</th>
-        <td ><img src="lib/iconoir/check-circled-outline.png"></td>
         <td><img src="lib/iconoir/check-circled-outline.png"></td>
+        <td><img src="lib/iconoir/check-circled-outline.png"></td>
+        <td><img src="lib/iconoir/question-mark.png"></td>
     </tr>
     <tr>
         <th>7.4.5</th>
         <td><img src="lib/iconoir/question-mark.png"></td>
         <td><img src="lib/iconoir/question-mark.png"></td>
+        <td><img src="lib/iconoir/check-circled-outline.png"></td>
     </tr>
     <tr>
         <th>8.1.3</th>
         <td><img src="lib/iconoir/warning-circled-outline.png"></td>
         <td><img src="lib/iconoir/warning-circled-outline.png"></td>
+        <td><img src="lib/iconoir/question-mark.png"></td>
     </tr>
 </table>
 
@@ -64,3 +68,9 @@ installs and functions correctly given the combination of REDCap and PHP version
 | ![](lib/iconoir/warning-circled-outline.png) | Module installs correctly but either has not been tested or has minor bugs |
 |       ![](lib/iconoir/prohibition.png)       | Module fails to install or has major bugs                                  |
 |      ![](lib/iconoir/question-mark.png)      | No attempt has been made to assess the module                              |
+
+## Roadmap
+
+- Include support for newer granular data export rights
+- Parse REDCap logs to track user rights prior to module's installation?
+- Include option to run for all projects?
