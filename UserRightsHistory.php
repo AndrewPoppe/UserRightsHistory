@@ -12,16 +12,21 @@ class UserRightsHistory extends AbstractExternalModule
     function updateAllProjects($cronInfo = array())
     {
         // TODO: there were like 6 or 7 repeated logs when initially enabling the module in a project. how and why?
-        foreach ($this->getProjectsWithModuleEnabled() as $localProjectId) {
-            $this->updateUserList($localProjectId);
-            $this->updateProjectInfo($localProjectId);
-            $this->updatePermissionsForAllUsers($localProjectId);
-            $this->updateAllRoles($localProjectId);
-            $this->updateAllDAGs($localProjectId);
-            $this->updateAllInstruments($localProjectId);
+        try {
+            foreach ($this->getProjectsWithModuleEnabled() as $localProjectId) {
+                $this->updateUserList($localProjectId);
+                $this->updateProjectInfo($localProjectId);
+                $this->updatePermissionsForAllUsers($localProjectId);
+                $this->updateAllRoles($localProjectId);
+                $this->updateAllDAGs($localProjectId);
+                $this->updateAllInstruments($localProjectId);
+            }
+            $this->updateAllSystem();
+            return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
+        } catch (\Exception $e) {
+            $this->log("Error updating projects", ["error" => $e->getMessage()]);
+            return "The \"{$cronInfo['cron_name']}\" cron job failed: " . $e->getMessage();
         }
-        $this->updateAllSystem();
-        return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
     }
 
     ////////////////////////////
@@ -360,7 +365,8 @@ class UserRightsHistory extends AbstractExternalModule
     function getLastDAGs($localProjectId)
     {
         $sql = "select dags where message = 'dags' and project_id = ? order by timestamp desc limit 1";
-        return $this->queryLogs($sql, [$localProjectId]);
+        $result = $this->queryLogs($sql, [$localProjectId]);
+        return $result->fetch_assoc()["dags"];
     }
 
     function dagsChanged($lastDAGsGzip, $currentDAGsGzip)
@@ -435,7 +441,7 @@ class UserRightsHistory extends AbstractExternalModule
     function updateAllInstruments($localProjectId)
     {
         $currentInstrumentsGzip = $this->getCurrentInstruments($localProjectId);
-        $lastInstrumentsGzip = $this->getLastInstruments();
+        $lastInstrumentsGzip = $this->getLastInstruments($localProjectId);
         if ($this->instrumentsChanged($lastInstrumentsGzip, $currentInstrumentsGzip)) {
             $this->saveInstruments($localProjectId, $currentInstrumentsGzip);
         }
@@ -463,10 +469,10 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
-    function getLastInstruments()
+    function getLastInstruments($localProjectId)
     {
-        $sql = "select instruments where message = 'instruments' order by timestamp desc limit 1";
-        $result = $this->queryLogs($sql, []);
+        $sql = "select instruments where message = 'instruments' and project_id = ? order by timestamp desc limit 1";
+        $result = $this->queryLogs($sql, [$localProjectId]);
         return $result->fetch_assoc()["instruments"];
     }
 
