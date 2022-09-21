@@ -33,7 +33,7 @@ installs and functions correctly given the combination of REDCap and PHP version
 <table style="text-align:center;">
     <tr>
         <th></th>
-        <th colspan="2">REDCap Version</th>
+        <th colspan="3">REDCap Version</th>
     </tr>
     <tr>
         <th>PHP version</th>
