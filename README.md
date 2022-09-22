@@ -71,6 +71,6 @@ installs and functions correctly given the combination of REDCap and PHP version
 
 ## Roadmap
 
-- Include support for newer granular data export rights
 - Parse REDCap logs to track user rights prior to module's installation?
 - Include option to run for all projects?
+- Add system-level functionality, i.e., run for all projects in the system without needing to enable the module in all projects
