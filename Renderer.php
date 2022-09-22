@@ -651,23 +651,22 @@ class Renderer
         $instruments = $this->parseInstrumentRightsString($string);
 
         $cell = "";
-        var_dump($instruments["by_permission"][1]);
         $nNoAccess = count($instruments["by_permission"][0]);
         $nFullData = count($instruments["by_permission"][1]);
         $nDeidentified = count($instruments["by_permission"][2]);
         $nIdentRemoved = count($instruments["by_permission"][3]);
 
         if ($nNoAccess > 0) {
-            $cell += "<p>" . $nNoAccess . " No Access</p>";
+            $cell .= "<p>" . $nNoAccess . " No Access</p>";
         }
         if ($nDeidentified > 0) {
-            $cell += "<p>" . $nDeidentified . " De-Identified</p>";
+            $cell .= "<p>" . $nDeidentified . " De-Identified</p>";
         }
         if ($nIdentRemoved > 0) {
-            $cell += "<p>" . $nIdentRemoved . " Remove All Identifier Fields</p>";
+            $cell .= "<p>" . $nIdentRemoved . " Remove All Identifier Fields</p>";
         }
         if ($nFullData > 0) {
-            $cell += "<p>" . $nFullData . " Full Data Set</p>";
+            $cell .= "<p>" . $nFullData . " Full Data Set</p>";
         }
 
         var_dump($cell);
