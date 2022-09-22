@@ -455,7 +455,8 @@ class UserRightsHistory extends AbstractExternalModule
             on m.form_name = s.form_name
             and m.project_id = s.project_id
             where m.project_id = ?
-            group by m.project_id, m.form_name";
+            group by m.project_id, m.form_name
+            order by m.field_order";
             $result = $this->query($sql, [$localProjectId]);
             $instruments = [];
             while ($instrument = $result->fetch_assoc()) {
