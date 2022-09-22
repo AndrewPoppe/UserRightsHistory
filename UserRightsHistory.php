@@ -586,7 +586,6 @@ class UserRightsHistory extends AbstractExternalModule
 
     function renderTable(array $permissions)
     {
-        //var_dump($permissions);
         $Renderer = new Renderer($permissions);
         try {
             $Renderer->renderTable();

@@ -37,7 +37,7 @@ class Renderer
                 </thead>
                 <tbody>
                     <?php
-                    $nonCentered = array("user", "expiration", "group", "randomization", "api", "mobile_app");
+                    $nonCentered = array("user", "expiration", "group", "randomization", "api", "mobile_app", "data_export_rights", "data_viewing_rights");
                     foreach ($this->permissions["users"] as $user) {
                         echo "<tr>";
                         foreach ($columns as $column_id => $column) {
@@ -80,9 +80,9 @@ class Renderer
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
             "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
             "data_access_groups"      => array("title" => "Data Access Groups", "show" => true, "width" => 50),
-            "data_viewing_rights"     => array("title" => "Data Viewing Rights", "show" => true, "width" => 50),
-            "data_export_rights"      => array("title" => "Data Export Rights", "show" => true, "width" => 50),
-            "export"                  => array("title" => "Data Export Tool", "show" => true, "width" => 50),
+            "data_viewing_rights"     => array("title" => "Data Viewing Rights", "show" => $this->hasGranularExportRights(), "width" => 50),
+            "data_export_rights"      => array("title" => "Data Export Rights", "show" => $this->hasGranularExportRights(), "width" => 50),
+            "export"                  => array("title" => "Data Export Tool", "show" => !$this->hasGranularExportRights(), "width" => 50),
             "reports"                 => array("title" => "Reports & Report Builder", "show" => true, "width" => 50),
             "graphical"               => array("title" => "Graphical Data View & Stats", "show" => $this->graphicalEnabled(), "width" => 50),
             "surveys"                 => array("title" => "Survey Distribution Tools", "show" => $this->surveysEnabled(), "width" => 50),
@@ -107,7 +107,7 @@ class Renderer
             "record_rename"           => array("title" => "Rename Records", "show" => true, "width" => 50),
             "record_delete"           => array("title" => "Delete Records", "show" => true, "width" => 50),
             "record_level_locking"    => array("title" => "Record-Level Locking", "show" => true, "width" => 50),
-            "data_entry_rights"       => array("title" => "Data Entry Rights", "show" => true, "width" => 50)
+            "data_entry_rights"       => array("title" => "Data Entry Rights", "show" => !$this->hasGranularExportRights(), "width" => 50)
         ];
     }
 
@@ -115,6 +115,12 @@ class Renderer
     {
         $dags = $this->permissions["dags"];
         return !is_null($dags) && count($dags) > 0;
+    }
+
+    private function hasGranularExportRights()
+    {
+        $user = reset($this->permissions["users"]);
+        return isset($user["data_export_instruments"]);
     }
 
     private function graphicalEnabled()
@@ -651,7 +657,7 @@ class Renderer
     {
         $instruments = $this->parseInstrumentRightsString($string);
         $allInstruments = $this->permissions["instruments"];
-        $cell = "<div tabindex='0' class='popoverspan' style='cursor:help;' data-toggle='popover' data-trigger='focus' title='Data Export Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>De-Identified</th><th>Remove All Identifier Fields</th><th>Full Data Set</th></tr></thead><tbody>";
+        $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-trigger='focus' title='Data Export Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>De-Identified</th><th>Remove All Identifier Fields</th><th>Full Data Set</th></tr></thead><tbody>";
         $tdStart = "<td><i style=\"color:#666;\" class=\"";
         $tdEnd = " fa-circle\"></i></td>";
         foreach ($allInstruments as $thisInstrument) {
@@ -695,7 +701,7 @@ class Renderer
         $instruments = $this->parseInstrumentRightsString($string);
         $allInstruments = $this->permissions["instruments"];
         $surveysHeader = $this->getSurveyHeader();
-        $cell = "<div tabindex='0' class='popoverspan' style='cursor:help;' data-toggle='popover' data-trigger='focus' title='Data Viewing Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-trigger='focus' title='Data Viewing Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
         $tdStart = "<td><i style=\"color:#666;\" class=\"";
         $tdEnd = " fa-circle\"></i></td>";
         foreach ($allInstruments as $thisInstrument) {

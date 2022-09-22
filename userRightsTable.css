@@ -180,3 +180,7 @@
     .ui-datepicker {
         z-index: 1001 !important;
     }
+    
+    .instrumentCell:hover {
+        text-decoration: underline;
+    }
