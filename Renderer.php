@@ -80,6 +80,8 @@ class Renderer
             "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
             "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
             "data_access_groups"      => array("title" => "Data Access Groups", "show" => true, "width" => 50),
+            "data_viewing_rights"     => array("title" => "Data Viewing Rights", "show" => true, "width" => 50),
+            "data_export_rights"      => array("title" => "Data Export Rights", "show" => true, "width" => 50),
             "export"                  => array("title" => "Data Export Tool", "show" => true, "width" => 50),
             "reports"                 => array("title" => "Reports & Report Builder", "show" => true, "width" => 50),
             "graphical"               => array("title" => "Graphical Data View & Stats", "show" => $this->graphicalEnabled(), "width" => 50),
@@ -645,37 +647,92 @@ class Renderer
         return [$cell];
     }
 
-    private function getDataExportRightsText(string $string): array
+    private function getDataExportRightsText(?string $string): array
     {
-        $allInstruments = $this->permissions["instruments"];
         $instruments = $this->parseInstrumentRightsString($string);
+        $allInstruments = $this->permissions["instruments"];
+        $cell = "<div tabindex='0' class='popoverspan' style='cursor:help;' data-toggle='popover' data-trigger='focus' title='Data Export Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>De-Identified</th><th>Remove All Identifier Fields</th><th>Full Data Set</th></tr></thead><tbody>";
+        $tdStart = "<td><i style=\"color:#666;\" class=\"";
+        $tdEnd = " fa-circle\"></i></td>";
+        foreach ($allInstruments as $thisInstrument) {
+            $instrument = $thisInstrument["id"];
+            $permission = $instruments["by_instrument"][$instrument] ?? "1";
+            $instrumentTitle = $thisInstrument["title"];
+            $instrumentText = $instrumentTitle . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
+            $cell .= "<tr><th>${instrumentText}</th>";
+            $cell .= $tdStart . ($permission == 0 ? "fas" : "far") . $tdEnd;
+            $cell .= $tdStart . ($permission == 2 ? "fas" : "far") . $tdEnd;
+            $cell .= $tdStart . ($permission == 3 ? "fas" : "far") . $tdEnd;
+            $cell .= $tdStart . ($permission == 1 ? "fas" : "far") . $tdEnd;
+            $cell .= "</tr>";
+        }
+        $cell .= "</tbody></table></div>'>";
 
-        $cell = "";
         $nNoAccess = count($instruments["by_permission"][0]);
         $nFullData = count($instruments["by_permission"][1]);
         $nDeidentified = count($instruments["by_permission"][2]);
         $nIdentRemoved = count($instruments["by_permission"][3]);
+        $cell_line_prefix = "<div class='userRightsTableForms'><code>";
 
         if ($nNoAccess > 0) {
-            $cell .= "<p>" . $nNoAccess . " No Access</p>";
+            $cell .= $cell_line_prefix . $nNoAccess . "</code> No Access</div>";
         }
         if ($nDeidentified > 0) {
-            $cell .= "<p>" . $nDeidentified . " De-Identified</p>";
+            $cell .= $cell_line_prefix . $nDeidentified . "</code> De-Identified</div>";
         }
         if ($nIdentRemoved > 0) {
-            $cell .= "<p>" . $nIdentRemoved . " Remove All Identifier Fields</p>";
+            $cell .= $cell_line_prefix . $nIdentRemoved . "</code> Remove All Identifier Fields</div>";
         }
         if ($nFullData > 0) {
-            $cell .= "<p>" . $nFullData . " Full Data Set</p>";
+            $cell .= $cell_line_prefix . $nFullData . "</code> Full Data Set</div>";
         }
-
-        var_dump($cell);
+        $cell .= "</div>";
         return [$cell];
     }
 
-    private function getDataViewingRightsText(string $string): array
+    private function getDataViewingRightsText(?string $string): array
     {
-        return [];
+        $instruments = $this->parseInstrumentRightsString($string);
+        $allInstruments = $this->permissions["instruments"];
+        $surveysHeader = $this->getSurveyHeader();
+        $cell = "<div tabindex='0' class='popoverspan' style='cursor:help;' data-toggle='popover' data-trigger='focus' title='Data Viewing Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $tdStart = "<td><i style=\"color:#666;\" class=\"";
+        $tdEnd = " fa-circle\"></i></td>";
+        foreach ($allInstruments as $thisInstrument) {
+            $instrument = $thisInstrument["id"];
+            $permission = $instruments["by_instrument"][$instrument] ?? "1";
+            $isSurvey = !is_null($thisInstrument["survey_id"]);
+            $instrumentTitle = $thisInstrument["title"];
+            $instrumentText = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
+            $cell .= "<tr><th>${instrumentText}</th>";
+            $cell .= $tdStart . ($permission == 0 ? "fas" : "far") . $tdEnd;
+            $cell .= $tdStart . ($permission == 2 ? "fas" : "far") . $tdEnd;
+            $cell .= $tdStart . (($permission == 1 || $permission == 3) ? "fas" : "far") . $tdEnd;
+
+            $cell .= $this->getSurveyTD($isSurvey, $permission);
+
+            $cell .= "</tr>";
+        }
+        $cell .= "</tbody></table></div>'>";
+
+        $nNoAccess = count($instruments["by_permission"][0]);
+        $nViewAndEdit = count($instruments["by_permission"][1]);
+        $nReadOnly = count($instruments["by_permission"][2]);
+        $nEditSurvey = count($instruments["by_permission"][3]);
+
+        $cell_line_prefix = "<div class='userRightsTableForms'><code>";
+
+        if ($nNoAccess > 0) {
+            $cell .= $cell_line_prefix . $nNoAccess . "</code> No Access (Hidden)</div>";
+        }
+        if ($nReadOnly > 0) {
+            $cell .= $cell_line_prefix . $nReadOnly . "</code> Read Only</div>";
+        }
+        if ($nViewAndEdit > 0 || $nEditSurvey > 0) {
+            $cell .= $cell_line_prefix . ($nViewAndEdit + $nEditSurvey) . "</code> View & Edit</div>";
+        }
+        $cell .= "</div>";
+        return [$cell];
     }
 
     private function getSurveyHeader()

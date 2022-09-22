@@ -166,13 +166,17 @@
         inset-block-start: 0;
     }
     
-    th.dtfc-fixed-left {
-        z-index: 1000;
-    }
-    
     table#userrights tbody th:last-child,
     table#userrights tbody td:last-child,
     table#userrights thead th:last-child,
     table#userrights thead td:last-child {
         border-right: none !important;
+    }
+    
+    th.dtfc-fixed-left {
+        z-index: 1000;
+    }
+    
+    .ui-datepicker {
+        z-index: 1001 !important;
     }
