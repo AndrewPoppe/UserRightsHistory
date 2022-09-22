@@ -277,6 +277,12 @@ class Renderer
         // Data Access Groups
         $row["data_access_groups"] = $this->getCheckOrX($data["data_access_groups"]);
 
+        // Data Viewing Rights
+        $row["data_viewing_rights"] = $this->getDataViewingRightsText($data["data_entry"]);
+
+        // Data Export Rights
+        $row["data_export_rights"] = $this->getDataExportRightsText($data["data_export_instruments"]);
+
         // Data Export Tool
         $row["export"] = $this->getDataExportText($data["data_export_tool"]);
 
@@ -578,7 +584,7 @@ class Renderer
         return $result;
     }
 
-    private function parseDataEntryString(?string $string): array
+    private function parseInstrumentRightsString(?string $string): array
     {
         $trimmed = substr(trim($string), 1, -1);
         $forms = explode("][", $trimmed);
@@ -614,7 +620,7 @@ class Renderer
     {
         $string = $data["data_entry"];
         $allInstruments = $this->permissions["instruments"];
-        $instruments = $this->parseDataEntryString($string);
+        $instruments = $this->parseInstrumentRightsString($string);
         $surveysHeader = $this->getSurveyHeader();
         $cell = "<a tabindex='0' style='color:#333; text-decoration:underline;' class='popoverspan' data-toggle='popover' data-trigger='focus' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
         $tdStart = "<td><i style=\"color:#666;\" class=\"";
@@ -637,6 +643,40 @@ class Renderer
         $cell .= "</tbody></table></div>'>Rights</a>";
 
         return [$cell];
+    }
+
+    private function getDataExportRightsText(string $string): array
+    {
+        $allInstruments = $this->permissions["instruments"];
+        $instruments = $this->parseInstrumentRightsString($string);
+
+        $cell = "";
+        var_dump($instruments["by_permission"][1]);
+        $nNoAccess = count($instruments["by_permission"][0]);
+        $nFullData = count($instruments["by_permission"][1]);
+        $nDeidentified = count($instruments["by_permission"][2]);
+        $nIdentRemoved = count($instruments["by_permission"][3]);
+
+        if ($nNoAccess > 0) {
+            $cell += "<p>" . $nNoAccess . " No Access</p>";
+        }
+        if ($nDeidentified > 0) {
+            $cell += "<p>" . $nDeidentified . " De-Identified</p>";
+        }
+        if ($nIdentRemoved > 0) {
+            $cell += "<p>" . $nIdentRemoved . " Remove All Identifier Fields</p>";
+        }
+        if ($nFullData > 0) {
+            $cell += "<p>" . $nFullData . " Full Data Set</p>";
+        }
+
+        var_dump($cell);
+        return [$cell];
+    }
+
+    private function getDataViewingRightsText(string $string): array
+    {
+        return [];
     }
 
     private function getSurveyHeader()

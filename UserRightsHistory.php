@@ -585,11 +585,12 @@ class UserRightsHistory extends AbstractExternalModule
 
     function renderTable(array $permissions)
     {
+        var_dump($permissions);
         $Renderer = new Renderer($permissions);
         try {
             $Renderer->renderTable();
         } catch (\Exception $e) {
-            var_dump($e);
+            $this->log('Error rendering table', ['message' => $e->getMessage()]);
         }
     }
 }
