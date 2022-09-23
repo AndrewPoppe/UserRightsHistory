@@ -184,3 +184,8 @@
     .instrumentCell:hover {
         text-decoration: underline;
     }
+    
+    .popover-table tbody tr:hover td,
+    .popover-table tbody tr:hover th {
+        background-color: #d9ebf5 !important;
+    }
