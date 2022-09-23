@@ -19,10 +19,10 @@
         "control-center": []
     },
     "no-auth-pages": [],
-    "framework-version": 5,
+    "framework-version": 9,
     "compatibility": {
         "php-version-min": "7.3.27",
-        "php-version-max": "",
+        "php-version-max": "7.99.99",
         "redcap-version-min": "10.0.28",
         "redcap-version-max": ""
     },
