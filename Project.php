@@ -134,4 +134,44 @@ class Project
             return null;
         }
     }
+
+    function getRoles(): ?array
+    {
+        try {
+            $all_results = [];
+            $result = $this->module->query("Show tables  like 'redcap_log_event%'", []);
+            while ($row = $result->fetch_assoc()) {
+                $log_table = array_values($row)[0];
+                $SQL = "SELECT * FROM " . $log_table .
+                    " WHERE object_type in ('redcap_user_rights','redcap_projects')" .
+                    " AND description in ('add role','Create project')";
+                $this_result = $this->module->query($SQL, []);
+                while ($row = $this_result->fetch_assoc()) {
+                    array_push($all_results, $row);
+                }
+            }
+            // put roles in chronological order
+            usort($all_results, function ($x, $y) {
+                return $x["ts"] - $y["ts"];
+            });
+            // add index into role
+            foreach ($all_results as $index => $role) {
+                $role["role_id"] = $index + 1;
+                $all_results[$index] = $role;
+            }
+
+            $SQL2 = "SELECT a.*, CONVERT(a.argument USING utf8) FROM mysql.general_log a;";
+            $result2 = $this->module->query($SQL2, []);
+            var_dump($result2->fetch_assoc());
+
+            //var_dump($all_results);
+            return ($all_results);
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching roles', [
+                "pid" => $this->pid,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
 }

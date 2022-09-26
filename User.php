@@ -63,7 +63,7 @@ class User
         }
     }
 
-    function getAssignedDag(): ?array
+    function getAssignedDag(): ?string
     {
         $SQL = "SELECT sql_log FROM " . $this->project->log_event_table .
             " WHERE log_event_id IN (" .
@@ -78,12 +78,7 @@ class User
             $result = $this->module->query($SQL, [$this->project->pid, $this->timestamp, $this->username]);
             $sql_log = $result->fetch_assoc()["sql_log"];
             preg_match("/group_id = (.*) where/", $sql_log, $matches);
-            $this_dag = str_replace("'", "", $matches[1]);
-
-            foreach ($this->project->dags as $dag) {
-                if ($dag["dag"] == $this_dag) return $dag;
-            }
-            return null;
+            return str_replace("'", "", $matches[1]);
         } catch (\Exception $e) {
             $this->module->log('Error fetching user assigned dag', [
                 "username" => $this->username,
@@ -112,12 +107,7 @@ class User
                 $sql_log = $row["sql_log"];
                 preg_match("/values \(\'" . $this->project->pid . "\', \'(.*)\',/", $sql_log, $matches);
                 $this_dag =  str_replace("'", "", $matches[1]);
-                foreach ($this->project->dags as $dag) {
-                    if ($dag["dag"] == $this_dag) {
-                        $possible_dags[] = $dag;
-                        continue;
-                    }
-                }
+                $possible_dags[] = $this_dag;
             }
             return $possible_dags;
         } catch (\Exception $e) {
@@ -200,6 +190,63 @@ class User
             }
         } catch (\Exception $e) {
             $this->module->log('Error fetching suspended status', [
+                "username" => $this->username,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    function isSuperUser(): ?bool
+    {
+        $SQL = "SELECT * FROM redcap_log_event" .
+            " WHERE log_event_id IN (" .
+            " SELECT max(log_event_id) log_event_id FROM redcap_log_event" .
+            " WHERE object_type = 'redcap_user_information'" .
+            " AND ts <= ?" .
+            " AND pk = ?" .
+            " AND sql_log LIKE '% super_user = %')" .
+            " AND sql_log LIKE '% super_user = 1 %'";
+        try {
+            $result = $this->module->query($SQL, [$this->timestamp, $this->username]);
+            $row = $result->fetch_assoc();
+            if (empty($row)) {
+                return false;
+            } else {
+                return true;
+            }
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching superuser status', [
+                "username" => $this->username,
+                "error_message" => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    function getRole(): ?string
+    {
+        $SQL = "SELECT sql_log FROM " . $this->project->log_event_table .
+            " WHERE log_event_id IN (" .
+            " SELECT max(log_event_id) log_event_id FROM " . $this->project->log_event_table .
+            " WHERE project_id = ?" .
+            " AND ts <= ?" .
+            " AND pk = ?" .
+            " AND object_type = 'redcap_user_rights'" .
+            " AND description IN ('Assign user to role', 'Remove user from role'))" .
+            " AND description = 'Assign user to role'";
+        try {
+            $result = $this->module->query($SQL, [$this->project->pid, $this->timestamp, $this->username]);
+            $sql_log = $result->fetch_assoc()['sql_log'];
+            if (empty($sql_log)) {
+                return null;
+            } else {
+                preg_match('/role_id = ([0-9]+)/', $sql_log, $matches);
+                var_dump($matches);
+                return $matches[1];
+            }
+        } catch (\Exception $e) {
+            $this->module->log('Error fetching role', [
                 "username" => $this->username,
                 "error_message" => $e->getMessage()
             ]);

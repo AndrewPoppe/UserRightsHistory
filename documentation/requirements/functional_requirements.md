@@ -9,7 +9,7 @@ ___
 | username         |                  |                    |      ✔       |
 | name             | (first and last) |                    |      ✔       |
 | email address    |                  |                    |      ✔       |
-| superuser status |                  |                    |              |
+| superuser status |                  |                    |      ✔       |
 | suspended status |                  |                    |      ✔       |
 
 ### Project-Level Rights and Attributes
@@ -48,6 +48,7 @@ ___
 | **Record-Level Locking**                          |                                                  |                    |      ✔       |
 | **Data Entry Rights**                             |                                                  |                    |      ✔       |
 | **Data Export Rights**                            |                                                  |                    |              |
+| **Assigned Role**                                 |                                                  |                    |      ✔       |
 
 
 ---
@@ -58,3 +59,4 @@ ___
 | Project Status     |                 |                    |              |
 | Data Access Groups |                 |                    |      ✔       |
 | Users              |                 |                    |      ✔       |
+| Roles              |                 |                    |              |

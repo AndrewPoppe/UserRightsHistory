@@ -595,31 +595,27 @@ class UserRightsHistory extends AbstractExternalModule
     {
 
         $Project = new Project($this, 18, date('YmdHis'));
+        $Project->getRoles();
         $User = new User($this, $Project, 'bob');
-        $dag = $User->getAssignedDag();
-        $possible_dags = $User->getPossibleDags();
         $rights = $User->getRights();
         $bob_permissions = array_merge(
             $rights,
             [
                 "project_id" => $Project->pid,
-                "username" => $User->username,
+                "username" => "bob2", //$User->username,
                 "expiration" => $User->getExpiration(),
-                "role_id" => "",
-                "group_id" => $dag["dag"],
-                "role_name" => "",
-                "unique_role_name" => "",
-                "name" => "bob2", //$User->getName(),
+                "role_id" => '', //$User->getRole(),
+                "group_id" => $User->getAssignedDag(),
+                "name" => $User->getName(),
                 "email" => $User->getEmail(),
                 "suspended" => $User->isSuspended(),
-                "isSuperUser" => false,
-                "possibleDags" => [4, 5],
+                "isSuperUser" => $User->isSuperUser(),
+                "possibleDags" => $User->getPossibleDags(),
             ]
         );
 
         $permissions["users"]["bob2"] = $bob_permissions;
-        var_dump($User->isSuspended());
-        var_dump($permissions);
+        //var_dump($permissions);
 
         $Renderer = new Renderer($permissions);
         try {
