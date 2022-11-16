@@ -156,6 +156,33 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
 
     }
 </script>
+<style>
+    .urh-nav a {
+        color: #303030 !important;
+        font-weight: bold !important;
+    }
+
+    .urh-nav a.active:hover {
+        color: #303030 !important;
+        font-weight: bold !important;
+        outline: none !important;
+    }
+
+    .urh-nav a:hover:not(.active),
+    a:focus {
+        color: #303030 !important;
+        font-weight: bold !important;
+        border: 1px solid #c0c0c0 !important;
+        background-color: #e1e1e1 !important;
+        outline: none !important;
+    }
+
+    .urh-nav a:not(.active) {
+        background-color: #f7f6f6 !important;
+        border: 1px solid #e1e1e1 !important;
+        outline: none !important;
+    }
+</style>
 <div class="projhdr">
     <div style="float:left;">
         <i class="fas fa-history"></i>
@@ -168,7 +195,20 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
     You may select a date and time, and the user rights at that point in time will be displayed below. You can only select dates
     following the moment this module was installed in the project.
 </p>
-<div style=" margin:20px 0;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
+
+<nav style='margin:5px 0 20px;'>
+    <ul class='nav nav-tabs urh-nav'>
+        <li class='nav-item active'>
+            <a class='nav-link active' href='<?= $module->getUrl('history_viewer.php') ?>'>History Viewer</a>
+        </li>
+        <li class='nav-item'>
+            <a class='nav-link' href='<?= $module->getUrl('logging_table.php') ?>'>Logs</a>
+        </li>
+    </ul>
+</nav>
+<div class='clear'></div>
+
+<div style="margin:20px 0px;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
     <div style="color:#444;"><span style="color:#000;font-weight:bold;font-size:13px;margin-right:5px;">Choose a date and time:</span> The user rights at that point in time will be displayed below.</div>
     <div style="margin:8px 0 0 0px;">
         <input id="datetime">&nbsp;

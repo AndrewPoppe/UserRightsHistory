@@ -11,11 +11,16 @@
     "project-settings": [],
     "links": {
         "project": [{
-            "name": "User Rights History",
-            "icon": "fas fa-history",
-            "url": "history_viewer.php",
-            "show-header-and-footer": true
-        }],
+                "name": "User Rights History",
+                "icon": "fas fa-history",
+                "url": "history_viewer.php",
+                "show-header-and-footer": true
+            },
+            {
+                "url": "logging_table.php",
+                "show-header-and-footer": true
+            }
+        ],
         "control-center": []
     },
     "no-auth-pages": [],
