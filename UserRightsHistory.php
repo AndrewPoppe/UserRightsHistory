@@ -5,9 +5,12 @@ namespace YaleREDCap\UserRightsHistory;
 use ExternalModules\AbstractExternalModule;
 
 include_once "Renderer.php";
+include_once "UI.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
+
+    public $UI;
 
     function getAllProjectIds()
     {
@@ -620,5 +623,11 @@ class UserRightsHistory extends AbstractExternalModule
         } catch (\Exception $e) {
             $this->log('Error rendering table', ['message' => $e->getMessage()]);
         }
+    }
+
+    function showPageHeader(string $page, string $description)
+    {
+        $UI = new UI($this);
+        $UI->showPageHeader($page, $description);
     }
 }
