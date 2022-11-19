@@ -1,7 +1,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <?php
-$description = "This page may be used for investigating which users had access to this project and what permissions those users had.<br>You may select a date and time, and the user rights at that point in time will be displayed below. You can only select dates<br>following the moment this module was installed in the project.";
 $module->showPageHeader("history_viewer", $description);
 
 if (isset($_GET["datetime"])) {
@@ -16,6 +15,13 @@ $time_format =  explode("_", \DateTimeRC::get_user_format_full(), 2)[1];
 $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
 
 ?>
+<p>
+    This page may be used for investigating which users had access to this project and what permissions those users had.
+    <br>
+    You may select a date and time, and the user rights at that point in time will be displayed below. You can only select dates
+    <br>
+    following the moment this module was installed in the project.
+</p>
 <script type="text/javascript">
     $(function() {
         $('#datetime_icon').attr('src', app_path_images + 'date.png');

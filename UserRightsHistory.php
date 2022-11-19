@@ -625,9 +625,9 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
-    function showPageHeader(string $page, string $description)
+    function showPageHeader(string $page)
     {
         $UI = new UI($this);
-        $UI->showPageHeader($page, $description);
+        $UI->showPageHeader($page);
     }
 }
