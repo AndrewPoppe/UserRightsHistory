@@ -1,3 +1,8 @@
 <?php
-$description = "This page ...";
 $module->showPageHeader("logging_table", $description);
+?>
+<p>
+    This page
+    <br>
+    ...
+</p>

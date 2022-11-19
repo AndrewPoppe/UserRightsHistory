@@ -1,7 +1,13 @@
 <?php
-$description = "This page may be used for investigating which users had access to this project and what permissions those users had.<br>You may select a date and time, and the user rights at that point in time will be displayed below. You can only select dates<br>following the moment this module was installed in the project.";
 $module->showPageHeader("history_viewer", $description);
 ?>
+<p>
+    This page may be used for investigating which users had access to this project and what permissions those users had.
+    <br>
+    You may select a date and time, and the user rights at that point in time will be displayed below. You can only select dates
+    <br>
+    following the moment this module was installed in the project.
+</p>
 <script type="text/javascript">
     $(function() {
         console.log(<?= $module->getEarliestLogTimestamp() ?>)
