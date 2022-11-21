@@ -469,10 +469,17 @@ class UserRightsHistory extends AbstractExternalModule
 
     function updateAllSystem()
     {
-        $currentSystemGzip = $this->getCurrentSystem();
-        $lastSystemGzip = $this->getLastSystem();
-        if ($this->systemChanged($lastSystemGzip, $currentSystemGzip)) {
-            $this->saveSystem($currentSystemGzip);
+        try {
+            $currentSystemGzip = $this->getCurrentSystem();
+            $lastSystemGzip = $this->getLastSystem();
+            $systemChanges = $this->getSystemChanges($lastSystemGzip, $currentSystemGzip);
+            if (empty($lastSystemGzip) || $systemChanges["any_changes"]) {
+                $this->saveSystem($currentSystemGzip, $systemChanges);
+            }
+        } catch (\Exception $e) {
+            $this->log("Error updating system",  [
+                "error" => $e->getMessage()
+            ]);
         }
     }
 
@@ -490,7 +497,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return base64_encode(gzdeflate(json_encode($system_info), 9));
         } catch (\Exception $e) {
-            $this->log("Error updating system",  [
+            $this->log("Error getting current system",  [
                 "error" => $e->getMessage()
             ]);
         }
@@ -503,15 +510,25 @@ class UserRightsHistory extends AbstractExternalModule
         return $result->fetch_assoc()["info"];
     }
 
-    function systemChanged($lastSystemGzip, $currentSystemGzip)
+    function getSystemChanges($lastSystemGzip, $currentSystemGzip)
     {
-        return $lastSystemGzip !== $currentSystemGzip;
+        $changes = array("any_changes" => false);
+        if ($lastSystemGzip !== $currentSystemGzip) {
+            $changes["any_changes"] = true;
+            $lastSystem = json_decode(gzinflate(base64_decode($lastSystemGzip)), true);
+            $currentSystem = json_decode(gzinflate(base64_decode($currentSystemGzip)), true);
+            $changes["previous"] = array_diff_assoc($lastSystem, $currentSystem);
+            $changes["current"] = array_diff_assoc($currentSystem, $lastSystem);
+        }
+        return $changes;
     }
 
-    function saveSystem($system_gzip)
+    function saveSystem($system_gzip, $systemChanges)
     {
         $this->log('system', [
-            "info" => $system_gzip
+            "info" => $system_gzip,
+            "current" => json_encode($systemChanges["current"]),
+            "previous" => json_encode($systemChanges["previous"])
         ]);
     }
 
