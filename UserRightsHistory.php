@@ -40,8 +40,9 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentProjectInfo = $this->getCurrentProjectInfo($localProjectId);
         $lastProjectInfo = $this->getLastProjectInfo($localProjectId);
-        if ($lastProjectInfo == null || $this->projectInfoChanged($lastProjectInfo, $currentProjectInfo)) {
-            $this->saveProjectInfo($localProjectId, $currentProjectInfo);
+        $changes =  $this->projectInfoChanges($lastProjectInfo, $currentProjectInfo);
+        if ($lastProjectInfo == null || $changes["any_changes"]) {
+            $this->saveProjectInfo($localProjectId, $currentProjectInfo, $changes);
         }
     }
 
@@ -66,18 +67,25 @@ class UserRightsHistory extends AbstractExternalModule
         return json_decode(gzinflate(base64_decode($info_gzip)), true);
     }
 
-    function projectInfoChanged(array $oldProjectInfo, array $newProjectInfo)
+    function projectInfoChanges(array $oldProjectInfo, array $newProjectInfo)
     {
         $difference1 = array_diff_assoc($oldProjectInfo, $newProjectInfo);
         $difference2 = array_diff_assoc($newProjectInfo, $oldProjectInfo);
-        return (count($difference1) + count($difference2)) > 0;
+        $any_changes = (count($difference1) + count($difference2)) > 0;
+        return [
+            "previous" => $difference1,
+            "current" => $difference2,
+            "any_changes" => $any_changes
+        ];
     }
 
-    function saveProjectInfo($localProjectId, array $newProjectInfo)
+    function saveProjectInfo($localProjectId, array $newProjectInfo, array $changes)
     {
         $this->log('project_info', [
             "project_id" => $localProjectId,
-            "info" => base64_encode(gzdeflate(json_encode($newProjectInfo), 9))
+            "info" => base64_encode(gzdeflate(json_encode($newProjectInfo), 9)),
+            "previous" => json_encode($changes["previous"]),
+            "current" => json_encode($changes["current"])
         ]);
     }
 
@@ -101,12 +109,13 @@ class UserRightsHistory extends AbstractExternalModule
         $currentUsers = $this->getCurrentUsers($localProjectId);
         $lastUsers = $this->getLastUsers($localProjectId);
         if ($lastUsers == null) {
-            $this->saveUsers($localProjectId, $currentUsers);
+            $changes = array("added" => $currentUsers, "removed" => null);
+            $this->saveUsers($localProjectId, $currentUsers, $changes);
             return null;
         }
         $userChanges = $this->usersChanged($lastUsers, $currentUsers);
         if ($userChanges["wereChanged"]) {
-            $this->saveUsers($localProjectId, $currentUsers);
+            $this->saveUsers($localProjectId, $currentUsers, $userChanges);
         }
         if (count($userChanges["removed"]) > 0) {
             $this->markUsersRemoved($localProjectId, $userChanges["removed"]);
@@ -124,17 +133,19 @@ class UserRightsHistory extends AbstractExternalModule
     function usersChanged($oldUsers, $newUsers)
     {
         $result = array();
-        $result["removed"] =  array_diff($oldUsers, $newUsers);
+        $result["removed"] = array_diff($oldUsers, $newUsers);
         $result["added"] = array_diff($newUsers, $oldUsers);
         $result["wereChanged"] = count($result["removed"]) > 0 || count($result["added"]) > 0;
         return $result;
     }
 
-    function saveUsers($localProjectId, $users)
+    function saveUsers($localProjectId, $users, array $changes)
     {
         $this->log('users', [
             "project_id" => $localProjectId,
-            "users" => json_encode($users)
+            "users" => json_encode($users),
+            "added" => json_encode($changes["added"]),
+            "removed" => json_encode($changes["removed"])
         ]);
     }
 
@@ -146,8 +157,9 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentRolesGzip = $this->getCurrentRoles($localProjectId);
         $lastRolesGzip = $this->getLastRoles($localProjectId);
-        if ($this->rolesChanged($lastRolesGzip, $currentRolesGzip)) {
-            $this->saveRoles($localProjectId, $currentRolesGzip);
+        $rolesChanges = $this->getRolesChanges($lastRolesGzip, $currentRolesGzip);
+        if ($rolesChanges["any_changes"]) {
+            $this->saveRoles($localProjectId, $currentRolesGzip, $rolesChanges);
         }
     }
 
@@ -176,16 +188,40 @@ class UserRightsHistory extends AbstractExternalModule
         return $result->fetch_assoc()["roles"];
     }
 
-    function rolesChanged($lastRolesGzip, $currentRolesGzip)
+    function getRolesChanges($lastRolesGzip, $currentRolesGzip)
     {
-        return $lastRolesGzip !== $currentRolesGzip;
+        $changes = array("any_changes" => false);
+        if ($lastRolesGzip !== $currentRolesGzip) {
+            $lastRoles = json_decode(gzinflate(base64_decode($lastRolesGzip)), true);
+            $currentRoles = json_decode(gzinflate(base64_decode($currentRolesGzip)), true);
+            $changes["previous"] = array();
+            foreach ($lastRoles as $index => $lastRole) {
+                if (empty($currentRoles[$index])) {
+                    $changes["previous"][$index] = $lastRole;
+                } else {
+                    $changes["previous"][$index] = array_diff_assoc($lastRole, $currentRoles[$index]);
+                }
+            }
+            $changes["current"] = array();
+            foreach ($currentRoles as $index => $currentRole) {
+                if (empty($lastRoles[$index])) {
+                    $changes["current"][$index] = $currentRole;
+                } else {
+                    $changes["current"][$index] = array_diff_assoc($currentRole, $lastRoles[$index]);
+                }
+            }
+            $changes["any_changes"] = true;
+        }
+        return $changes;
     }
 
-    function saveRoles($localProjectId, $rolesGzip)
+    function saveRoles($localProjectId, $rolesGzip, $changes)
     {
         $this->log('roles', [
             "project_id" => $localProjectId,
-            "roles" => $rolesGzip
+            "roles" => $rolesGzip,
+            "previous" => json_encode($changes["previous"]),
+            "current" => json_encode($changes["current"])
         ]);
     }
 
