@@ -286,17 +286,18 @@ class UserRightsHistory extends AbstractExternalModule
     function updatePermissionsForUser($localProjectId, $user)
     {
         $username = $user->getUsername();
-        $currentPermissions = $this->getCurrentUserPermissions($localProjectId, $user);
-        $lastPermissions = $this->getLastUserPermissions($localProjectId, $username);
-        if ($lastPermissions == null || $this->permissionsChanged($lastPermissions, $currentPermissions)) {
-            $this->savePermissions($localProjectId, $currentPermissions);
+        $currentPermissions_gzip = $this->getCurrentUserPermissions($localProjectId, $user);
+        $lastPermissions_gzip = $this->getLastUserPermissions($localProjectId, $username);
+        $permissionsChanges = $this->getPermissionsChanges($lastPermissions_gzip, $currentPermissions_gzip, $username);
+        if ($lastPermissions_gzip == null || $permissionsChanges["any_changes"]) {
+            $this->savePermissions($localProjectId, $currentPermissions_gzip, $permissionsChanges, $username);
         }
     }
 
     /**
      * @param user $user user object from EM framework
      * 
-     * @return array permissions, including name and account status
+     * @return string permissions, including name and account status
      */
     function getCurrentUserPermissions($localProjectId, $user)
     {
@@ -315,7 +316,7 @@ class UserRightsHistory extends AbstractExternalModule
         $rights["isSuperUser"] = $isSuperUser;
         $rights["possibleDags"] = $possibleDags;
 
-        return $rights;
+        return base64_encode(gzdeflate(json_encode($rights), 9));
     }
 
     function getLastUserPermissions($localProjectId, string $username)
@@ -324,7 +325,7 @@ class UserRightsHistory extends AbstractExternalModule
         $sql = "select rights where message = 'rights' and user_name = ? and project_id = ? order by timestamp desc limit 1";
         $result = $this->queryLogs($sql, [$username, $localProjectId]);
         $rights_gzip = $result->fetch_assoc()["rights"];
-        return json_decode(gzinflate(base64_decode($rights_gzip)), true);
+        return $rights_gzip;
     }
 
     function getName(string $username)
@@ -368,19 +369,35 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
-    function permissionsChanged(array $oldPermissions, array $newPermissions)
+    function getPermissionsChanges(string $oldPermissions_gzip, string $newPermissions_gzip, $username)
     {
-        $difference1 = array_diff_assoc($oldPermissions, $newPermissions);
-        $difference2 = array_diff_assoc($newPermissions, $oldPermissions);
-        return count($difference1) > 0 || count($difference2) > 0;
+        $changes = array("any_changes" => false);
+        if ($oldPermissions_gzip !== $newPermissions_gzip) {
+            $changes["any_changes"] = true;
+            $oldPermissions = json_decode(gzinflate(base64_decode($oldPermissions_gzip)), true);
+            $newPermissions = json_decode(gzinflate(base64_decode($newPermissions_gzip)), true);
+
+            $changes["previous"] = array_diff_assoc($oldPermissions, $newPermissions);
+            $changes["current"] = array_diff_assoc($newPermissions, $oldPermissions);
+
+            $possibleDagChanges_previous = array_diff_assoc($oldPermissions["possibleDags"], $newPermissions["possibleDags"]);
+            $possibleDagChanges_current = array_diff_assoc($newPermissions["possibleDags"], $oldPermissions["possibleDags"]);
+            if (count($possibleDagChanges_previous) > 0 || count($possibleDagChanges_current) > 0) {
+                $changes["previous"]["possibleDags"] = $possibleDagChanges_previous;
+                $changes["current"]["possibleDags"] = $possibleDagChanges_current;
+            }
+        }
+        return $changes;
     }
 
-    function savePermissions($localProjectId, array $newPermissions)
+    function savePermissions($localProjectId, string $newPermissions_gzip, array $permissionsChanges, $username)
     {
         $this->log('rights', [
-            "user_name" => $newPermissions["username"],
+            "user_name" => $username,
             "project_id" => $localProjectId,
-            "rights" => base64_encode(gzdeflate(json_encode($newPermissions), 9))
+            "rights" => $newPermissions_gzip,
+            "previous" => json_encode($permissionsChanges["previous"]),
+            "current" => json_encode($permissionsChanges["current"])
         ]);
     }
 
@@ -406,8 +423,9 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentDAGsGzip = $this->getCurrentDAGs($localProjectId);
         $lastDAGsGzip = $this->getLastDAGs($localProjectId);
-        if ($this->dagsChanged($lastDAGsGzip, $currentDAGsGzip)) {
-            $this->saveDAGs($localProjectId, $currentDAGsGzip);
+        $dagChanges = $this->getDAGsChanges($lastDAGsGzip, $currentDAGsGzip);
+        if ($dagChanges["any_changes"]) {
+            $this->saveDAGs($localProjectId, $currentDAGsGzip, $dagChanges);
         }
     }
 
@@ -436,16 +454,40 @@ class UserRightsHistory extends AbstractExternalModule
         return $result->fetch_assoc()["dags"];
     }
 
-    function dagsChanged($lastDAGsGzip, $currentDAGsGzip)
+    function getDAGsChanges($lastDAGsGzip, $currentDAGsGzip)
     {
-        return $lastDAGsGzip !== $currentDAGsGzip;
+        $changes = array("any_changes" => false);
+        if ($lastDAGsGzip !== $currentDAGsGzip) {
+            $changes["any_changes"] = true;
+            $lastDAGs = json_decode(gzinflate(base64_decode($lastDAGsGzip)), true);
+            $currentDAGs = json_decode(gzinflate(base64_decode($currentDAGsGzip)), true);
+            $changes["previous"] = array();
+            foreach ($lastDAGs as $index => $lastDAG) {
+                if (empty($currentDAGs[$index])) {
+                    $changes["previous"][$index] = $lastDAG;
+                } else {
+                    $changes["previous"][$index] = array_diff_assoc($lastDAG, $currentDAGs[$index]);
+                }
+            }
+            $changes["current"] = array();
+            foreach ($currentDAGs as $index => $currentDAG) {
+                if (empty($lastDAGs[$index])) {
+                    $changes["current"][$index] = $currentDAG;
+                } else {
+                    $changes["current"][$index] = array_diff_assoc($currentDAG, $lastDAGs[$index]);
+                }
+            }
+        }
+        return $changes;
     }
 
-    function saveDAGs($localProjectId, $dagsGzip)
+    function saveDAGs($localProjectId, $dagsGzip, $dagChanges)
     {
         $this->log('dags', [
             "project_id" => $localProjectId,
-            "dags" => $dagsGzip
+            "dags" => $dagsGzip,
+            "current" => json_encode($dagChanges["current"]),
+            "previous" => json_encode($dagChanges["previous"])
         ]);
     }
 
