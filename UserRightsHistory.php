@@ -715,6 +715,48 @@ class UserRightsHistory extends AbstractExternalModule
         return $timestamp * 1000 + 60000;
     }
 
+    ///////////////////////////
+    // Logging Table Methods //
+    ///////////////////////////
+
+    function syntaxHighlight($json)
+    {
+        $json = json_encode(json_decode($json), JSON_PRETTY_PRINT);
+        $json = preg_replace('/&/', '&amp;', $json);
+        $json = preg_replace('/</', '&lt;', $json);
+        $json = preg_replace('/>/', '&gt;', $json);
+        $result = preg_replace_callback(
+            '/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/',
+            function ($matches) {
+                $cls = "number";
+                if (preg_match('/^"/', $matches[1])) {
+                    if (preg_match('/:$/', $matches[1])) {
+                        $cls = "key";
+                    } else {
+                        $cls = "string";
+                    }
+                } else if (preg_match('/true|false/', $matches[1])) {
+                    $cls = "boolean";
+                } else if (preg_match('/null/', $matches[1])) {
+                    $cls = "null";
+                }
+                return '<span class="' . $cls . '">' . $matches[1] . '</span>';
+            },
+            $json
+        );
+        return $result;
+    }
+
+    function getLogs()
+    {
+        $queryResult = $this->queryLogs("select timestamp, message, current, previous where project_id = ? or project_id is null order by timestamp desc", [$this->getProjectId()]);
+        $logs = array();
+        while ($row = $queryResult->fetch_assoc()) {
+            $row["test"] = $this->syntaxHighlight($row["previous"]);
+            array_push($logs, $row);
+        }
+        var_dump($logs);
+    }
 
 
     /////////////////////
