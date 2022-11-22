@@ -568,8 +568,9 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentInstrumentsGzip = $this->getCurrentInstruments($localProjectId);
         $lastInstrumentsGzip = $this->getLastInstruments($localProjectId);
-        if ($this->instrumentsChanged($lastInstrumentsGzip, $currentInstrumentsGzip)) {
-            $this->saveInstruments($localProjectId, $currentInstrumentsGzip);
+        $instrumentsChanges = $this->getInstrumentsChanges($lastInstrumentsGzip, $currentInstrumentsGzip);
+        if ($instrumentsChanges["any_changes"]) {
+            $this->saveInstruments($localProjectId, $currentInstrumentsGzip, $instrumentsChanges);
         }
     }
 
@@ -603,16 +604,26 @@ class UserRightsHistory extends AbstractExternalModule
         return $result->fetch_assoc()["instruments"];
     }
 
-    function instrumentsChanged($lastInstrumentsGzip, $currentInstrumentsGzip)
+    function getInstrumentsChanges($lastInstrumentsGzip, $currentInstrumentsGzip)
     {
-        return $lastInstrumentsGzip !== $currentInstrumentsGzip;
+        $changes = array("any_changes" => false);
+        if ($lastInstrumentsGzip !== $currentInstrumentsGzip) {
+            $changes["any_changes"] = true;
+            $lastInstruments = json_decode(gzinflate(base64_decode($lastInstrumentsGzip)), true);
+            $currentInstruments = json_decode(gzinflate(base64_decode($currentInstrumentsGzip)), true);
+            $changes["previous"] = array_diff_assoc($lastInstruments, $currentInstruments);
+            $changes["current"] = array_diff_assoc($currentInstruments, $lastInstruments);
+        }
+        return $changes;
     }
 
-    function saveInstruments($localProjectId, $instruments_gzip)
+    function saveInstruments($localProjectId, $instruments_gzip, $instrumentsChanges)
     {
         $this->log('instruments', [
             "project_id" => $localProjectId,
-            "instruments" => $instruments_gzip
+            "instruments" => $instruments_gzip,
+            "previous" => json_encode($instrumentsChanges["previous"]),
+            "current" => json_encode($instrumentsChanges["current"])
         ]);
     }
 

@@ -660,8 +660,10 @@ class Renderer
         $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-trigger='focus' title='Data Export Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>De-Identified</th><th>Remove All Identifier Fields</th><th>Full Data Set</th></tr></thead><tbody>";
         $tdStart = "<td><i style=\"color:#666;\" class=\"";
         $tdEnd = " fa-circle\"></i></td>";
+        $instrumentArray = array();
         foreach ($allInstruments as $thisInstrument) {
             $instrument = $thisInstrument["id"];
+            array_push($instrumentArray, $instrument);
             $permission = $instruments["by_instrument"][$instrument] ?? "1";
             $instrumentTitle = $thisInstrument["title"];
             $instrumentText = $instrumentTitle . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
@@ -674,10 +676,10 @@ class Renderer
         }
         $cell .= "</tbody></table></div>'>";
 
-        $nNoAccess = count($instruments["by_permission"][0]);
-        $nFullData = count($instruments["by_permission"][1]);
-        $nDeidentified = count($instruments["by_permission"][2]);
-        $nIdentRemoved = count($instruments["by_permission"][3]);
+        $nNoAccess = count(array_intersect($instrumentArray, $instruments["by_permission"][0]));
+        $nFullData = count(array_intersect($instrumentArray, $instruments["by_permission"][1]));
+        $nDeidentified = count(array_intersect($instrumentArray, $instruments["by_permission"][2]));
+        $nIdentRemoved = count(array_intersect($instrumentArray, $instruments["by_permission"][3]));
         $cell_line_prefix = "<div class='userRightsTableForms'><code>";
 
         if ($nNoAccess > 0) {
@@ -704,8 +706,10 @@ class Renderer
         $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-trigger='focus' title='Data Viewing Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
         $tdStart = "<td><i style=\"color:#666;\" class=\"";
         $tdEnd = " fa-circle\"></i></td>";
+        $instrumentArray = array();
         foreach ($allInstruments as $thisInstrument) {
             $instrument = $thisInstrument["id"];
+            array_push($instrumentArray, $instrument);
             $permission = $instruments["by_instrument"][$instrument] ?? "1";
             $isSurvey = !is_null($thisInstrument["survey_id"]);
             $instrumentTitle = $thisInstrument["title"];
@@ -721,10 +725,10 @@ class Renderer
         }
         $cell .= "</tbody></table></div>'>";
 
-        $nNoAccess = count($instruments["by_permission"][0]);
-        $nViewAndEdit = count($instruments["by_permission"][1]);
-        $nReadOnly = count($instruments["by_permission"][2]);
-        $nEditSurvey = count($instruments["by_permission"][3]);
+        $nNoAccess = count(array_intersect($instrumentArray, $instruments["by_permission"][0]));
+        $nViewAndEdit = count(array_intersect($instrumentArray, $instruments["by_permission"][1]));
+        $nReadOnly = count(array_intersect($instrumentArray, $instruments["by_permission"][2]));
+        $nEditSurvey = count(array_intersect($instrumentArray, $instruments["by_permission"][3]));
 
         $cell_line_prefix = "<div class='userRightsTableForms'><code>";
 
