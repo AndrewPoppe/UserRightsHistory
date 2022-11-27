@@ -19,6 +19,10 @@
             {
                 "url": "logging_table.php",
                 "show-header-and-footer": true
+            },
+            {
+                "url": "logging_table_ajax.php",
+                "show-header-and-footer": false
             }
         ],
         "control-center": []
