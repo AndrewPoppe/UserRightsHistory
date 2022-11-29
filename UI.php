@@ -15,11 +15,12 @@ class UI
     {
         echo '<link rel="stylesheet" type="text/css" href="' . self::$module->getUrl('lib/jquery-ui.min.css') . '" />
             <link rel="stylesheet" type="text/css" href="' . self::$module->getUrl('lib/jquery-ui-timepicker-addon.css') . '" />
-            <link rel="stylesheet" type="text/css" href="' . self::$module->getUrl('lib/datatables.min.css') . '" />
+            ' . ($page == "logging_table" ? "" : '<link rel="stylesheet" type="text/css" href="' . self::$module->getUrl('lib/datatables.min.css') . '" />') . '
+
             <link rel="stylesheet" type="text/css" href="' . self::$module->getUrl('userRightsTable.css') . '" />
             <script src="' . self::$module->getUrl('lib/jquery-ui.min.js') . '"></script>
             <script src="' . self::$module->getUrl('lib/jquery-ui-timepicker-addon.js') . '"></script>
-            <script src="' . self::$module->getUrl('lib/datatables.min.js') . '"></script>
+            ' . ($page == "logging_table" ? "" : '<script src="' . self::$module->getUrl('lib/datatables.min.js') . '"></script>') . '
 
     
     <div class="projhdr">

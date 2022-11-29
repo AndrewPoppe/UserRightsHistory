@@ -2,24 +2,22 @@
 
 // TODO: Implement some kind of authentication - based on User Rights permissions?
 
-$token = $module->getCSRFToken();
+$params = [
+    "search" => filter_input(INPUT_GET, 'search', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY),
+    "start" => filter_input(INPUT_GET, "start", FILTER_VALIDATE_INT),
+    "length" => filter_input(INPUT_GET, "length", FILTER_VALIDATE_INT),
+    "order" => filter_input(INPUT_GET, "order", FILTER_DEFAULT, FILTER_REQUIRE_ARRAY),
+    "columns" => filter_input(INPUT_GET, "columns", FILTER_DEFAULT, FILTER_REQUIRE_ARRAY)
+];
 
-//$module->log('test', array('post' => json_encode($_POST), 'get' => json_encode($_GET), 'request' => json_encode($_REQUEST)));
-
-$user = $module->getUser();
-$username = $user->getUsername();
-
-$logs = $module->getLogs($_GET);
+[$logs, $recordsFiltered] = $module->getLogs($params);
 $total = $module->getTotalLogCount();
-$module->log('logtotal', ["total" => $total]);
-
-//$module->log('logs', array('logs' => json_encode($logs)));
 
 $response = array(
     "data" => $logs,
-    "draw" => $_GET["draw"],
+    "draw" => filter_input(INPUT_GET, "draw", FILTER_VALIDATE_INT),
     "recordsTotal" => $total,
-    "recordsFiltered" => $total
+    "recordsFiltered" => $recordsFiltered
 );
 
 echo json_encode($response);

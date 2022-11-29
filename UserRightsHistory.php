@@ -777,67 +777,75 @@ class UserRightsHistory extends AbstractExternalModule
         try {
             $start = intval($params["start"]);
             $length = intval($params["length"]);
+
+            $searchTerm = $params["search"]["value"] ?? "";
+            $searchText = $searchTerm === "" ? "" : " and (timestamp like '%" . $searchTerm . "%' or message like '%" . $searchTerm . "%' or current like '%" . $searchTerm . "%' or previous like '%" . $searchTerm . "%')";
+
+            $orderTerm = "";
+            foreach ($params["order"] as $index => $order) {
+                $column = $params["columns"][intval($order["column"])]["data"];
+                $direction = $order["dir"] === "asc" ? "asc" : "desc";
+                if ($index === 0) {
+                    $orderTerm .= " order by ";
+                }
+                $orderTerm .= $column . " " . $direction;
+                if ($index !== sizeof($params["order"]) - 1) {
+                    $orderTerm .= ", ";
+                }
+            }
+            if ($orderTerm === "") {
+                $orderTerm = " order by timestamp desc";
+            }
+
+            $queryText =  "select timestamp, message, current, previous where (project_id = ? or project_id is null) and message in (
+                'rights', 
+                'instruments',
+                'roles',
+                'rights',
+                'system',
+                'dags',
+                'project_info',
+                'users'
+            )" . $searchText . $orderTerm . " limit " . $start . "," . $length;
+            $countText =  "select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
+                'rights', 
+                'instruments',
+                'roles',
+                'rights',
+                'system',
+                'dags',
+                'project_info',
+                'users'
+            )" . $searchText;
+
             $startTime = microtime();
             $queryResult = $this->queryLogs(
-                "select timestamp, message, current, previous where (project_id = ? or project_id is null) and message in (
-                    'rights', 
-                    'instruments',
-                    'roles',
-                    'rights',
-                    'system',
-                    'dags',
-                    'project_info',
-                    'users'
-                ) order by timestamp desc limit " . $start . "," . $length,
+                $queryText,
                 [
                     $this->getProjectId(), // project id
                 ]
             );
+            $countResult = $this->queryLogs(
+                $countText,
+                [
+                    $this->getProjectId()
+                ]
+            );
+            $rowsTotal = $countResult->fetch_assoc()["ts"];
             $endTime = microtime();
             $logs = array();
             while ($row = $queryResult->fetch_assoc()) {
-                $row["previous_formatted"] = $this->syntaxHighlight($row["previous"]);
-                $row["current_formatted"] = $this->syntaxHighlight($row["current"]);
+                $row["previous"] = $this->syntaxHighlight($row["previous"]);
+                $row["current"] = $this->syntaxHighlight($row["current"]);
                 $logs[] = $row;
             }
             $endTime2 = microtime();
             $this->log("process time: get logs", ["time" => $endTime - $startTime]);
             $this->log("process time: format logs", ["time" => $endTime2 - $endTime]);
-            return $logs;
+            return [$logs, $rowsTotal];
         } catch (\Exception $e) {
             $this->log('Error getting logs', ["error" => $e->getMessage()]);
         }
-    }
-
-    function showLoggingTable()
-    {
-        var_dump(time());
-        $logs = $this->getLogs();
-        var_dump(time());
-        echo "<form style='display:none;'></form>";
-        return;
-?>
-        <table id="history_logging_table" style="display: none;">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Message</th>
-                    <th>Previous Value</th>
-                    <th>New Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($logs as $log) { ?>
-                    <tr>
-                        <td><?= $log["timestamp"] ?></td>
-                        <td><?= $log["message"] ?></td>
-                        <td><?= $log["previous_formatted"] ?></td>
-                        <td><?= $log["current_formatted"] ?></td>
-                    </tr>
-                <?php } ?>
-            </tbody>
-        </table>
-<?php
     }
 
 
