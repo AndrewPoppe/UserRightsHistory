@@ -1,13 +1,48 @@
 <?php
 $start = time();
-$module->showPageHeader("logging_table", $description);
+$module->showPageHeader("logging_table");
 $module->initializeJavascriptModuleObject();
-$initialLogs = $module->getLogs(["start" => 0, "length" => 10]);
+[$initialLogs, $recordsFiltered] = $module->getLogs([
+    "start" => 0,
+    "length" => 10,
+    "search" => [
+        "value" => "",
+        "regex" => false
+    ],
+    "order" => [
+        [
+            "column" => 0,
+            "dir" => "desc"
+        ]
+    ],
+    "columns" => [
+        [
+            "data" => "timestamp"
+        ]
+    ]
+]);
 //$module->showLoggingTable();
 //$end = time();
 //echo $end - $start;
 
 ?>
+<script>
+    Array.from(document.styleSheets).forEach(ss => {
+        try {
+            if (!ss.href.includes('https://cdn.datatables.net')) {
+                return Array.from(ss.cssRules).forEach(rule => {
+                    if (rule.cssText.toLowerCase().includes('datatable')) {
+                        rule.style.removeProperty('all')
+                    }
+                })
+            }
+        } catch (err) {
+
+        }
+    })
+</script>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.css" />
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.js"></script>
 <form style="display:none;"></form>
 <script type="text/javascript">
     const module = <?= $module->getJavascriptModuleObjectName() ?>;
@@ -20,12 +55,6 @@ $initialLogs = $module->getLogs(["start" => 0, "length" => 10]);
             deferLoading: totalRecords,
             ajax: {
                 url: module.getUrl('logging_table_ajax.php'),
-                //type: 'POST',
-                // redcap_csrf_token: token,
-                token: token,
-                data: {
-                    token2: token
-                }
             },
             columns: [{
                     data: 'timestamp'
@@ -34,12 +63,15 @@ $initialLogs = $module->getLogs(["start" => 0, "length" => 10]);
                     data: 'message'
                 },
                 {
-                    data: 'previous_formatted'
+                    data: 'previous'
                 },
                 {
-                    data: 'current_formatted'
+                    data: 'current'
                 },
             ],
+            order: [
+                [0, 'desc']
+            ]
         });
     });
 </script>
@@ -62,8 +94,8 @@ $initialLogs = $module->getLogs(["start" => 0, "length" => 10]);
             <tr>
                 <td><?= $log["timestamp"] ?></td>
                 <td><?= $log["message"] ?></td>
-                <td><?= $log["previous_formatted"] ?></td>
-                <td><?= $log["current_formatted"] ?></td>
+                <td><?= $log["previous"] ?></td>
+                <td><?= $log["current"] ?></td>
             </tr>
         <?php } ?>
     </tbody>
@@ -87,6 +119,10 @@ $initialLogs = $module->getLogs(["start" => 0, "length" => 10]);
 
     .key {
         color: darkred;
+    }
+
+    tr.odd {
+        background-color: transparent !important;
     }
 </style>
 <?php
