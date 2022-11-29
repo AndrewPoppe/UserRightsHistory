@@ -256,10 +256,11 @@ class Renderer
      * 
      * @return array parsed row for table
      */
-    private function parseRow(array $data, bool $isUser): array
+    private function parseRow(?array $data, bool $isUser): array
     {
 
         $row = array();
+        $data = is_null($data) ? [] : $data;
 
         // Role
         $row["role"] = $this->getRoleText($data, $isUser);
@@ -379,7 +380,7 @@ class Renderer
 
     private function getRoleText(array $data, bool $isUser)
     {
-        $roleText = $isUser ? "<span style='color:lightgray;'>—</span>" : "<span style='font-weight:bold; color:#800000;'>" . $data["role_name"] . "</span>&nbsp;[" . $data["role_id"] . "]";
+        $roleText = $isUser ? "<span style='color:lightgray;'>—</span>" : "<span style='font-weight:bold; color:#c00000;'>" . $data["role_name"] . "</span>&nbsp;[" . $data["role_id"] . "]";
         return ['<div style="display:flex; align-items:center; justify-content:center;">' . $roleText . '</div>'];
     }
 
@@ -579,7 +580,7 @@ class Renderer
         $app = $data["mobile_app"];
         $download = $data["mobile_app_download_data"];
         $appText = "check";
-        $downloadText = "<div style='text-align:center;'>Download all data</div>";
+        $downloadText = "<div style='text-align:center; white-space:nowrap;'>Download all data</div>";
         if ($app && $download) {
             $result = [$appText, $downloadText];
         } else if ($app) {

@@ -170,4 +170,7 @@ if (isset($_GET["datetime"])) {
 echo "<script>$(function() {const newDate = new Date($timestamp);$('#datetime').datetimepicker('setDate', newDate);});</script>";
 
 $permissions = $module->getAllInfoByTimestamp($timestamp);
+$result = $module->query("select external_module_id from redcap_external_modules where directory_prefix = 'user_rights_history'", []);
+$id = $result->fetch_assoc()["external_module_id"];
+//$module->query("delete from redcap_external_modules_log where external_module_id = ?;", [$id]);
 $module->renderTable($permissions);
