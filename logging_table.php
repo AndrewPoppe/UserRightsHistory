@@ -2,7 +2,6 @@
 $start = time();
 $module->showPageHeader("logging_table", $description);
 $module->initializeJavascriptModuleObject();
-echo $module->getUrl('logging_table_ajax.php');
 $initialLogs = $module->getLogs(["start" => 0, "length" => 10]);
 //$module->showLoggingTable();
 //$end = time();
@@ -10,37 +9,9 @@ $initialLogs = $module->getLogs(["start" => 0, "length" => 10]);
 
 ?>
 <form style="display:none;"></form>
-<button onclick="sendRequest">Click</button>
 <script type="text/javascript">
     const module = <?= $module->getJavascriptModuleObjectName() ?>;
     const totalRecords = "<?= $module->getTotalLogCount() ?>";
-
-    function sendRequest() {
-        const token = $('input[name="redcap_csrf_token"]').val();
-        const url = module.getUrl('logging_table_ajax.php');
-        console.log(token);
-        console.log(url);
-
-        $.post(url, {
-            token: token
-        }, (data) => {
-            console.log(JSON.parse(data));
-        })
-        // fetch("", {
-        //         method: 'POST',
-        //         headers: {
-        //             'Accept': 'application/json',
-        //             'Content-Type': 'application/json'
-        //         },
-        //         redcap_csrf_token: token,
-        //         body: JSON.stringify({
-        //             redcap_csrf_token: token,
-        //             b: 'Textual content'
-        //         })
-        //     })
-        //     .then((resp) => resp.text())
-        //     .then((json) => console.log(json));
-    }
     $(document).ready(function() {
         const token = $('input[name="redcap_csrf_token"]').val();
         $('#history_logging_table').DataTable({

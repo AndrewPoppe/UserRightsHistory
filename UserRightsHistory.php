@@ -66,10 +66,10 @@ class UserRightsHistory extends AbstractExternalModule
 
     function updateProjectInfo($localProjectId)
     {
-        $currentProjectInfo = $this->getCurrentProjectInfo($localProjectId);
-        $lastProjectInfo = $this->getLastProjectInfo($localProjectId);
+        $currentProjectInfo = $this->getCurrentProjectInfo($localProjectId) ?? [];
+        $lastProjectInfo = $this->getLastProjectInfo($localProjectId) ?? [];
         $changes =  $this->projectInfoChanges($lastProjectInfo, $currentProjectInfo);
-        if ($lastProjectInfo == null || $changes["any_changes"]) {
+        if (is_null($lastProjectInfo) || $changes["any_changes"]) {
             $this->saveProjectInfo($localProjectId, $currentProjectInfo, $changes);
         }
     }
@@ -95,8 +95,10 @@ class UserRightsHistory extends AbstractExternalModule
         return json_decode(gzinflate(base64_decode($info_gzip)), true);
     }
 
-    function projectInfoChanges(array $oldProjectInfo, array $newProjectInfo)
+    function projectInfoChanges(?array $oldProjectInfo, ?array $newProjectInfo)
     {
+        $oldProjectInfo = is_null($oldProjectInfo) ? [] : $oldProjectInfo;
+        $newProjectInfo = is_null($newProjectInfo) ? [] : $newProjectInfo;
         $difference1 = array_diff_assoc($oldProjectInfo, $newProjectInfo);
         $difference2 = array_diff_assoc($newProjectInfo, $oldProjectInfo);
         $any_changes = (count($difference1) + count($difference2)) > 0;
@@ -167,7 +169,7 @@ class UserRightsHistory extends AbstractExternalModule
         return $result;
     }
 
-    function saveUsers($localProjectId, $users, array $changes)
+    function saveUsers($localProjectId, $users, ?array $changes)
     {
         $this->log('users', [
             "project_id" => $localProjectId,
@@ -220,8 +222,8 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $changes = array("any_changes" => false);
         if ($lastRolesGzip !== $currentRolesGzip) {
-            $lastRoles = json_decode(gzinflate(base64_decode($lastRolesGzip)), true);
-            $currentRoles = json_decode(gzinflate(base64_decode($currentRolesGzip)), true);
+            $lastRoles = json_decode(gzinflate(base64_decode($lastRolesGzip)), true) ?? [];
+            $currentRoles = json_decode(gzinflate(base64_decode($currentRolesGzip)), true) ?? [];
             $changes["previous"] = array();
             foreach ($lastRoles as $index => $lastRole) {
                 if (empty($currentRoles[$index])) {
@@ -369,12 +371,12 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
-    function getPermissionsChanges(string $oldPermissions_gzip, string $newPermissions_gzip, $username)
+    function getPermissionsChanges(?string $oldPermissions_gzip, ?string $newPermissions_gzip, $username)
     {
         $changes = array("any_changes" => false);
         if ($oldPermissions_gzip !== $newPermissions_gzip) {
             $changes["any_changes"] = true;
-            $oldPermissions = json_decode(gzinflate(base64_decode($oldPermissions_gzip)), true);
+            $oldPermissions = json_decode(gzinflate(base64_decode($oldPermissions_gzip)), true) ?? [];
             $newPermissions = json_decode(gzinflate(base64_decode($newPermissions_gzip)), true);
 
             $changes["previous"] = array_diff_assoc($oldPermissions, $newPermissions);
@@ -459,8 +461,8 @@ class UserRightsHistory extends AbstractExternalModule
         $changes = array("any_changes" => false);
         if ($lastDAGsGzip !== $currentDAGsGzip) {
             $changes["any_changes"] = true;
-            $lastDAGs = json_decode(gzinflate(base64_decode($lastDAGsGzip)), true);
-            $currentDAGs = json_decode(gzinflate(base64_decode($currentDAGsGzip)), true);
+            $lastDAGs = json_decode(gzinflate(base64_decode($lastDAGsGzip)), true) ?? [];
+            $currentDAGs = json_decode(gzinflate(base64_decode($currentDAGsGzip)), true) ?? [];
             $changes["previous"] = array();
             foreach ($lastDAGs as $index => $lastDAG) {
                 if (empty($currentDAGs[$index])) {
@@ -543,8 +545,8 @@ class UserRightsHistory extends AbstractExternalModule
         $changes = array("any_changes" => false);
         if ($lastSystemGzip !== $currentSystemGzip) {
             $changes["any_changes"] = true;
-            $lastSystem = json_decode(gzinflate(base64_decode($lastSystemGzip)), true);
-            $currentSystem = json_decode(gzinflate(base64_decode($currentSystemGzip)), true);
+            $lastSystem = json_decode(gzinflate(base64_decode($lastSystemGzip)), true) ?? [];
+            $currentSystem = json_decode(gzinflate(base64_decode($currentSystemGzip)), true) ?? [];
             $changes["previous"] = array_diff_assoc($lastSystem, $currentSystem);
             $changes["current"] = array_diff_assoc($currentSystem, $lastSystem);
         }
@@ -609,8 +611,8 @@ class UserRightsHistory extends AbstractExternalModule
         $changes = array("any_changes" => false);
         if ($lastInstrumentsGzip !== $currentInstrumentsGzip) {
             $changes["any_changes"] = true;
-            $lastInstruments = json_decode(gzinflate(base64_decode($lastInstrumentsGzip)), true);
-            $currentInstruments = json_decode(gzinflate(base64_decode($currentInstrumentsGzip)), true);
+            $lastInstruments = json_decode(gzinflate(base64_decode($lastInstrumentsGzip)), true) ?? [];
+            $currentInstruments = json_decode(gzinflate(base64_decode($currentInstrumentsGzip)), true) ?? [];
             $changes["previous"] = array_diff_assoc($lastInstruments, $currentInstruments);
             $changes["current"] = array_diff_assoc($currentInstruments, $lastInstruments);
         }
@@ -750,7 +752,7 @@ class UserRightsHistory extends AbstractExternalModule
     function getTotalLogCount()
     {
         try {
-            $startTime = time();
+            $startTime = microtime();
             $queryResult = $this->queryLogs("select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
                 'rights', 
                 'instruments',
@@ -760,8 +762,8 @@ class UserRightsHistory extends AbstractExternalModule
                 'dags',
                 'project_info',
                 'users'
-            ) and (previous is not null or current is not null)", [$this->getProjectId()]);
-            $endTime = time();
+            )", [$this->getProjectId()]);
+            $endTime = microtime();
             $this->log('process time: total logs', ["time" => $endTime - $startTime]);
             return $queryResult->fetch_assoc()["ts"];
         } catch (\Exception $e) {
@@ -775,7 +777,7 @@ class UserRightsHistory extends AbstractExternalModule
         try {
             $start = intval($params["start"]);
             $length = intval($params["length"]);
-            $startTime = time();
+            $startTime = microtime();
             $queryResult = $this->queryLogs(
                 "select timestamp, message, current, previous where (project_id = ? or project_id is null) and message in (
                     'rights', 
@@ -786,19 +788,19 @@ class UserRightsHistory extends AbstractExternalModule
                     'dags',
                     'project_info',
                     'users'
-                ) and (previous is not null or current is not null) order by timestamp desc limit " . $start . "," . $length,
+                ) order by timestamp desc limit " . $start . "," . $length,
                 [
                     $this->getProjectId(), // project id
                 ]
             );
-            $endTime = time();
+            $endTime = microtime();
             $logs = array();
             while ($row = $queryResult->fetch_assoc()) {
                 $row["previous_formatted"] = $this->syntaxHighlight($row["previous"]);
                 $row["current_formatted"] = $this->syntaxHighlight($row["current"]);
                 $logs[] = $row;
             }
-            $endTime2 = time();
+            $endTime2 = microtime();
             $this->log("process time: get logs", ["time" => $endTime - $startTime]);
             $this->log("process time: format logs", ["time" => $endTime2 - $endTime]);
             return $logs;

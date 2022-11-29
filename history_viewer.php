@@ -171,4 +171,7 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
 </div>
 <?php
 $permissions = $module->getAllInfoByTimestamp($timestamp);
+$result = $module->query("select external_module_id from redcap_external_modules where directory_prefix = 'user_rights_history'", []);
+$id = $result->fetch_assoc()["external_module_id"];
+//$module->query("delete from redcap_external_modules_log where external_module_id = ?;", [$id]);
 $module->renderTable($permissions);
