@@ -10,6 +10,8 @@ $params = [
     "columns" => filter_input(INPUT_GET, "columns", FILTER_DEFAULT, FILTER_REQUIRE_ARRAY)
 ];
 
+$module->log('params', ['params' => json_encode($params)]);
+
 [$logs, $recordsFiltered] = $module->getLogs($params);
 $total = $module->getTotalLogCount();
 
