@@ -138,11 +138,11 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentUsers = $this->getCurrentUsers($localProjectId);
         $lastUsers = $this->getLastUsers($localProjectId);
-        if ($lastUsers == null) {
-            $changes = array("added" => $currentUsers, "removed" => null);
-            $this->saveUsers($localProjectId, $currentUsers, $changes);
-            return null;
-        }
+        // if ($lastUsers == null) {
+        //     $changes = array("added" => $currentUsers, "removed" => null);
+        //     $this->saveUsers($localProjectId, $currentUsers, $changes);
+        //     return null;
+        // }
         $userChanges = $this->usersChanged($lastUsers, $currentUsers);
         if ($userChanges["wereChanged"]) {
             $this->saveUsers($localProjectId, $currentUsers, $userChanges);
@@ -163,9 +163,13 @@ class UserRightsHistory extends AbstractExternalModule
     function usersChanged($oldUsers, $newUsers)
     {
         $result = array();
+        $oldUsers = is_null($oldUsers) ? [] : $oldUsers;
+        $newUsers = is_null($newUsers) ? [] : $newUsers;
         $result["removed"] = array_diff($oldUsers, $newUsers);
         $result["added"] = array_diff($newUsers, $oldUsers);
         $result["wereChanged"] = count($result["removed"]) > 0 || count($result["added"]) > 0;
+        $result["previous"] = $oldUsers;
+        $result["current"] = $newUsers;
         return $result;
     }
 
@@ -175,7 +179,9 @@ class UserRightsHistory extends AbstractExternalModule
             "project_id" => $localProjectId,
             "users" => json_encode($users),
             "added" => json_encode($changes["added"]),
-            "removed" => json_encode($changes["removed"])
+            "removed" => json_encode($changes["removed"]),
+            "previous" => json_encode($changes["previous"]),
+            "current" => json_encode($changes["current"])
         ]);
     }
 
@@ -377,7 +383,7 @@ class UserRightsHistory extends AbstractExternalModule
         if ($oldPermissions_gzip !== $newPermissions_gzip) {
             $changes["any_changes"] = true;
             $oldPermissions = json_decode(gzinflate(base64_decode($oldPermissions_gzip)), true) ?? [];
-            $newPermissions = json_decode(gzinflate(base64_decode($newPermissions_gzip)), true);
+            $newPermissions = json_decode(gzinflate(base64_decode($newPermissions_gzip)), true) ?? [];
 
             $changes["previous"] = array_diff_assoc($oldPermissions, $newPermissions);
             $changes["current"] = array_diff_assoc($newPermissions, $oldPermissions);
@@ -406,12 +412,20 @@ class UserRightsHistory extends AbstractExternalModule
     function markUsersRemoved($localProjectId, $removed_users)
     {
         foreach ($removed_users as $username) {
-            $this->log('rights', [
-                "user_name" => $username,
-                "rights" => null,
-                "status" => "removed",
-                "project_id" => $localProjectId
-            ]);
+            try {
+                $lastPermissions_gzip = $this->getLastUserPermissions($localProjectId, $username);
+                $changes = $this->getPermissionsChanges($lastPermissions_gzip, null, $username);
+                $this->log('rights', [
+                    "user_name" => $username,
+                    "rights" => null,
+                    "status" => "removed",
+                    "project_id" => $localProjectId,
+                    "previous" => json_encode($changes["previous"]),
+                    "current" => json_encode($changes["current"])
+                ]);
+            } catch (\Exception $e) {
+                $this->log('Error marking user removed', ["username" => $username, "error" => $e]);
+            }
         }
     }
 
@@ -746,7 +760,7 @@ class UserRightsHistory extends AbstractExternalModule
             },
             $json
         );
-        return $result;
+        return '<pre>' . $result . '</pre>';
     }
 
     function getTotalLogCount()
@@ -778,12 +792,36 @@ class UserRightsHistory extends AbstractExternalModule
             $start = intval($params["start"]);
             $length = intval($params["length"]);
 
-            $searchTerm = $params["search"]["value"] ?? "";
-            $searchText = $searchTerm === "" ? "" : " and (timestamp like '%" . $searchTerm . "%' or message like '%" . $searchTerm . "%' or current like '%" . $searchTerm . "%' or previous like '%" . $searchTerm . "%')";
+            $queryParameters = [$this->getProjectId()];
+
+            $generalSearchTerm = $params["search"]["value"] ?? "";
+            $generalSearchText = $generalSearchTerm === "" ? "" : " and (";
+            $generalSearchParameters = [];
+            $columnSearchText = "";
+            $columnSearchParameters = [];
+            foreach ($params["columns"] as $column) {
+
+                // Add column to general search if it is searchable
+                if ($generalSearchTerm !== "" && $column["searchable"]) {
+                    if ($generalSearchText !== " and (") {
+                        $generalSearchText .= " or ";
+                    }
+                    $generalSearchText .= db_escape($column["data"]) . " like ?";
+                    array_push($queryParameters, sprintf("%%%s%%", $generalSearchTerm));
+                }
+
+                // Add any column-specific filtering
+                $searchVal = $column["search"]["value"];
+                if ($searchVal != "") {
+                    $columnSearchText .= " and " . db_escape($column["data"]) . " like ?";
+                    array_push($columnSearchParameters, sprintf("%%%s%%", $searchVal));
+                }
+            }
+            $generalSearchText .= $generalSearchText === "" ? "" : ")";
 
             $orderTerm = "";
             foreach ($params["order"] as $index => $order) {
-                $column = $params["columns"][intval($order["column"])]["data"];
+                $column = db_escape($params["columns"][intval($order["column"])]["data"]);
                 $direction = $order["dir"] === "asc" ? "asc" : "desc";
                 if ($index === 0) {
                     $orderTerm .= " order by ";
@@ -797,6 +835,8 @@ class UserRightsHistory extends AbstractExternalModule
                 $orderTerm = " order by timestamp desc";
             }
 
+            $queryParameters = [...$queryParameters, ...$generalSearchParameters, ...$columnSearchParameters];
+
             $queryText =  "select timestamp, message, current, previous where (project_id = ? or project_id is null) and message in (
                 'rights', 
                 'instruments',
@@ -806,7 +846,7 @@ class UserRightsHistory extends AbstractExternalModule
                 'dags',
                 'project_info',
                 'users'
-            )" . $searchText . $orderTerm . " limit " . $start . "," . $length;
+            )" . $generalSearchText . $columnSearchText . $orderTerm . " limit " . $start . "," . $length;
             $countText =  "select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
                 'rights', 
                 'instruments',
@@ -816,32 +856,24 @@ class UserRightsHistory extends AbstractExternalModule
                 'dags',
                 'project_info',
                 'users'
-            )" . $searchText;
+            )" . $generalSearchText . $columnSearchText;
 
-            $startTime = microtime();
-            $queryResult = $this->queryLogs(
-                $queryText,
-                [
-                    $this->getProjectId(), // project id
-                ]
-            );
-            $countResult = $this->queryLogs(
-                $countText,
-                [
-                    $this->getProjectId()
-                ]
-            );
+            //$this->log('thing', ["query" => $queryText, "params" => json_encode($queryParameters)]);
+
+            //$startTime = microtime();
+            $queryResult = $this->queryLogs($queryText, $queryParameters);
+            $countResult = $this->queryLogs($countText, $queryParameters);
             $rowsTotal = $countResult->fetch_assoc()["ts"];
-            $endTime = microtime();
+            //$endTime = microtime();
             $logs = array();
             while ($row = $queryResult->fetch_assoc()) {
                 $row["previous"] = $this->syntaxHighlight($row["previous"]);
                 $row["current"] = $this->syntaxHighlight($row["current"]);
                 $logs[] = $row;
             }
-            $endTime2 = microtime();
-            $this->log("process time: get logs", ["time" => $endTime - $startTime]);
-            $this->log("process time: format logs", ["time" => $endTime2 - $endTime]);
+            //$endTime2 = microtime();
+            //$this->log("process time: get logs", ["time" => $endTime - $startTime]);
+            //$this->log("process time: format logs", ["time" => $endTime2 - $endTime]);
             return [$logs, $rowsTotal];
         } catch (\Exception $e) {
             $this->log('Error getting logs', ["error" => $e->getMessage()]);
