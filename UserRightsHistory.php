@@ -115,7 +115,8 @@ class UserRightsHistory extends AbstractExternalModule
             "project_id" => $localProjectId,
             "info" => base64_encode(gzdeflate(json_encode($newProjectInfo), 9)),
             "previous" => json_encode($changes["previous"]),
-            "current" => json_encode($changes["current"])
+            "current" => json_encode($changes["current"]),
+            "event" => sizeof($changes["previous"]) === 0 ? "Initialize URH Module" : "Update Project"
         ]);
     }
 
@@ -175,13 +176,21 @@ class UserRightsHistory extends AbstractExternalModule
 
     function saveUsers($localProjectId, $users, ?array $changes)
     {
+        $event = "";
+        if (sizeof($changes["added"]) > 0) {
+            $event .= "Add User(s)";
+        }
+        if (sizeof($changes["removed"]) > 0) {
+            $event .= (sizeof($changes["added"]) > 0) ? "and Removed User(s)" : "Removed User(s)";
+        }
         $this->log('users', [
             "project_id" => $localProjectId,
             "users" => json_encode($users),
             "added" => json_encode($changes["added"]),
             "removed" => json_encode($changes["removed"]),
             "previous" => json_encode($changes["previous"]),
-            "current" => json_encode($changes["current"])
+            "current" => json_encode($changes["current"]),
+            "event" => $event
         ]);
     }
 
