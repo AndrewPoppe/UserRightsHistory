@@ -21,6 +21,14 @@ $module->initializeJavascriptModuleObject();
         ]
     ]
 ]);
+
+$event_types = [
+    "Initialize URH Module",
+    "Update Project",
+    "Added User(s)",
+    "Removed User(s)",
+    "Added User(s) and Removed User(s)"
+];
 //$module->showLoggingTable();
 //$end = time();
 //echo $end - $start;
