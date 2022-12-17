@@ -25,9 +25,9 @@ $module->initializeJavascriptModuleObject();
 $event_types = [
     "Initialize URH Module",
     "Update Project",
-    "Added User(s)",
-    "Removed User(s)",
-    "Added User(s) and Removed User(s)"
+    "Add User(s)",
+    "Remove User(s)",
+    "Add User(s) and Remove User(s)"
 ];
 //$module->showLoggingTable();
 //$end = time();
@@ -51,22 +51,34 @@ $event_types = [
 </script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.css" />
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.js"></script>
-<form style="display:none;"></form>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.2/moment.min.js"></script>
+<!--<form style="display:none;"></form>-->
 <script type="text/javascript">
     const module = <?= $module->getJavascriptModuleObjectName() ?>;
     const totalRecords = "<?= $module->getTotalLogCount() ?>";
     $(document).ready(function() {
         const token = $('input[name="redcap_csrf_token"]').val();
-        $('#history_logging_table tfoot th').each(function() {
+        $('#history_logging_table tfoot th').each(function(i, el) {
             var title = $(this).text();
-            $(this).html('<input type="text" placeholder="Search ' + title + '" />');
+            if (title === "Timestamp") {
+                $(this).html('<input class="timestamp min" type="text" placeholder="Min ' + title + '" /><br><input class="timestamp max" type="text" placeholder="Max ' + title + '" />');
+            } else {
+                $(this).html('<input type="text" placeholder="Search ' + title + '" />');
+            }
         });
+        DataTable.datetime('YYYY-MM-DD HH:mm:ss');
         $('#history_logging_table').DataTable({
             processing: true,
             serverSide: true,
             deferLoading: totalRecords,
             ajax: {
                 url: module.getUrl('logging_table_ajax.php'),
+                type: 'POST',
+                data: function(dtParams) {
+                    dtParams.minDate = $('.timestamp.min').val();
+                    dtParams.maxDate = $('.timestamp.max').val();
+                    return dtParams;
+                }
             },
             columns: [{
                     data: 'timestamp'
@@ -90,9 +102,26 @@ $event_types = [
                     .columns()
                     .every(function() {
                         var that = this;
-                        $('input', this.footer()).on('keyup change clear', function() {
+                        $('input', this.footer()).not('.timestamp').on('keyup change clear', function() {
                             if (that.search() !== this.value) {
                                 that.search(this.value).draw();
+                            }
+                        });
+                        // new DateTime($('input.timestamp.min', this.footer()), {
+                        //     format: 'YYYY-MM-DD HH:mm:ss'
+                        // });
+                        // new DateTime($('input.timestamp.max', this.footer()), {
+                        //     format: 'YYYY-MM-DD HH:mm:ss'
+                        // });
+                        $('input.timestamp.min', this.footer()).datetimepicker({
+                            changeMonth: true,
+                            changeYear: true,
+                            yearRange: '-100:+100',
+                            dateFormat: 'yy-mm-dd',
+                            timeFormat: 'HH:mm:ss',
+                            onClose: function() {
+                                console.log($(this).val());
+                                that.search('').draw();
                             }
                         });
                     });
@@ -161,6 +190,10 @@ $event_types = [
     pre {
         background-color: inherit !important;
         border: none !important;
+    }
+
+    .ui-timepicker-div dl dd {
+        margin: 14px 10px 10px 40%;
     }
 </style>
 <?php
