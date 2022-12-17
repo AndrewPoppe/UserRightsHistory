@@ -181,7 +181,7 @@ class UserRightsHistory extends AbstractExternalModule
             $event .= "Add User(s)";
         }
         if (sizeof($changes["removed"]) > 0) {
-            $event .= (sizeof($changes["added"]) > 0) ? "and Removed User(s)" : "Removed User(s)";
+            $event .= (sizeof($changes["added"]) > 0) ? "and Remove User(s)" : "Remove User(s)";
         }
         $this->log('users', [
             "project_id" => $localProjectId,
