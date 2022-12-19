@@ -782,7 +782,7 @@ class UserRightsHistory extends AbstractExternalModule
             foreach ($params["columns"] as $column) {
 
                 // Add column to general search if it is searchable
-                if ($generalSearchTerm !== "" && $column["searchable"]) {
+                if ($generalSearchTerm !== "" && $column["searchable"] == "true") {
                     if ($generalSearchText !== " and (") {
                         $generalSearchText .= " or ";
                     }
@@ -798,6 +798,18 @@ class UserRightsHistory extends AbstractExternalModule
                 }
             }
             $generalSearchText .= $generalSearchText === "" ? "" : ")";
+
+            // Timestamp filtering
+            $timestampFilterText = "";
+            $timestampFilterParameters = [];
+            if ($params["minDate"] != "") {
+                $timestampFilterText .= " and timestamp >= ?";
+                $timestampFilterParameters[] = $params["minDate"];
+            }
+            if ($params["maxDate"] != "") {
+                $timestampFilterText .= " and timestamp <= ?";
+                $timestampFilterParameters[] = $params["maxDate"];
+            }
 
             $orderTerm = "";
             foreach ($params["order"] as $index => $order) {
@@ -815,7 +827,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $orderTerm = " order by timestamp desc";
             }
 
-            $queryParameters = [...$queryParameters, ...$generalSearchParameters, ...$columnSearchParameters];
+            $queryParameters = [...$queryParameters, ...$generalSearchParameters, ...$columnSearchParameters, ...$timestampFilterParameters];
 
             $queryText =  "select timestamp, message, current, previous where (project_id = ? or project_id is null) and message in (
                 'rights', 
@@ -826,7 +838,7 @@ class UserRightsHistory extends AbstractExternalModule
                 'dags',
                 'project_info',
                 'users'
-            )" . $generalSearchText . $columnSearchText . $orderTerm . " limit " . $start . "," . $length;
+            )" . $generalSearchText . $columnSearchText . $timestampFilterText . $orderTerm . " limit " . $start . "," . $length;
             $countText =  "select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
                 'rights', 
                 'instruments',
@@ -836,9 +848,9 @@ class UserRightsHistory extends AbstractExternalModule
                 'dags',
                 'project_info',
                 'users'
-            )" . $generalSearchText . $columnSearchText;
+            )" . $generalSearchText . $columnSearchText . $timestampFilterText;
 
-            //$this->log('thing', ["query" => $queryText, "params" => json_encode($queryParameters)]);
+            $this->log('thing', ["query" => $queryText, "params" => json_encode($queryParameters)]);
 
             //$startTime = microtime();
             $queryResult = $this->queryLogs($queryText, $queryParameters);

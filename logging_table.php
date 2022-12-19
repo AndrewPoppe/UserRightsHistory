@@ -81,7 +81,8 @@ $event_types = [
                 }
             },
             columns: [{
-                    data: 'timestamp'
+                    data: 'timestamp',
+                    searchable: false
                 },
                 {
                     data: 'message'
@@ -113,14 +114,19 @@ $event_types = [
                         // new DateTime($('input.timestamp.max', this.footer()), {
                         //     format: 'YYYY-MM-DD HH:mm:ss'
                         // });
-                        $('input.timestamp.min', this.footer()).datetimepicker({
+                        $('input.timestamp', this.footer()).datetimepicker({
                             changeMonth: true,
                             changeYear: true,
                             yearRange: '-100:+100',
                             dateFormat: 'yy-mm-dd',
                             timeFormat: 'HH:mm:ss',
                             onClose: function() {
-                                console.log($(this).val());
+
+                                if ($(this).val() !== "") {
+                                    const pickerOption = $(this).hasClass("min") ? "minDate" : "maxDate";
+                                    $(this).siblings('input').datetimepicker("option", pickerOption, $(this).val());
+                                }
+
                                 that.search('').draw();
                             }
                         });
