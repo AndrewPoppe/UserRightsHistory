@@ -12,7 +12,6 @@ $params = [
     "maxDate" => filter_input(INPUT_POST, "maxDate", FILTER_DEFAULT)
 ];
 
-$module->log('post', ['post' => json_encode($_POST)]);
 $module->log('params', ['params' => json_encode($params)]);
 
 [$logs, $recordsFiltered] = $module->getLogs($params);
