@@ -740,7 +740,13 @@ class UserRightsHistory extends AbstractExternalModule
             },
             $json
         );
-        return '<pre>' . $result . '</pre>';
+        $lines = substr_count($result, "\n") + 1;
+        if ($lines > 10) {
+            $final_result = '<pre style="display:none;">' . $result . '</pre><button onclick="$(this).siblings(\'pre\').toggle();$(this).text(($(this).text()==\'Show Value\'?\'Hide Value\':\'Show Value\'));">Show Value</button>';
+        } else {
+            $final_result = '<pre>' . $result . '</pre>';
+        }
+        return $final_result;
     }
 
     function getTotalLogCount()
@@ -771,6 +777,8 @@ class UserRightsHistory extends AbstractExternalModule
         try {
             $start = intval($params["start"]);
             $length = intval($params["length"]);
+            $limitTerm = ($length < 0) ? "" : " limit " . $start .  "," . $length;
+
 
             $queryParameters = [$this->getProjectId()];
 
@@ -838,7 +846,7 @@ class UserRightsHistory extends AbstractExternalModule
                 'dags',
                 'project_info',
                 'users'
-            )" . $generalSearchText . $columnSearchText . $timestampFilterText . $orderTerm . " limit " . $start . "," . $length;
+            )" . $generalSearchText . $columnSearchText . $timestampFilterText . $orderTerm . $limitTerm;
             $countText =  "select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
                 'rights', 
                 'instruments',

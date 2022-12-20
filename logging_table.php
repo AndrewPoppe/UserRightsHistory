@@ -61,7 +61,7 @@ $event_types = [
         $('#history_logging_table tfoot th').each(function(i, el) {
             var title = $(this).text();
             if (title === "Timestamp") {
-                $(this).html('<input class="timestamp min" type="text" placeholder="Min ' + title + '" /><br><input class="timestamp max" type="text" placeholder="Max ' + title + '" />');
+                $(this).html('');
             } else {
                 $(this).html('<input type="text" placeholder="Search ' + title + '" />');
             }
@@ -71,6 +71,13 @@ $event_types = [
             processing: true,
             serverSide: true,
             deferLoading: totalRecords,
+            lengthMenu: [
+                [10, 25, 50, 100, -1],
+                [10, 25, 50, 100, 'All']
+            ],
+            scrollX: true,
+            scrollY: 'calc(100vh - ' + $("#history_logging_table").offset().top + 'px - 200px)',
+            scrollCollapse: true,
             ajax: {
                 url: module.getUrl('logging_table_ajax.php'),
                 type: 'POST',
@@ -99,6 +106,7 @@ $event_types = [
             ],
             initComplete: function() {
                 // Apply the search
+                let table = this;
                 this.api()
                     .columns()
                     .every(function() {
@@ -108,29 +116,21 @@ $event_types = [
                                 that.search(this.value).draw();
                             }
                         });
-                        // new DateTime($('input.timestamp.min', this.footer()), {
-                        //     format: 'YYYY-MM-DD HH:mm:ss'
-                        // });
-                        // new DateTime($('input.timestamp.max', this.footer()), {
-                        //     format: 'YYYY-MM-DD HH:mm:ss'
-                        // });
-                        $('input.timestamp', this.footer()).datetimepicker({
-                            changeMonth: true,
-                            changeYear: true,
-                            yearRange: '-100:+100',
-                            dateFormat: 'yy-mm-dd',
-                            timeFormat: 'HH:mm:ss',
-                            onClose: function() {
-
-                                if ($(this).val() !== "") {
-                                    const pickerOption = $(this).hasClass("min") ? "minDate" : "maxDate";
-                                    $(this).siblings('input').datetimepicker("option", pickerOption, $(this).val());
-                                }
-
-                                that.search('').draw();
-                            }
-                        });
                     });
+                $.timepicker.datetimeRange(
+                    $('input.timestamp.min'),
+                    $('input.timestamp.max'), {
+                        changeMonth: true,
+                        changeYear: true,
+                        yearRange: '-100:+100',
+                        dateFormat: 'yy-mm-dd',
+                        timeFormat: 'HH:mm:ss',
+                        minInterval: 0,
+                        onClose: function() {
+                            $('#history_logging_table').DataTable().search('').draw();
+                        }
+                    }
+                )
             },
         });
     });
@@ -140,34 +140,40 @@ $event_types = [
     <br>
     ...
 </p>
-<table id="history_logging_table">
-    <thead>
-        <tr>
-            <th>Timestamp</th>
-            <th>Message</th>
-            <th>Previous Value</th>
-            <th>New Value</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($initialLogs as $log) { ?>
+<div class="container">
+    <div class="options">
+        <input class="timestamp min" type="text" placeholder="Min Timestamp" /><br>
+        <input class="timestamp max" type="text" placeholder="Max Timestamp" />
+    </div>
+    <table id="history_logging_table" class="display compact cell-border" style="width: 100%;">
+        <thead>
             <tr>
-                <td><?= $log["timestamp"] ?></td>
-                <td><?= $log["message"] ?></td>
-                <td><?= $log["previous"] ?></td>
-                <td><?= $log["current"] ?></td>
+                <th>Timestamp</th>
+                <th>Message</th>
+                <th>Previous Value</th>
+                <th>New Value</th>
             </tr>
-        <?php } ?>
-    </tbody>
-    <tfoot>
-        <tr>
-            <th>Timestamp</th>
-            <th>Message</th>
-            <th>Previous Value</th>
-            <th>New Value</th>
-        </tr>
-    </tfoot>
-</table>
+        </thead>
+        <tbody>
+            <?php foreach ($initialLogs as $log) { ?>
+                <tr>
+                    <td><?= $log["timestamp"] ?></td>
+                    <td><?= $log["message"] ?></td>
+                    <td><?= $log["previous"] ?></td>
+                    <td><?= $log["current"] ?></td>
+                </tr>
+            <?php } ?>
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Timestamp</th>
+                <th>Message</th>
+                <th>Previous Value</th>
+                <th>New Value</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
 <style>
     .string {
         color: green;
@@ -200,6 +206,10 @@ $event_types = [
 
     .ui-timepicker-div dl dd {
         margin: 14px 10px 10px 40%;
+    }
+
+    div.container {
+        width: 80%;
     }
 </style>
 <?php
