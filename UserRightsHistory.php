@@ -715,6 +715,17 @@ class UserRightsHistory extends AbstractExternalModule
     // Logging Table Methods //
     ///////////////////////////
 
+
+    function strposX($haystack, $needle, $number = 0)
+    {
+        return strpos(
+            $haystack,
+            $needle,
+            $number > 1 ?
+                $this->strposX($haystack, $needle, $number - 1) + strlen($needle) : 0
+        );
+    }
+
     function syntaxHighlight($json)
     {
         $json = json_encode(json_decode($json), JSON_PRETTY_PRINT);
@@ -742,7 +753,8 @@ class UserRightsHistory extends AbstractExternalModule
         );
         $lines = substr_count($result, "\n") + 1;
         if ($lines > 10) {
-            $final_result = '<pre style="display:none;">' . $result . '</pre><button onclick="$(this).siblings(\'pre\').toggle();$(this).text(($(this).text()==\'Show Value\'?\'Hide Value\':\'Show Value\'));">Show Value</button>';
+            $result_preview = substr($result, 0, $this->strposX($result, "\n", 9));
+            $final_result = '<pre style="display:none;">' . $result . '</pre><pre>' . $result_preview . '<br>...</pre><button onclick="$(this).siblings(\'pre\').toggle();$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\'));">Show More</button>';
         } else {
             $final_result = '<pre>' . $result . '</pre>';
         }

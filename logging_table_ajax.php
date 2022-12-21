@@ -12,7 +12,7 @@ $params = [
     "maxDate" => filter_input(INPUT_POST, "maxDate", FILTER_DEFAULT)
 ];
 
-$module->log('params', ['params' => json_encode($params)]);
+$module->log('params', ['params' => json_encode($params), "post" => json_encode($_POST)]);
 
 [$logs, $recordsFiltered] = $module->getLogs($params);
 $total = $module->getTotalLogCount();
