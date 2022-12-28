@@ -138,13 +138,16 @@ $event_types = [
 </p>
 <div class="container">
     <div class="options">
-        <input class="timestamp min" type="text" placeholder="Min Timestamp" /><br>
-        <input class="timestamp max" type="text" placeholder="Max Timestamp" />
+        
     </div>
     <table id="history_logging_table" class="display compact cell-border" style="width: 100%;">
         <thead>
             <tr>
-                <th>Timestamp</th>
+                <th>
+                    Timestamp
+                    <br><input onclick="event.stopPropagation();" class="timestamp min" type="text" placeholder="Min Timestamp" />
+                    <br><input onclick="event.stopPropagation();" class="timestamp max" type="text" placeholder="Max Timestamp" />
+                </th>
                 <th>Message<br><input onclick="event.stopPropagation();" type="text" placeholder="Search Message"></th>
                 <th>Previous Value<br><input onclick="event.stopPropagation();" type="text" placeholder="Search Previous Value"></th>
                 <th>New Value<br><input onclick="event.stopPropagation();" type="text" placeholder="Search New Value"></th>
@@ -160,14 +163,6 @@ $event_types = [
                 </tr>
             <?php } ?>
         </tbody>
-        <tfoot>
-            <tr>
-                <th>Timestamp</th>
-                <th>Message</th>
-                <th>Previous Value</th>
-                <th>New Value</th>
-            </tr>
-        </tfoot>
     </table>
 </div>
 <style>
@@ -205,7 +200,7 @@ $event_types = [
     }
 
     div.container {
-        width: 80%;
+        width: 100%;
     }
 
     .dataTables_processing {
