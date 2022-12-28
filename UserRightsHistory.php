@@ -754,7 +754,7 @@ class UserRightsHistory extends AbstractExternalModule
         $lines = substr_count($result, "\n") + 1;
         if ($lines > 10) {
             $result_preview = substr($result, 0, $this->strposX($result, "\n", 9));
-            $final_result = '<pre style="display:none;">' . $result . '</pre><pre>' . $result_preview . '<br>...</pre><button onclick="$(this).siblings(\'pre\').toggle();$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\'));">Show More</button>';
+            $final_result = '<pre style="display:none;">' . $result . '</pre><pre>' . $result_preview . '<br>...</pre><button type="button" class="btn btn-outline-primary" onclick="$(this).siblings(\'pre\').toggle(500);$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\')); $(this).toggleClass(\'btn-outline-primary\').toggleClass(\'btn-primary\');">Show More</button>';
         } else {
             $final_result = '<pre>' . $result . '</pre>';
         }
