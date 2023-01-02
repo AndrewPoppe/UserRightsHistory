@@ -22,6 +22,7 @@ $module->initializeJavascriptModuleObject();
     ]
 ]);
 
+// TODO: use 
 $event_types = [
     "Initialize URH Module",
     "Update Project",
@@ -35,6 +36,7 @@ $event_types = [
 
 ?>
 <script>
+    //TODO: Get rid of this nastiness 
     Array.from(document.styleSheets).forEach(ss => {
         try {
             if (!ss.href.includes('https://cdn.datatables.net')) {
@@ -52,7 +54,6 @@ $event_types = [
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.css" />
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.2/moment.min.js"></script>
-<!--<form style="display:none;"></form>-->
 <script type="text/javascript">
     const module = <?= $module->getJavascriptModuleObjectName() ?>;
     const totalRecords = "<?= $module->getTotalLogCount() ?>";
@@ -138,7 +139,7 @@ $event_types = [
 </p>
 <div class="container">
     <div class="options">
-        
+
     </div>
     <table id="history_logging_table" class="display compact cell-border" style="width: 100%;">
         <thead>

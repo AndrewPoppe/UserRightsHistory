@@ -367,6 +367,10 @@ class UserRightsHistory extends AbstractExternalModule
 
             $changes["previous"] = array_diff_assoc($oldPermissions, $newPermissions);
             $changes["current"] = array_diff_assoc($newPermissions, $oldPermissions);
+            if (empty($changes["previous"]["username"]) && empty($changes["current"]["username"])) {
+                $changes["previous"]["username"] = $username;
+                $changes["current"]["username"] = $username;
+            }
 
             $possibleDagChanges_previous = array_diff_assoc($oldPermissions["possibleDags"], $newPermissions["possibleDags"]);
             $possibleDagChanges_current = array_diff_assoc($newPermissions["possibleDags"], $oldPermissions["possibleDags"]);
@@ -754,7 +758,8 @@ class UserRightsHistory extends AbstractExternalModule
         $lines = substr_count($result, "\n") + 1;
         if ($lines > 10) {
             $result_preview = substr($result, 0, $this->strposX($result, "\n", 9));
-            $final_result = '<pre style="display:none;">' . $result . '</pre><pre>' . $result_preview . '<br>...</pre><button type="button" class="btn btn-outline-primary" onclick="$(this).siblings(\'pre\').toggle(500);$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\')); $(this).toggleClass(\'btn-outline-primary\').toggleClass(\'btn-primary\');">Show More</button>';
+            $result_tail = substr($result, $this->strposX($result, "\n", 9));
+            $final_result = '<pre class="preview" style="margin-bottom:0px !important;padding-bottom:0px !important;">' . $result_preview . '</pre><pre class="break">    ...</pre><pre class="tail" style="display:none; margin-top:0px !important;padding-top:0px !important;">' . $result_tail . '</pre><button type="button" class="btn btn-outline-primary" onclick="$(this).siblings(\'pre.break\').toggle();$(this).siblings(\'pre.tail\').slideToggle(500);$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\')); $(this).toggleClass(\'btn-outline-primary\').toggleClass(\'btn-primary\');">Show More</button>';
         } else {
             $final_result = '<pre>' . $result . '</pre>';
         }
