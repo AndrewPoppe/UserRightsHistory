@@ -9,11 +9,39 @@ include_once "Renderer.php";
 class UserRightsHistory extends AbstractExternalModule
 {
 
+    function getAllProjectIds()
+    {
+        try {
+            $query = "select project_id from redcap_projects
+            where created_by is not null
+            and completed_time is null
+            and date_deleted is null";
+            $result = $this->query($query, []);
+            $project_ids = [];
+            while ($row = $result->fetch_assoc()) {
+                $project_ids[] = $row["project_id"];
+            }
+            return $project_ids;
+        } catch (\Exception $e) {
+            $this->log("Error fetching all projects", ["error" => $e->getMessage()]);
+        }
+    }
+
     function updateAllProjects($cronInfo = array())
     {
-        // TODO: there were like 6 or 7 repeated logs when initially enabling the module in a project. how and why?
         try {
-            foreach ($this->getProjectsWithModuleEnabled() as $localProjectId) {
+            $enabledSystemwide = $this->getSystemSetting('enabled');
+
+            if ($enabledSystemwide == true) {
+                $all_project_ids = $this->getAllProjectIds();
+                $project_ids = array_filter($all_project_ids, function ($project_id) {
+                    return $this->isModuleEnabled('user_rights_history', $project_id);
+                });
+            } else {
+                $project_ids = $this->getProjectsWithModuleEnabled();
+            }
+
+            foreach ($project_ids as $localProjectId) {
                 $this->updateUserList($localProjectId);
                 $this->updateProjectInfo($localProjectId);
                 $this->updatePermissionsForAllUsers($localProjectId);
