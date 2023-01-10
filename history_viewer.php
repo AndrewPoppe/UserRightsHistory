@@ -29,7 +29,7 @@
             constrainInput: false
         });
 
-        let myDefaultWhiteList = $.fn.popover.Constructor.Default.whiteList;
+        let myDefaultWhiteList = $.fn.popover.Constructor.Default.whiteList ?? $.fn.popover.Constructor.Default.allowList;
         myDefaultWhiteList.table = ["style", "class"];
         myDefaultWhiteList.tr = ["class"];
         myDefaultWhiteList.th = ["style"];
