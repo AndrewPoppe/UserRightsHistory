@@ -1,32 +1,35 @@
-<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui.min.css') ?>" />
-<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.css') ?>" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/datatables.min.css') ?>" />
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('userRightsTable.css') ?>" />
-<script src="<?= $module->getUrl('lib/jquery-ui.min.js') ?>"></script>
-<script src="<?= $module->getUrl('lib/jquery-ui-timepicker-addon.js') ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="<?= $module->getUrl('lib/datatables.min.js') ?>"></script>
+<?php
+if (isset($_GET["datetime"])) {
+    $timestamp = intval($_GET["datetime"]);
+} else {
+    $timestamp = microtime(true) * 1000;
+}
+
+// Get User's Date Format
+$date_format = \DateTimeRC::get_user_format_php();
+$time_format =  explode("_", \DateTimeRC::get_user_format_full(), 2)[1];
+$datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
+
+?>
 <script type="text/javascript">
     $(function() {
-        console.log(<?= $module->getEarliestLogTimestamp() ?>)
-        console.log(new Date(<?= $module->getEarliestLogTimestamp() ?>))
-        $('#datetime').datetimepicker({
+        $('#datetime_icon').attr('src', app_path_images + 'date.png');
+        const newDate = new Date(<?= $timestamp ?>);
+        const fp = $('#datetime').flatpickr({
             onClose: function() {
                 pageLoad()
             },
-            yearRange: '-100:+0',
-            changeMonth: true,
-            changeYear: true,
-            dateFormat: user_date_format_jquery,
-            hour: currentTime('h'),
-            minute: currentTime('m'),
-            buttonText: 'Click to select a date/time',
-            showOn: 'button',
-            buttonImage: app_path_images + 'date.png',
-            buttonImageOnly: true,
-            timeFormat: 'hh:mm tt',
-            maxDate: new Date(),
-            minDateTime: new Date(<?= $module->getEarliestLogTimestamp() ?>),
-            constrainInput: false
+            enableTime: true,
+            allowInput: true,
+            defaultDate: newDate,
+            dateFormat: "<?= $datetime_format ?>",
+            minDate: new Date(<?= $module->getEarliestLogTimestamp() ?>),
+            maxDate: Date.now()
         });
 
         let myDefaultWhiteList = $.fn.popover.Constructor.Default.whiteList ?? $.fn.popover.Constructor.Default.allowList;
@@ -112,7 +115,7 @@
             return;
         }
         showProgress(1);
-        const datetime = $('#datetime').val() === '' ? Date.now() : new Date($('#datetime').datetimepicker('getDate')).getTime();
+        const datetime = $('#datetime').val() === '' ? Date.now() : document.querySelector("#datetime")._flatpickr.selectedDates[0].getTime();
         window.location.href = `<?= $module->getUrl('history_viewer.php') ?>&datetime=${datetime}`;
     }
 
@@ -167,16 +170,10 @@
 <div style=" margin:20px 0;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
     <div style="color:#444;"><span style="color:#000;font-weight:bold;font-size:13px;margin-right:5px;">Choose a date and time:</span> The user rights at that point in time will be displayed below.</div>
     <div style="margin:8px 0 0 0px;">
-        <input id="datetime" onclick="$(this).next('img').click();">
+        <input id="datetime">&nbsp;
+        <img id="datetime_icon" onclick="document.querySelector('#datetime')._flatpickr.toggle();" style="cursor:pointer">
     </div>
 </div>
 <?php
-if (isset($_GET["datetime"])) {
-    $timestamp = intval($_GET["datetime"]);
-} else {
-    $timestamp = microtime(true) * 1000;
-}
-echo "<script>$(function() {const newDate = new Date($timestamp);$('#datetime').datetimepicker('setDate', newDate);});</script>";
-
 $permissions = $module->getAllInfoByTimestamp($timestamp);
 $module->renderTable($permissions);
