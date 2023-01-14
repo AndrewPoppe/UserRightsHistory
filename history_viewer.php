@@ -29,7 +29,8 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
             defaultDate: newDate,
             dateFormat: "<?= $datetime_format ?>",
             minDate: new Date(<?= $module->getEarliestLogTimestamp() ?>),
-            maxDate: Date.now()
+            maxDate: Date.now(),
+            time_24hr: <?= $time_format == 24 ? "true" : "false" ?>
         });
 
         let myDefaultWhiteList = $.fn.popover.Constructor.Default.whiteList ?? $.fn.popover.Constructor.Default.allowList;
