@@ -2,6 +2,12 @@
 $start = time();
 $module->showPageHeader("logging_table");
 $module->initializeJavascriptModuleObject();
+
+// Get User's Date Format
+$date_format = \DateTimeRC::get_user_format_php();
+$time_format =  explode("_", \DateTimeRC::get_user_format_full(), 2)[1];
+$datetime_format = $date_format . " " . ($time_format == 24 ? "H:i:S" : "h:i:S K");
+
 [$initialLogs, $recordsFiltered] = $module->getLogs([
     "start" => 0,
     "length" => 10,
@@ -61,7 +67,6 @@ $event_types = [
         column.search(searchTerm).draw();
     }, 400);
     $(document).ready(function() {
-        DataTable.datetime('YYYY-MM-DD HH:mm:ss');
         $('#history_logging_table').DataTable({
             processing: true,
             serverSide: true,
@@ -85,7 +90,13 @@ $event_types = [
             },
             columns: [{
                     data: 'timestamp',
-                    searchable: false
+                    searchable: false,
+                    render: function(data, type) {
+                        if (type === 'display') {
+                            return flatpickr.formatDate(new Date(data), '<?= $datetime_format ?>');
+                        }
+                        return data;
+                    }
                 },
                 {
                     data: 'message'
@@ -114,20 +125,33 @@ $event_types = [
                             }
                         });
                     });
-                $.timepicker.datetimeRange(
-                    $('input.timestamp.min'),
-                    $('input.timestamp.max'), {
-                        changeMonth: true,
-                        changeYear: true,
-                        yearRange: '-100:+100',
-                        dateFormat: 'yy-mm-dd',
-                        timeFormat: 'HH:mm:ss',
-                        minInterval: 0,
-                        onClose: function() {
-                            $('#history_logging_table').DataTable().search('').draw();
-                        }
+
+                const fp_opts = {
+                    enableTime: true,
+                    enableSeconds: true,
+                    allowInput: true,
+                    altInput: true,
+                    altFormat: "<?= $datetime_format ?>",
+                    dateFormat: "Y-m-d H:i:S",
+                    time_24hr: <?= $time_format == 24 ? "true" : "false" ?>
+                };
+                $('input.timestamp.min').flatpickr(Object.assign(fp_opts, {
+                    onClose: function() {
+                        $('#history_logging_table').DataTable().search('').draw();
+                        const fp_max = document.querySelector('input.timestamp.max')._flatpickr;
+                        const fp_min = document.querySelector('input.timestamp.min')._flatpickr;
+                        fp_max.set('minDate', fp_min.selectedDates[0]);
                     }
-                )
+                }));
+                $('input.timestamp.max').flatpickr(Object.assign(fp_opts, {
+                    onClose: function() {
+                        $('#history_logging_table').DataTable().search('').draw();
+                        const fp_max = document.querySelector('input.timestamp.max')._flatpickr;
+                        const fp_min = document.querySelector('input.timestamp.min')._flatpickr;
+                        fp_min.set('maxDate', fp_max.selectedDates[0]);
+                    }
+                }));
+                $('input.timestamp').removeClass("form-control").attr('onclick', "event.stopPropagation();");
             },
         });
     });
