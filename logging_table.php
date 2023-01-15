@@ -99,7 +99,15 @@ $event_types = [
                     }
                 },
                 {
-                    data: 'message'
+                    data: 'message',
+                    render: function(data, type) {
+                        if (type === 'display') {
+                            return data.replace('_', ' ').replace(/\S+/gm, (match, offset) => {
+                                return ((offset > 0 ? ' ' : '') + match[0].toUpperCase() + match.substr(1));
+                            })
+                        }
+                        return data;
+                    }
                 },
                 {
                     data: 'previous'
