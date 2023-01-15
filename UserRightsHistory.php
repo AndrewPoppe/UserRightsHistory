@@ -891,7 +891,8 @@ class UserRightsHistory extends AbstractExternalModule
                 'system',
                 'dags',
                 'project_info',
-                'users'
+                'users',
+                'project status'
             )" . $generalSearchText . $columnSearchText . $timestampFilterText . $orderTerm . $limitTerm;
             $countText =  "select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
                 'rights', 
@@ -901,7 +902,8 @@ class UserRightsHistory extends AbstractExternalModule
                 'system',
                 'dags',
                 'project_info',
-                'users'
+                'users',
+                'project status'
             )" . $generalSearchText . $columnSearchText . $timestampFilterText;
 
             $this->log('thing', ["query" => $queryText, "params" => json_encode($queryParameters)]);
