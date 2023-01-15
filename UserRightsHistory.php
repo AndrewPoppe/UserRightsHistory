@@ -11,22 +11,40 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_project_enable($version, $project_id)
     {
-        $this->log('project status', ["version" => $version, "status" => 1, "project_id" => $project_id]);
+        $this->log('project status', [
+            "version" => $version,
+            "status" => 1,
+            "project_id" => $project_id,
+            "previous" => "Disabled",
+            "current" => "Enabled"
+        ]);
     }
 
     function redcap_module_project_disable($version, $project_id)
     {
-        $this->log('project status', ["version" => $version, "status" => 0, "project_id" => $project_id]);
+        $this->log('project status', [
+            "version" => $version,
+            "status" => 0,
+            "project_id" => $project_id,
+            "previous" => "Enabled",
+            "current" => "Disabled"
+        ]);
     }
 
     function redcap_module_system_enable($version)
     {
-        $this->log('system status', ["version" => $version, "status" => 1]);
+        $this->log('system status', [
+            "version" => $version,
+            "status" => 1
+        ]);
     }
 
     function redcap_module_system_disable($version)
     {
-        $this->log('system status', ["version" => $version, "status" => 0]);
+        $this->log('system status', [
+            "version" => $version,
+            "status" => 0
+        ]);
     }
 
     function updateEnabledByDefaultStatus($currentStatus)
