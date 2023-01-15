@@ -15,8 +15,8 @@ class UserRightsHistory extends AbstractExternalModule
             "version" => $version,
             "status" => 1,
             "project_id" => $project_id,
-            "previous" => "Disabled",
-            "current" => "Enabled"
+            "previous" => json_encode("Disabled"),
+            "current" => json_encode("Enabled")
         ]);
     }
 
@@ -26,8 +26,8 @@ class UserRightsHistory extends AbstractExternalModule
             "version" => $version,
             "status" => 0,
             "project_id" => $project_id,
-            "previous" => "Enabled",
-            "current" => "Disabled"
+            "previous" => json_encode("Enabled"),
+            "current" => json_encode("Disabled")
         ]);
     }
 
