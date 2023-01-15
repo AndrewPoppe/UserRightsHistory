@@ -6,6 +6,8 @@ include_once "User.php";
 
 class Renderer
 {
+    public $permissions;
+
     function __construct($permissions)
     {
         $this->permissions = $permissions;
@@ -64,6 +66,9 @@ class Renderer
                     } ?>
                 </tbody>
             </table>
+            <div style="margin-top: 10px;">
+                <?= $this->getModuleStatus() ?>
+            </div>
         </div>
     <?php
     }
@@ -782,5 +787,11 @@ class Renderer
                 $statusText = " unknown</span>";
         }
         return $statusText;
+    }
+
+    private function getModuleStatus(): string
+    {
+        $module_status = $this->permissions["module_status"];
+        return $module_status === 1 ? "" : "<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> the module was not enabled at this point in time. The above permissions may not be accurate.</span>";
     }
 }

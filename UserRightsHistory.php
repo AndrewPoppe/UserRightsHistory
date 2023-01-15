@@ -11,7 +11,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_project_enable($version, $project_id)
     {
-        $this->log('project status', [
+        $this->log('module project status', [
             "version" => $version,
             "status" => 1,
             "project_id" => $project_id,
@@ -22,7 +22,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_project_disable($version, $project_id)
     {
-        $this->log('project status', [
+        $this->log('module project status', [
             "version" => $version,
             "status" => 0,
             "project_id" => $project_id,
@@ -33,7 +33,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_system_enable($version)
     {
-        $this->log('system status', [
+        $this->log('module system status', [
             "version" => $version,
             "status" => 1
         ]);
@@ -41,7 +41,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_system_disable($version)
     {
-        $this->log('system status', [
+        $this->log('module system status', [
             "version" => $version,
             "status" => 0
         ]);
@@ -49,10 +49,10 @@ class UserRightsHistory extends AbstractExternalModule
 
     function updateEnabledByDefaultStatus($currentStatus)
     {
-        $lastStatusResult = $this->queryLogs("select status where message = ? order by timestamp desc limit 1", ['enabled by default status']);
+        $lastStatusResult = $this->queryLogs("select status where message = ? order by timestamp desc limit 1", ['module enabled by default status']);
         $lastStatus = $lastStatusResult->fetch_assoc()["status"];
         if ($currentStatus != $lastStatus) {
-            $this->log('enabled by default status', ['status' => $currentStatus]);
+            $this->log('module enabled by default status', ['status' => $currentStatus]);
         }
     }
 
@@ -566,6 +566,57 @@ class UserRightsHistory extends AbstractExternalModule
         ]);
     }
 
+    ///////////////////////////
+    // Module Status Methods //
+    ///////////////////////////
+
+    function getModuleSystemStatusByTimestamp($timestamp_clean)
+    {
+        $system_status_sql = "select status where message = 'module system status' and project_id is null";
+        $system_status_sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $system_status_sql .= " order by timestamp desc limit 1";
+        $system_status_result = $this->queryLogs($system_status_sql, [$timestamp_clean]);
+        $status = $system_status_result->fetch_assoc()["status"];
+        return isset($status) ? intval($status) : $status;
+    }
+
+    function getModuleProjectStatusByTimestamp($timestamp_clean)
+    {
+        $project_status_sql = "select status where message = 'module project status'";
+        $project_status_sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $project_status_sql .= " order by timestamp desc limit 1";
+        $project_status_result = $this->queryLogs($project_status_sql, [$timestamp_clean]);
+        $status = $project_status_result->fetch_assoc()["status"];
+        return isset($status) ? intval($status) : $status;
+    }
+
+    function getModuleDefaultEnabledByTimestamp($timestamp_clean)
+    {
+        $default_status_sql = "select status where message = 'module enabled by default status' and project_id is null";
+        $default_status_sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $default_status_sql .= " order by timestamp desc limit 1";
+        $default_status_result = $this->queryLogs($default_status_sql, [$timestamp_clean]);
+        $status = $default_status_result->fetch_assoc()["status"];
+        return isset($status) ? intval($status) : $status;
+    }
+
+    function getModuleStatusByTimestamp($timestamp_clean)
+    {
+        $system_status = $this->getModuleSystemStatusByTimestamp($timestamp_clean);
+        if ($system_status === 0) {
+            return 0;
+        }
+
+        $project_status = $this->getModuleProjectStatusByTimestamp($timestamp_clean);
+        if ($project_status === 1) {
+            return 1;
+        } else if ($project_status === 0) {
+            return 0;
+        }
+
+        return $this->getModuleDefaultEnabledByTimestamp($timestamp_clean);
+    }
+
     ///////////////////////
     // Filtering Methods //
     ///////////////////////
@@ -642,6 +693,8 @@ class UserRightsHistory extends AbstractExternalModule
         $results["project_status"] = $this->getProjectStatusByTimestamp($results["timestamp"]);
         $results["system"] = $this->getAllSystemByTimestamp($results["timestamp"]);
         $results["instruments"] = $this->getAllInstrumentsByTimestamp($results["timestamp"]);
+
+        $results["module_status"] = $this->getModuleStatusByTimestamp($results["timestamp"]);
         return $results;
     }
 
