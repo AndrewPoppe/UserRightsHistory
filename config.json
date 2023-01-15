@@ -2,20 +2,29 @@
     "name": "User Rights History",
     "namespace": "YaleREDCap\\UserRightsHistory",
     "description": "Displays the user rights for a project at any point in time.",
-    "permissions": [],
-    "authors": [{
-        "name": "Andrew Poppe",
-        "email": "andrew.poppe@yale.edu",
-        "institution": "Yale Center for Clinical Investigation"
-    }],
+    "permissions": [
+        "redcap_module_project_enable",
+        "redcap_module_project_disable",
+        "redcap_module_system_enable",
+        "redcap_module_system_disable"
+    ],
+    "authors": [
+        {
+            "name": "Andrew Poppe",
+            "email": "andrew.poppe@yale.edu",
+            "institution": "Yale Center for Clinical Investigation"
+        }
+    ],
     "project-settings": [],
     "links": {
-        "project": [{
-            "name": "User Rights History",
-            "icon": "fas fa-history",
-            "url": "history_viewer.php",
-            "show-header-and-footer": true
-        }],
+        "project": [
+            {
+                "name": "User Rights History",
+                "icon": "fas fa-history",
+                "url": "history_viewer.php",
+                "show-header-and-footer": true
+            }
+        ],
         "control-center": []
     },
     "no-auth-pages": [],
@@ -26,11 +35,13 @@
         "redcap-version-min": "10.0.28",
         "redcap-version-max": ""
     },
-    "crons": [{
-        "cron_name": "user_rights_history",
-        "cron_description": "Checks every minute for changes in projects that have the module enabled",
-        "method": "updateAllProjects",
-        "cron_frequency": "60",
-        "cron_max_run_time": "120"
-    }]
+    "crons": [
+        {
+            "cron_name": "user_rights_history",
+            "cron_description": "Checks every minute for changes in projects that have the module enabled",
+            "method": "updateAllProjects",
+            "cron_frequency": "60",
+            "cron_max_run_time": "120"
+        }
+    ]
 }

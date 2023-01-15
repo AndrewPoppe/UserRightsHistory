@@ -9,6 +9,35 @@ include_once "Renderer.php";
 class UserRightsHistory extends AbstractExternalModule
 {
 
+    function redcap_module_project_enable($version, $project_id)
+    {
+        $this->log('project status', ["version" => $version, "status" => 1, "project_id" => $project_id]);
+    }
+
+    function redcap_module_project_disable($version, $project_id)
+    {
+        $this->log('project status', ["version" => $version, "status" => 0, "project_id" => $project_id]);
+    }
+
+    function redcap_module_system_enable($version)
+    {
+        $this->log('system status', ["version" => $version, "status" => 1]);
+    }
+
+    function redcap_module_system_disable($version)
+    {
+        $this->log('system status', ["version" => $version, "status" => 0]);
+    }
+
+    function updateEnabledByDefaultStatus($currentStatus)
+    {
+        $lastStatusResult = $this->queryLogs("select status where message = ? order by timestamp desc limit 1", ['enabled by default status']);
+        $lastStatus = $lastStatusResult->fetch_assoc()["status"];
+        if ($currentStatus != $lastStatus) {
+            $this->log('enabled by default status', ['status' => $currentStatus]);
+        }
+    }
+
     function getAllProjectIds()
     {
         try {
@@ -31,6 +60,7 @@ class UserRightsHistory extends AbstractExternalModule
     {
         try {
             $enabledSystemwide = $this->getSystemSetting('enabled');
+            $this->updateEnabledByDefaultStatus($enabledSystemwide);
 
             if ($enabledSystemwide == true) {
                 $all_project_ids = $this->getAllProjectIds();
