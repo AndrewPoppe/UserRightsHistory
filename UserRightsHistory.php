@@ -9,6 +9,11 @@ include_once "Renderer.php";
 class UserRightsHistory extends AbstractExternalModule
 {
 
+    function redcap_module_system_change_version($version, $old_version)
+    {
+        $this->log('module version', ['previous' => json_encode($old_version), 'current' => json_encode($version), 'version' => $version]);
+    }
+
     function redcap_module_project_enable($version, $project_id)
     {
         $this->log('module project status', [
@@ -74,11 +79,25 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
+    function logVersionIfNeeded()
+    {
+        $current_version = end(explode("_", $this->getModuleDirectoryName()));
+        $sql = "select version where message = 'module version' and version = ? order by timestamp desc";
+        $result = $this->queryLogs($sql, [$current_version]);
+        $row = $result->fetch_assoc();
+        if (empty($row)) {
+            $this->log('module version', ['version' => $current_version, 'current' => json_encode($current_version)]);
+        }
+    }
+
     function updateAllProjects($cronInfo = array())
     {
         try {
             $enabledSystemwide = $this->getSystemSetting('enabled');
             $this->updateEnabledByDefaultStatus($enabledSystemwide);
+
+            // log new versions manually (in case version change hook doesn't work)
+            $this->logVersionIfNeeded();
 
             if ($enabledSystemwide == true) {
                 $all_project_ids = $this->getAllProjectIds();
@@ -617,6 +636,34 @@ class UserRightsHistory extends AbstractExternalModule
         return $this->getModuleDefaultEnabledByTimestamp($timestamp_clean);
     }
 
+
+    ////////////////////////////
+    // Module Version Methods //
+    ////////////////////////////
+
+    /**
+     * Get the timestamp of the first 'module version' log
+     * 
+     * This is useful, as the adoption of some module functions coincided with these logs
+     * @return int
+     */
+    function getFirstModuleVersionTimestamp()
+    {
+        $sql = "select UNIX_TIMESTAMP(timestamp) where message = 'module version' and project_id is null order by timestamp limit 1";
+        $result = $this->queryLogs($sql, []);
+        $timestamp = $result->fetch_assoc()["UNIX_TIMESTAMP(redcap_external_modules_log.timestamp)"];
+        return intval($timestamp);
+    }
+
+    function isTimestampOld($timestamp_clean)
+    {
+        $sql = "message = 'module version' and project_id is null";
+        $sql .= $timestamp_clean === 0 ? "" : " and timestamp <= from_unixtime(?)";
+        $result = intval($this->countLogs($sql, [$timestamp_clean]));
+        return $result === 0;
+    }
+
+
     ///////////////////////
     // Filtering Methods //
     ///////////////////////
@@ -695,6 +742,7 @@ class UserRightsHistory extends AbstractExternalModule
         $results["instruments"] = $this->getAllInstrumentsByTimestamp($results["timestamp"]);
 
         $results["module_status"] = $this->getModuleStatusByTimestamp($results["timestamp"]);
+        $results["old"] = $this->isTimestampOld($results["timestamp"]);
         return $results;
     }
 

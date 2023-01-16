@@ -174,6 +174,8 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
         <input id="datetime">&nbsp;
         <img id="datetime_icon" onclick="document.querySelector('#datetime')._flatpickr.toggle();" style="cursor:pointer">
     </div>
+    <div id="warning" style="margin-top: 5px;">
+    </div>
 </div>
 <?php
 $permissions = $module->getAllInfoByTimestamp($timestamp);
