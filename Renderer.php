@@ -13,12 +13,6 @@ class Renderer
         $this->permissions = $permissions;
     }
 
-    function print()
-    {
-        var_dump($this->permissions);
-    }
-
-
     function renderTable()
     {
         $columns = $this->getColumns();
