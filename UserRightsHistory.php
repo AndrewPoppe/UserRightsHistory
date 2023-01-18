@@ -95,7 +95,7 @@ class UserRightsHistory extends AbstractExternalModule
         $sql = "select timestamp where message = 'module project status' and project_id = ?";
         $result = $this->queryLogs($sql, [$localProjectId]);
         $row = $result->fetch_assoc();
-        if (empty($row) && $this->isModuleEnabled('user_rights_history', $localProjectId)) {
+        if (empty($row) && in_array($localProjectId, $this->getProjectsWithModuleEnabled())) {
             $this->log('module project status', [
                 "project_id" => $localProjectId,
                 "status" => 1,
