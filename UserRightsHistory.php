@@ -90,6 +90,20 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
+    function updateProjectStatusMessageIfNeeded($localProjectId)
+    {
+        $sql = "select timestamp where message = 'module project status' and project_id = ?";
+        $result = $this->queryLogs($sql, [$localProjectId]);
+        $row = $result->fetch_assoc();
+        if (empty($row) && $this->isModuleEnabled('user_rights_history', $localProjectId)) {
+            $this->log('module project status', [
+                "project_id" => $localProjectId,
+                "status" => 1,
+                "current" => json_encode("Enabled")
+            ]);
+        }
+    }
+
     function updateAllProjects($cronInfo = array())
     {
         try {
@@ -109,6 +123,9 @@ class UserRightsHistory extends AbstractExternalModule
             }
 
             foreach ($project_ids as $localProjectId) {
+                // Ensure a project status message appears for this module.
+                $this->updateProjectStatusMessageIfNeeded($localProjectId);
+
                 $this->updateUserList($localProjectId);
                 $this->updateProjectInfo($localProjectId);
                 $this->updatePermissionsForAllUsers($localProjectId);
