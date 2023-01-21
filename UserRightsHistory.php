@@ -8,6 +8,9 @@ include_once "Renderer.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
+    //////////////////
+    // REDCap Hooks //
+    //////////////////
 
     function redcap_module_system_change_version($version, $old_version)
     {
@@ -51,6 +54,48 @@ class UserRightsHistory extends AbstractExternalModule
             "status" => 0
         ]);
     }
+
+    function redcap_module_configuration_settings($project_id, $settings)
+    {
+        // Get existing user access
+        $all_users = $this->getUsers();
+        foreach ($all_users as $user) {
+            $username = $user->getUsername();
+            $name = $this->getName($username);
+            $user_key = $username . "_access";
+            $existing_access = $this->getProjectSetting($user_key);
+            $settings[] = [
+                "key" => $user_key,
+                "name" => "<strong>" . ucwords($name) . "</strong> (" . $username . ")",
+                "type" => "checkbox",
+                "branchingLogic" => [
+                    "field" => "restrict-access",
+                    "value" => "1"
+                ]
+            ];
+        }
+
+        return $settings;
+    }
+
+    function redcap_module_link_check_display($project_id, $link)
+    {
+        if ($this->getProjectSetting("restrict-access") != 1) {
+            return $link;
+        }
+        $user = $this->getUser();
+        $user_access_key = $user->getUsername() . "_access";
+        $access = $this->getProjectSetting($user_access_key);
+        if ($access != "1" && $user->isSuperUser() != true) {
+            return null;
+        }
+        return $link;
+    }
+
+
+    //////////////////
+    // Main Methods //
+    //////////////////
 
     function updateEnabledByDefaultStatus($currentStatus)
     {

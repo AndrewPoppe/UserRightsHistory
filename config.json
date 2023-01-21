@@ -16,7 +16,32 @@
             "institution": "Yale Center for Clinical Investigation"
         }
     ],
-    "project-settings": [],
+    "project-settings": [
+        {
+            "key": "restrict-access",
+            "name": "<strong>Restrict User Access</strong>: Choose whether to restrict access to certain users in the project or to allow access to all users.<br>If you choose to restrict access, you will be able to select which individual users have access to this module.<br>Default is to allow all users to access the module",
+            "type": "dropdown",
+            "choices": [
+                {
+                    "value": 0,
+                    "name": "Allow access to all project users"
+                },
+                {
+                    "value": 1,
+                    "name": "Restrict access to certain users"
+                }
+            ]
+        },
+        {
+            "key": "user-descriptive-text",
+            "name": "<strong>Select which users should have access to view this module</strong>",
+            "type": "descriptive",
+            "branchingLogic": {
+                "field": "restrict-access",
+                "value": "1"
+            }
+        }
+    ],
     "links": {
         "project": [
             {
