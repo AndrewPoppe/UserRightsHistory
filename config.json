@@ -18,6 +18,21 @@
     ],
     "project-settings": [
         {
+            "key": "restrict-dag",
+            "name": "<strong>Restrict DAG User Display</strong>: Choose whether to restrict display of user rights to only those users in the current Data Access Group<br>Users not currently assigned to a DAG will be able to see all users regardless.<br>Default is to restrict display to the current DAG only",
+            "type": "dropdown",
+            "choices": [
+                {
+                    "value": 0,
+                    "name": "Restrict viewing to the currently selected Data Access Group"
+                },
+                {
+                    "value": 1,
+                    "name": "Show all users in all Data Access Groups"
+                }
+            ]
+        },
+        {
             "key": "restrict-access",
             "name": "<strong>Restrict User Access</strong>: Choose whether to restrict access to certain users in the project or to allow access to all users.<br>If you choose to restrict access, you will be able to select which individual users have access to this module.<br>Default is to allow all users to access the module",
             "type": "dropdown",

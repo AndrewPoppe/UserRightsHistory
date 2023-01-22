@@ -787,9 +787,9 @@ class Renderer
         $module_status = $this->permissions["module_status"];
         $module_old = $this->permissions["old"];
         if ($module_old == 1) {
-            echo "<script>document.querySelector('#warning').innerHTML = \"<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> these records correspond with an older version of this module.<br>The permissions below may not be accurate.</span>\";</script>";
+            echo "<script>document.querySelector('#warning').innerHTML += \"<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> these records correspond with an older version of this module.<br>The permissions below may not be accurate.</span>\";</script>";
         } else if ($module_status !== 1) {
-            echo "<script>document.querySelector('#warning').innerHTML = \"<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> the module was not enabled at this point in time. The permissions below may not be accurate.</span>\";</script>";
+            echo "<script>document.querySelector('#warning').innerHTML += \"<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> the module was not enabled at this point in time. The permissions below may not be accurate.</span>\";</script>";
         }
     }
 }

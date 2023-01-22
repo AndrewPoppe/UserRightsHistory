@@ -175,6 +175,7 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
         <img id="datetime_icon" onclick="document.querySelector('#datetime')._flatpickr.toggle();" style="cursor:pointer">
     </div>
     <div id="warning" style="margin-top: 5px;">
+        <?= $module->shouldDagsBeChecked() ? "<span style='color:#C00000; margin-bottom: 5px;'>Note: Since you have been assigned to a Data Access Group, you are only able to view users from your group.</span><br>" : "" ?>
     </div>
 </div>
 <?php

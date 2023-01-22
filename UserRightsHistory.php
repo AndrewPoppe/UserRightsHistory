@@ -92,6 +92,24 @@ class UserRightsHistory extends AbstractExternalModule
         return $link;
     }
 
+    //////////////////////
+    // Settings Methods //
+    //////////////////////
+
+    function shouldDagsBeChecked()
+    {
+        $dags_setting = $this->getProjectSetting("restrict-dag");
+        $current_dag = $this->getCurrentDag($this->getProject()->getProjectId(), $this->getUser()->getUsername());
+        $superUser = $this->getUser()->isSuperUser();
+        return !$superUser && $dags_setting != "1" && !is_null($current_dag);
+    }
+
+    function isDagRestricted($dag)
+    {
+        $current_dag = $this->getCurrentDag($this->getProject()->getProjectId(), $this->getUser()->getUsername());
+        return $this->shouldDagsBeChecked() && $dag != $current_dag;
+    }
+
 
     //////////////////
     // Main Methods //
@@ -427,6 +445,18 @@ class UserRightsHistory extends AbstractExternalModule
             return $result->fetch_assoc()["name"];
         } catch (\Exception $e) {
             $this->log("Error fetching name", ["error" => $e->getMessage()]);
+        }
+    }
+
+    function getCurrentDag($localProjectId, $username)
+    {
+        try {
+            $sql = "select group_id from redcap_user_rights where project_id = ? and username = ?";
+            $result = $this->query($sql, [$localProjectId, $username]);
+            $dag = $result->fetch_assoc()["group_id"];
+            return $dag;
+        } catch (\Exception $e) {
+            $this->log("Error fetching current dag", ["error" => $e->getMessage()]);
         }
     }
 
@@ -794,7 +824,10 @@ class UserRightsHistory extends AbstractExternalModule
         $users = $this->getUsersByTimestamp($results["timestamp"]);
         $results["users"] = array();
         foreach ($users as $user) {
-            $results["users"][$user] = $this->getUserPermissionsByTimestamp($user, $results["timestamp"]);
+            $userInfo = $this->getUserPermissionsByTimestamp($user, $results["timestamp"]);
+            if (!$this->isDagRestricted($userInfo["group_id"])) {
+                $results["users"][$user] = $userInfo;
+            }
         }
 
         $results["dags"] = $this->getAllDAGsByTimestamp($results["timestamp"]);

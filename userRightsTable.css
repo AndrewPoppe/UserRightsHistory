@@ -1,18 +1,18 @@
     td.highlight {
         background-color: #d9ebf5 !important;
     }
-    
+
     div.userrights-table-container {
         width: calc(100vw - 305px - 58px);
     }
-    
+
     table.dataTable.cell-border tbody th,
     table.dataTable.cell-border tbody td {
         border-top: none;
         border-right: 1px solid #ddd;
         border-left: none !important;
     }
-    
+
     table.dataTable.cell-border thead th,
     table.dataTable.cell-border thead td {
         border-top: 1px solid #ccc;
@@ -20,49 +20,49 @@
         border-right: 1px solid #ddd;
         border-left: none;
     }
-    
+
     table#userrights tbody th:last-child,
     table#userrights tbody td:last-child,
     table#userrights thead th:last-child,
     table#userrights thead td:last-child {
         border-right: none !important;
     }
-    
+
     .DTFC_ScrollWrapper {
         border-right: 1px solid #ccc;
         border-left: 1px solid #ccc;
     }
-    
+
     table.dataTable.cell-border tbody tr:first-child th,
     table.dataTable.cell-border tbody tr:first-child td {
         border-top: none;
     }
-    
+
     .dataTables_wrapper.no-footer .dataTables_scrollBody {
         border-bottom-color: #ccc;
     }
-    
+
     table.dataTable,
     table.dataTable p {
         font-size: 12px;
     }
-    
+
     table.dataTable p {
         margin: 4px 0px;
     }
-    
+
     table.dataTable tbody tr.even td {
         background-color: #f3f3f3;
     }
-    
+
     table.dataTable tbody tr.odd td {
         background-color: white;
     }
-    
+
     table.dataTable thead th {
         background-color: #ececec !important;
     }
-    
+
     table.dataTable hr {
         height: 1px;
         border-width: 0;
@@ -70,7 +70,7 @@
         background-color: #eee;
         margin: 3px 0px;
     }
-    
+
     table.noOrderIcon.dataTable thead .sorting,
     table.noOrderIcon.dataTable thead .sorting_asc,
     table.noOrderIcon.dataTable thead .sorting_desc,
@@ -79,24 +79,24 @@
     table.noOrderIcon.dataTable thead th .sorting_desc {
         background-image: none !important;
     }
-    
+
     span.popoverspan {
         cursor: help;
     }
-    
+
     a.popoverspan {
         cursor: pointer;
     }
-    
+
     a.popoverspan:hover {
         font-size: inherit;
         font-family: inherit;
     }
-    
+
     .popover {
         max-width: 1000px;
     }
-    
+
     .popover td {
         border-left: 1px solid #ddd;
         border-top: 1px solid #ddd;
@@ -105,86 +105,82 @@
         text-align: center;
         vertical-align: middle;
     }
-    
+
     .ui-priority-secondary {
         opacity: 1 !important;
     }
-    
+
     .popover thead th {
         background-color: #ececec;
         border-bottom: 1px solid #aaa;
         border-top: 1px solid #aaa;
     }
-    
+
     .popover th:nth-child(1) {
         border-left: 1px solid #aaa;
     }
-    
+
     .popover tbody tr:nth-child(1) td,
     .popover tbody tr:nth-child(1) th {
         border-top: none;
     }
-    
+
     .popover tbody tr:last-child td,
     .popover tbody tr:last-child th {
         border-bottom: 1px solid #aaa;
     }
-    
+
     .popover td:last-child,
     .popover th:last-child {
         border-right: 1px solid #aaa;
     }
-    
+
     .popover tbody tr:nth-child(even) td,
     .popover tbody tr:nth-child(even) th {
         background-color: #f3f3f3;
     }
-    
+
     .popover table {
         font-size: 12px;
         border-collapse: separate !important;
         border-spacing: 0;
         margin-right: 20px;
     }
-    
+
     .popover th {
         padding: .25rem;
         border-left: 1px solid #ddd;
     }
-    
+
     .popover div.popover-table {
         display: block;
         overflow-y: auto;
         overflow-x: hidden;
         max-height: 90vh;
     }
-    
+
     .popover thead {
         position: -webkit-sticky;
         position: sticky;
         top: 0;
         inset-block-start: 0;
     }
-    
+
     table#userrights tbody th:last-child,
     table#userrights tbody td:last-child,
     table#userrights thead th:last-child,
     table#userrights thead td:last-child {
         border-right: none !important;
     }
-    
+
     th.dtfc-fixed-left {
-        z-index: 1000;
+        z-index: 100;
     }
-    
-    .ui-datepicker {
-        z-index: 1001 !important;
-    }
-    
+
     .instrumentCell:hover {
         text-decoration: underline;
     }
-    
+
     .popover-table tbody tr:hover td,
     .popover-table tbody tr:hover th {
         background-color: #d9ebf5 !important;
