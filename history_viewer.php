@@ -63,7 +63,8 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
             stateSave: true,
             dom: "t",
             "order": [
-                [0, 'desc']
+                [0, 'asc'],
+                [1, 'asc']
             ],
             columnDefs: [{
                 "targets": 0,
@@ -73,6 +74,8 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
                         row.text = strip(val);
                     } else if (type === "display") {
                         return row.orig;
+                    } else if (type === "sort") {
+                        return row.text.replace('—', '');
                     }
                     return row.orig;
                 }

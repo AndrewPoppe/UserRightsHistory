@@ -46,7 +46,8 @@ class Renderer
                         }
                         echo "</tr>";
                     }
-                    foreach ($this->permissions["roles"] as $role) {
+                    $roles = $this->permissions["roles"];
+                    foreach ($roles as $role) {
                         echo "<tr>";
                         foreach ($columns as $column_id => $column) {
                             $center = !in_array($column_id, $nonCentered, true);
