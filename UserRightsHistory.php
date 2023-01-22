@@ -1042,19 +1042,19 @@ class UserRightsHistory extends AbstractExternalModule
     function getTotalLogCount()
     {
         try {
-            $startTime = microtime();
             $queryResult = $this->queryLogs("select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
-                'rights', 
-                'instruments',
-                'roles',
-                'rights',
-                'system',
                 'dags',
+                'instruments',
+                'module enabled by default status',
+                'module project status',
+                'module system status',
+                'module version',
                 'project_info',
+                'rights',
+                'roles',
+                'system',
                 'users'
             )", [$this->getProjectId()]);
-            $endTime = microtime();
-            $this->log('process time: total logs', ["time" => $endTime - $startTime]);
             return $queryResult->fetch_assoc()["ts"];
         } catch (\Exception $e) {
             $this->log('Error getting total log count', ["error" => $e->getMessage()]);
@@ -1092,7 +1092,8 @@ class UserRightsHistory extends AbstractExternalModule
                 $searchVal = $column["search"]["value"];
                 if ($searchVal != "") {
                     $columnSearchText .= " and " . db_escape($column["data"]) . " like ?";
-                    array_push($columnSearchParameters, sprintf("%%%s%%", $searchVal));
+                    $searchVal = $column["search"]["regex"] == "true" ? $searchVal : sprintf("%%%s%%", $searchVal);
+                    array_push($columnSearchParameters, $searchVal);
                 }
             }
             $generalSearchText .= $generalSearchText === "" ? "" : ")";
@@ -1128,44 +1129,41 @@ class UserRightsHistory extends AbstractExternalModule
             $queryParameters = [...$queryParameters, ...$generalSearchParameters, ...$columnSearchParameters, ...$timestampFilterParameters];
 
             $queryText =  "select timestamp, message, current, previous where (project_id = ? or project_id is null) and message in (
-                'rights', 
-                'instruments',
-                'roles',
-                'rights',
-                'system',
                 'dags',
+                'instruments',
+                'module enabled by default status',
+                'module project status',
+                'module system status',
+                'module version',
                 'project_info',
-                'users',
-                'project status'
+                'rights',
+                'roles',
+                'system',
+                'users'
             )" . $generalSearchText . $columnSearchText . $timestampFilterText . $orderTerm . $limitTerm;
             $countText =  "select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
-                'rights', 
-                'instruments',
-                'roles',
-                'rights',
-                'system',
                 'dags',
+                'instruments',
+                'module enabled by default status',
+                'module project status',
+                'module system status',
+                'module version',
                 'project_info',
-                'users',
-                'project status'
+                'rights',
+                'roles',
+                'system',
+                'users'
             )" . $generalSearchText . $columnSearchText . $timestampFilterText;
 
-            $this->log('thing', ["query" => $queryText, "params" => json_encode($queryParameters)]);
-
-            //$startTime = microtime();
             $queryResult = $this->queryLogs($queryText, $queryParameters);
             $countResult = $this->queryLogs($countText, $queryParameters);
             $rowsTotal = $countResult->fetch_assoc()["ts"];
-            //$endTime = microtime();
             $logs = array();
             while ($row = $queryResult->fetch_assoc()) {
                 $row["previous"] = $this->syntaxHighlight($row["previous"]);
                 $row["current"] = $this->syntaxHighlight($row["current"]);
                 $logs[] = $row;
             }
-            //$endTime2 = microtime();
-            //$this->log("process time: get logs", ["time" => $endTime - $startTime]);
-            //$this->log("process time: format logs", ["time" => $endTime2 - $endTime]);
             return [$logs, $rowsTotal];
         } catch (\Exception $e) {
             $this->log('Error getting logs', ["error" => $e->getMessage()]);

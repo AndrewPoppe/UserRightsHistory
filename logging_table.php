@@ -36,10 +36,24 @@ $event_types = [
     "Remove User(s)",
     "Add User(s) and Remove User(s)"
 ];
-//$module->showLoggingTable();
-//$end = time();
-//echo $end - $start;
 
+$messages = [
+    'dags',
+    'instruments',
+    'module enabled by default status',
+    'module project status',
+    'module system status',
+    'module version',
+    'project_info',
+    'rights',
+    'roles',
+    'system',
+    'users'
+];
+$messages_pretty = [];
+foreach ($messages as $message) {
+    $messages_pretty[$message] = ucwords(str_replace('_', ' ', $message));
+}
 ?>
 <script>
     //TODO: Get rid of this nastiness 
@@ -59,7 +73,6 @@ $event_types = [
 </script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.css" />
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.2/moment.min.js"></script>
 <script type="text/javascript">
     const module = <?= $module->getJavascriptModuleObjectName() ?>;
     const totalRecords = "<?= $module->getTotalLogCount() ?>";
@@ -160,6 +173,11 @@ $event_types = [
                     }
                 }));
                 $('input.timestamp').removeClass("form-control").attr('onclick', "event.stopPropagation();");
+
+                $('.message-select').on('change', function(event) {
+                    const searchValue = event.target.value;
+                    table.DataTable().column(event.target.parentElement).search(searchValue, true).draw();
+                });
             },
         });
     });
@@ -181,9 +199,14 @@ $event_types = [
                     <br><input onclick="event.stopPropagation();" class="timestamp min" type="text" placeholder="Min Timestamp" />
                     <br><input onclick="event.stopPropagation();" class="timestamp max" type="text" placeholder="Max Timestamp" />
                 </th>
-                <th>Message<br><input onclick="event.stopPropagation();" type="text" placeholder="Search Message"></th>
-                <th>Previous Value<br><input onclick="event.stopPropagation();" type="text" placeholder="Search Previous Value"></th>
-                <th>New Value<br><input onclick="event.stopPropagation();" type="text" placeholder="Search New Value"></th>
+                <th>Message<br><select class="message-select form-control" onclick="event.stopPropagation();">
+                        <option value=""></option>
+                        <?php foreach ($messages_pretty as $value => $name) { ?>
+                            <option value="<?= $value ?>"><?= $name ?></option>
+                        <?php } ?>
+                    </select></th>
+                <th>Previous Value<br><input onclick="event.stopPropagation();" class="form-control" type="text" placeholder="Search Previous Value"></th>
+                <th>New Value<br><input onclick="event.stopPropagation();" class="form-control" type="text" placeholder="Search New Value"></th>
             </tr>
         </thead>
         <tbody>
