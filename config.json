@@ -64,6 +64,14 @@
                 "icon": "fas fa-history",
                 "url": "history_viewer.php",
                 "show-header-and-footer": true
+            },
+            {
+                "url": "logging_table.php",
+                "show-header-and-footer": true
+            },
+            {
+                "url": "logging_table_ajax.php",
+                "show-header-and-footer": false
             }
         ],
         "control-center": []
@@ -73,7 +81,7 @@
     "compatibility": {
         "php-version-min": "7.3.27",
         "php-version-max": "7.99.99",
-        "redcap-version-min": "10.0.28",
+        "redcap-version-min": "12.0.4",
         "redcap-version-max": ""
     },
     "crons": [
