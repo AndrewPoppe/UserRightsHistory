@@ -8,6 +8,9 @@ include_once "Renderer.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
+    //////////////////
+    // REDCap Hooks //
+    //////////////////
 
     function redcap_module_system_change_version($version, $old_version)
     {
@@ -51,6 +54,66 @@ class UserRightsHistory extends AbstractExternalModule
             "status" => 0
         ]);
     }
+
+    function redcap_module_configuration_settings($project_id, $settings)
+    {
+        // Get existing user access
+        $all_users = $this->getUsers();
+        foreach ($all_users as $user) {
+            $username = $user->getUsername();
+            $name = $this->getName($username);
+            $user_key = $username . "_access";
+            $existing_access = $this->getProjectSetting($user_key);
+            $settings[] = [
+                "key" => $user_key,
+                "name" => "<strong>" . ucwords($name) . "</strong> (" . $username . ")",
+                "type" => "checkbox",
+                "branchingLogic" => [
+                    "field" => "restrict-access",
+                    "value" => "1"
+                ]
+            ];
+        }
+
+        return $settings;
+    }
+
+    function redcap_module_link_check_display($project_id, $link)
+    {
+        if ($this->getProjectSetting("restrict-access") != 1) {
+            return $link;
+        }
+        $user = $this->getUser();
+        $user_access_key = $user->getUsername() . "_access";
+        $access = $this->getProjectSetting($user_access_key);
+        if ($access != "1" && $user->isSuperUser() != true) {
+            return null;
+        }
+        return $link;
+    }
+
+    //////////////////////
+    // Settings Methods //
+    //////////////////////
+
+    function shouldDagsBeChecked()
+    {
+        $dags_setting = $this->getProjectSetting("restrict-dag");
+        $current_dag = $this->getCurrentDag($this->getProject()->getProjectId(), $this->getUser()->getUsername());
+        $superUser = $this->getUser()->isSuperUser();
+        return !$superUser && $dags_setting != "1" && !is_null($current_dag);
+    }
+
+    function isDagRestricted($dag)
+    {
+        $current_dag = $this->getCurrentDag($this->getProject()->getProjectId(), $this->getUser()->getUsername());
+        return $this->shouldDagsBeChecked() && $dag != $current_dag;
+    }
+
+
+    //////////////////
+    // Main Methods //
+    //////////////////
 
     function updateEnabledByDefaultStatus($currentStatus)
     {
@@ -382,6 +445,18 @@ class UserRightsHistory extends AbstractExternalModule
             return $result->fetch_assoc()["name"];
         } catch (\Exception $e) {
             $this->log("Error fetching name", ["error" => $e->getMessage()]);
+        }
+    }
+
+    function getCurrentDag($localProjectId, $username)
+    {
+        try {
+            $sql = "select group_id from redcap_user_rights where project_id = ? and username = ?";
+            $result = $this->query($sql, [$localProjectId, $username]);
+            $dag = $result->fetch_assoc()["group_id"];
+            return $dag;
+        } catch (\Exception $e) {
+            $this->log("Error fetching current dag", ["error" => $e->getMessage()]);
         }
     }
 
@@ -749,7 +824,10 @@ class UserRightsHistory extends AbstractExternalModule
         $users = $this->getUsersByTimestamp($results["timestamp"]);
         $results["users"] = array();
         foreach ($users as $user) {
-            $results["users"][$user] = $this->getUserPermissionsByTimestamp($user, $results["timestamp"]);
+            $userInfo = $this->getUserPermissionsByTimestamp($user, $results["timestamp"]);
+            if (!$this->isDagRestricted($userInfo["group_id"])) {
+                $results["users"][$user] = $userInfo;
+            }
         }
 
         $results["dags"] = $this->getAllDAGsByTimestamp($results["timestamp"]);
