@@ -1,5 +1,4 @@
 <?php
-$start = time();
 $module->showPageHeader("logging_table");
 $module->initializeJavascriptModuleObject();
 
@@ -109,7 +108,8 @@ foreach ($messages as $message) {
                             return flatpickr.formatDate(new Date(data), '<?= $datetime_format ?>');
                         }
                         return data;
-                    }
+                    },
+                    width: "15%"
                 },
                 {
                     data: 'message',
@@ -120,13 +120,16 @@ foreach ($messages as $message) {
                             })
                         }
                         return data;
-                    }
+                    },
+                    width: "25%"
                 },
                 {
-                    data: 'previous'
+                    data: 'previous',
+                    width: "30%"
                 },
                 {
-                    data: 'current'
+                    data: 'current',
+                    width: "30%"
                 },
             ],
             order: [
@@ -172,9 +175,10 @@ foreach ($messages as $message) {
                         fp_min.set('maxDate', fp_max.selectedDates[0]);
                     }
                 }));
-                $('input.timestamp').removeClass("form-control").attr('onclick', "event.stopPropagation();");
+                $('input.timestamp').attr('onclick', "event.stopPropagation();");
 
                 $('.message-select').on('change', function(event) {
+                    $('.message-select').css('color', 'rgb(73, 80, 87)');
                     const searchValue = event.target.value;
                     table.DataTable().column(event.target.parentElement).search(searchValue, true).draw();
                 });
@@ -183,10 +187,9 @@ foreach ($messages as $message) {
     });
 </script>
 <p>
-    This page
-    <br>
-    ...
+    This page shows the changes to the project in a tabular form. This is useful when searching for a particular user rights change.
 </p>
+<br>
 <div class="container">
     <div class="options">
 
@@ -196,17 +199,18 @@ foreach ($messages as $message) {
             <tr>
                 <th>
                     Timestamp
-                    <br><input onclick="event.stopPropagation();" class="timestamp min" type="text" placeholder="Min Timestamp" />
-                    <br><input onclick="event.stopPropagation();" class="timestamp max" type="text" placeholder="Max Timestamp" />
+                    <br><input onclick="event.stopPropagation();" class="timestamp min form-control-sm" type="text" placeholder="Min Timestamp" />
+                    <input onclick="event.stopPropagation();" class="timestamp max form-control-sm" type="text" placeholder="Max Timestamp" />
                 </th>
-                <th>Message<br><select class="message-select form-control" onclick="event.stopPropagation();">
+                <th>Message<br><select class="message-select form-control form-control-sm" onclick="event.stopPropagation();">
+                        <option hidden>Select Message Type</option>
                         <option value=""></option>
                         <?php foreach ($messages_pretty as $value => $name) { ?>
-                            <option value="<?= $value ?>"><?= $name ?></option>
+                            <option class="choice" value="<?= $value ?>"><?= $name ?></option>
                         <?php } ?>
                     </select></th>
-                <th>Previous Value<br><input onclick="event.stopPropagation();" class="form-control" type="text" placeholder="Search Previous Value"></th>
-                <th>New Value<br><input onclick="event.stopPropagation();" class="form-control" type="text" placeholder="Search New Value"></th>
+                <th>Previous Value<br><input onclick="event.stopPropagation();" class="form-control form-control-sm" type="text" placeholder="Search Previous Value"></th>
+                <th>New Value<br><input onclick="event.stopPropagation();" class="form-control form-control-sm" type="text" placeholder="Search New Value"></th>
             </tr>
         </thead>
         <tbody>
@@ -257,10 +261,21 @@ foreach ($messages as $message) {
 
     div.container {
         width: 100%;
+        margin: 0;
+        padding: 0;
     }
 
     .dataTables_processing {
         z-index: 9000 !important;
+    }
+
+    .message-select,
+    .message-select:focus {
+        color: rgb(187, 187, 187);
+    }
+
+    .message-select .choice {
+        color: rgb(73, 80, 87) !important;
     }
 </style>
 <?php
