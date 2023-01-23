@@ -1032,7 +1032,7 @@ class UserRightsHistory extends AbstractExternalModule
         if ($lines > 10) {
             $result_preview = substr($result, 0, $this->strposX($result, "\n", 9));
             $result_tail = substr($result, $this->strposX($result, "\n", 9));
-            $final_result = '<pre class="preview" style="margin-bottom:0px !important;padding-bottom:0px !important;">' . $result_preview . '</pre><pre class="break">    ...</pre><pre class="tail" style="display:none; margin-top:0px !important;padding-top:0px !important;">' . $result_tail . '</pre><button type="button" class="btn btn-outline-primary" onclick="$(this).siblings(\'pre.break\').toggle();$(this).siblings(\'pre.tail\').slideToggle(500);$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\')); $(this).toggleClass(\'btn-outline-primary\').toggleClass(\'btn-primary\');$(\'#history_logging_table\').DataTable().columns.adjust()">Show More</button>';
+            $final_result = '<pre class="preview" style="margin-bottom:0px !important;padding-bottom:0px !important;">' . $result_preview . '</pre><pre class="break">    ...</pre><pre class="tail" style="display:none; margin-top:0px !important;padding-top:0px !important;">' . $result_tail . '</pre><button type="button" class="btn btn-outline-primary btn-sm" onclick="$(this).siblings(\'pre.break\').toggle();$(this).siblings(\'pre.tail\').slideToggle(500);$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\')); $(this).toggleClass(\'btn-outline-primary\').toggleClass(\'btn-primary\');$(\'#history_logging_table\').DataTable().columns.adjust();">Show More</button>';
         } else {
             $final_result = '<pre>' . $result . '</pre>';
         }

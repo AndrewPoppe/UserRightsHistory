@@ -75,10 +75,8 @@ foreach ($messages as $message) {
 <script type="text/javascript">
     const module = <?= $module->getJavascriptModuleObjectName() ?>;
     const totalRecords = "<?= $module->getTotalLogCount() ?>";
-    const columnSearch = $.fn.dataTable.util.throttle(function(column, searchTerm) {
-        column.search(searchTerm).draw();
-    }, 400);
     $(document).ready(function() {
+        console.log(module.getUrl('logging_table_ajax.php'));
         $('#history_logging_table').DataTable({
             processing: true,
             serverSide: true,
@@ -89,7 +87,6 @@ foreach ($messages as $message) {
                 [10, 25, 50, 100, 'All']
             ],
             scrollX: true,
-            //scrollY: 'calc(100vh - ' + $("#history_logging_table").offset().top + 'px - 200px)',
             scrollCollapse: true,
             ajax: {
                 url: module.getUrl('logging_table_ajax.php'),
@@ -144,8 +141,7 @@ foreach ($messages as $message) {
                         var that = this;
                         $('input', this.header()).not('.timestamp').on('keyup change clear', function() {
                             if (that.search() !== this.value) {
-                                columnSearch(that, this.value);
-                                //that.search(this.value).draw();
+                                that.search(this.value).draw();
                             }
                         });
                     });
@@ -202,8 +198,8 @@ foreach ($messages as $message) {
                     <br><input onclick="event.stopPropagation();" class="timestamp min form-control-sm" type="text" placeholder="Min Timestamp" />
                     <input onclick="event.stopPropagation();" class="timestamp max form-control-sm" type="text" placeholder="Max Timestamp" />
                 </th>
-                <th>Message<br><select class="message-select form-control form-control-sm" onclick="event.stopPropagation();">
-                        <option hidden>Select Message Type</option>
+                <th>Update Type<br><select class="message-select form-control form-control-sm" onclick="event.stopPropagation();">
+                        <option hidden>Select Update Type</option>
                         <option value=""></option>
                         <?php foreach ($messages_pretty as $value => $name) { ?>
                             <option class="choice" value="<?= $value ?>"><?= $name ?></option>
@@ -276,6 +272,20 @@ foreach ($messages as $message) {
 
     .message-select .choice {
         color: rgb(73, 80, 87) !important;
+    }
+
+    th {
+        border-top: 1px solid rgba(0, 0, 0, 0.15);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+        border-right: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    th:first-child {
+        border-left: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    thead tr {
+        background-color: rgb(220, 220, 220) !important;
     }
 </style>
 <?php
