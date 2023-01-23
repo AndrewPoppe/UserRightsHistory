@@ -1055,7 +1055,7 @@ class UserRightsHistory extends AbstractExternalModule
                 'system',
                 'users'
             )", [$this->getProjectId()]);
-            return $queryResult->fetch_assoc()["ts"];
+            return intval($queryResult->fetch_assoc()["ts"]);
         } catch (\Exception $e) {
             $this->log('Error getting total log count', ["error" => $e->getMessage()]);
             return;

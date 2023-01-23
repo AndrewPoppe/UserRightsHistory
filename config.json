@@ -79,7 +79,7 @@
     "no-auth-pages": [],
     "framework-version": 9,
     "compatibility": {
-        "php-version-min": "7.3.27",
+        "php-version-min": "7.4.00",
         "php-version-max": "7.99.99",
         "redcap-version-min": "12.0.4",
         "redcap-version-max": ""
