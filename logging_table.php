@@ -54,22 +54,6 @@ foreach ($messages as $message) {
     $messages_pretty[$message] = ucwords(str_replace('_', ' ', $message));
 }
 ?>
-<script>
-    //TODO: Get rid of this nastiness 
-    Array.from(document.styleSheets).forEach(ss => {
-        try {
-            if (!ss.href.includes('https://cdn.datatables.net')) {
-                return Array.from(ss.cssRules).forEach(rule => {
-                    if (rule.cssText.toLowerCase().includes('datatable')) {
-                        rule.style.removeProperty('all')
-                    }
-                })
-            }
-        } catch (err) {
-
-        }
-    })
-</script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.css" />
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.js"></script>
 <script type="text/javascript">
@@ -247,7 +231,7 @@ foreach ($messages as $message) {
     }
 
     pre {
-        background-color: inherit !important;
+        background-color: transparent !important;
         border: none !important;
     }
 
@@ -280,12 +264,17 @@ foreach ($messages as $message) {
         border-right: 1px solid rgba(0, 0, 0, 0.15);
     }
 
+    table#history_logging_table,
     th:first-child {
-        border-left: 1px solid rgba(0, 0, 0, 0.15);
+        border-left: 1px solid rgba(0, 0, 0, 0.15) !important;
     }
 
     thead tr {
         background-color: rgb(220, 220, 220) !important;
+    }
+
+    td.highlight {
+        background-color: #d9ebf5 !important;
     }
 </style>
 <?php
