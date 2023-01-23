@@ -5,6 +5,7 @@ namespace YaleREDCap\UserRightsHistory;
 use ExternalModules\AbstractExternalModule;
 
 include_once "Renderer.php";
+include_once "UI.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
@@ -124,6 +125,8 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
+    public $UI;
+
     function getAllProjectIds()
     {
         try {
@@ -210,10 +213,11 @@ class UserRightsHistory extends AbstractExternalModule
 
     function updateProjectInfo($localProjectId)
     {
-        $currentProjectInfo = $this->getCurrentProjectInfo($localProjectId);
-        $lastProjectInfo = $this->getLastProjectInfo($localProjectId);
-        if ($lastProjectInfo == null || $this->projectInfoChanged($lastProjectInfo, $currentProjectInfo)) {
-            $this->saveProjectInfo($localProjectId, $currentProjectInfo);
+        $currentProjectInfo = $this->getCurrentProjectInfo($localProjectId) ?? [];
+        $lastProjectInfo = $this->getLastProjectInfo($localProjectId) ?? [];
+        $changes =  $this->projectInfoChanges($lastProjectInfo, $currentProjectInfo);
+        if (is_null($lastProjectInfo) || $changes["any_changes"]) {
+            $this->saveProjectInfo($localProjectId, $currentProjectInfo, $changes);
         }
     }
 
@@ -238,18 +242,28 @@ class UserRightsHistory extends AbstractExternalModule
         return json_decode(gzinflate(base64_decode($info_gzip)), true);
     }
 
-    function projectInfoChanged(array $oldProjectInfo, array $newProjectInfo)
+    function projectInfoChanges(?array $oldProjectInfo, ?array $newProjectInfo)
     {
+        $oldProjectInfo = is_null($oldProjectInfo) ? [] : $oldProjectInfo;
+        $newProjectInfo = is_null($newProjectInfo) ? [] : $newProjectInfo;
         $difference1 = array_diff_assoc($oldProjectInfo, $newProjectInfo);
         $difference2 = array_diff_assoc($newProjectInfo, $oldProjectInfo);
-        return (count($difference1) + count($difference2)) > 0;
+        $any_changes = (count($difference1) + count($difference2)) > 0;
+        return [
+            "previous" => $difference1,
+            "current" => $difference2,
+            "any_changes" => $any_changes
+        ];
     }
 
-    function saveProjectInfo($localProjectId, array $newProjectInfo)
+    function saveProjectInfo($localProjectId, array $newProjectInfo, array $changes)
     {
         $this->log('project_info', [
             "project_id" => $localProjectId,
-            "info" => base64_encode(gzdeflate(json_encode($newProjectInfo), 9))
+            "info" => base64_encode(gzdeflate(json_encode($newProjectInfo), 9)),
+            "previous" => json_encode($changes["previous"]),
+            "current" => json_encode($changes["current"]),
+            "event" => sizeof($changes["previous"]) === 0 ? "Initialize URH Module" : "Update Project"
         ]);
     }
 
@@ -272,13 +286,14 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentUsers = $this->getCurrentUsers($localProjectId);
         $lastUsers = $this->getLastUsers($localProjectId);
-        if ($lastUsers == null) {
-            $this->saveUsers($localProjectId, $currentUsers);
-            return null;
-        }
+        // if ($lastUsers == null) {
+        //     $changes = array("added" => $currentUsers, "removed" => null);
+        //     $this->saveUsers($localProjectId, $currentUsers, $changes);
+        //     return null;
+        // }
         $userChanges = $this->usersChanged($lastUsers, $currentUsers);
         if ($userChanges["wereChanged"]) {
-            $this->saveUsers($localProjectId, $currentUsers);
+            $this->saveUsers($localProjectId, $currentUsers, $userChanges);
         }
         if (count($userChanges["removed"]) > 0) {
             $this->markUsersRemoved($localProjectId, $userChanges["removed"]);
@@ -296,17 +311,33 @@ class UserRightsHistory extends AbstractExternalModule
     function usersChanged($oldUsers, $newUsers)
     {
         $result = array();
-        $result["removed"] =  array_diff($oldUsers, $newUsers);
+        $oldUsers = is_null($oldUsers) ? [] : $oldUsers;
+        $newUsers = is_null($newUsers) ? [] : $newUsers;
+        $result["removed"] = array_diff($oldUsers, $newUsers);
         $result["added"] = array_diff($newUsers, $oldUsers);
         $result["wereChanged"] = count($result["removed"]) > 0 || count($result["added"]) > 0;
+        $result["previous"] = $oldUsers;
+        $result["current"] = $newUsers;
         return $result;
     }
 
-    function saveUsers($localProjectId, $users)
+    function saveUsers($localProjectId, $users, ?array $changes)
     {
+        $event = "";
+        if (sizeof($changes["added"]) > 0) {
+            $event .= "Add User(s)";
+        }
+        if (sizeof($changes["removed"]) > 0) {
+            $event .= (sizeof($changes["added"]) > 0) ? "and Remove User(s)" : "Remove User(s)";
+        }
         $this->log('users', [
             "project_id" => $localProjectId,
-            "users" => json_encode($users)
+            "users" => json_encode($users),
+            "added" => json_encode($changes["added"]),
+            "removed" => json_encode($changes["removed"]),
+            "previous" => json_encode($changes["previous"]),
+            "current" => json_encode($changes["current"]),
+            "event" => $event
         ]);
     }
 
@@ -318,8 +349,9 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentRolesGzip = $this->getCurrentRoles($localProjectId);
         $lastRolesGzip = $this->getLastRoles($localProjectId);
-        if ($this->rolesChanged($lastRolesGzip, $currentRolesGzip)) {
-            $this->saveRoles($localProjectId, $currentRolesGzip);
+        $rolesChanges = $this->getRolesChanges($lastRolesGzip, $currentRolesGzip);
+        if ($rolesChanges["any_changes"]) {
+            $this->saveRoles($localProjectId, $currentRolesGzip, $rolesChanges);
         }
     }
 
@@ -348,16 +380,40 @@ class UserRightsHistory extends AbstractExternalModule
         return $result->fetch_assoc()["roles"];
     }
 
-    function rolesChanged($lastRolesGzip, $currentRolesGzip)
+    function getRolesChanges($lastRolesGzip, $currentRolesGzip)
     {
-        return $lastRolesGzip !== $currentRolesGzip;
+        $changes = array("any_changes" => false);
+        if ($lastRolesGzip !== $currentRolesGzip) {
+            $lastRoles = json_decode(gzinflate(base64_decode($lastRolesGzip)), true) ?? [];
+            $currentRoles = json_decode(gzinflate(base64_decode($currentRolesGzip)), true) ?? [];
+            $changes["previous"] = array();
+            foreach ($lastRoles as $index => $lastRole) {
+                if (empty($currentRoles[$index])) {
+                    $changes["previous"][$index] = $lastRole;
+                } else {
+                    $changes["previous"][$index] = array_diff_assoc($lastRole, $currentRoles[$index]);
+                }
+            }
+            $changes["current"] = array();
+            foreach ($currentRoles as $index => $currentRole) {
+                if (empty($lastRoles[$index])) {
+                    $changes["current"][$index] = $currentRole;
+                } else {
+                    $changes["current"][$index] = array_diff_assoc($currentRole, $lastRoles[$index]);
+                }
+            }
+            $changes["any_changes"] = true;
+        }
+        return $changes;
     }
 
-    function saveRoles($localProjectId, $rolesGzip)
+    function saveRoles($localProjectId, $rolesGzip, $changes)
     {
         $this->log('roles', [
             "project_id" => $localProjectId,
-            "roles" => $rolesGzip
+            "roles" => $rolesGzip,
+            "previous" => json_encode($changes["previous"]),
+            "current" => json_encode($changes["current"])
         ]);
     }
 
@@ -394,17 +450,18 @@ class UserRightsHistory extends AbstractExternalModule
     function updatePermissionsForUser($localProjectId, $user)
     {
         $username = $user->getUsername();
-        $currentPermissions = $this->getCurrentUserPermissions($localProjectId, $user);
-        $lastPermissions = $this->getLastUserPermissions($localProjectId, $username);
-        if ($lastPermissions == null || $this->permissionsChanged($lastPermissions, $currentPermissions)) {
-            $this->savePermissions($localProjectId, $currentPermissions);
+        $currentPermissions_gzip = $this->getCurrentUserPermissions($localProjectId, $user);
+        $lastPermissions_gzip = $this->getLastUserPermissions($localProjectId, $username);
+        $permissionsChanges = $this->getPermissionsChanges($lastPermissions_gzip, $currentPermissions_gzip, $username);
+        if ($lastPermissions_gzip == null || $permissionsChanges["any_changes"]) {
+            $this->savePermissions($localProjectId, $currentPermissions_gzip, $permissionsChanges, $username);
         }
     }
 
     /**
      * @param user $user user object from EM framework
      * 
-     * @return array permissions, including name and account status
+     * @return string permissions, including name and account status
      */
     function getCurrentUserPermissions($localProjectId, $user)
     {
@@ -423,7 +480,7 @@ class UserRightsHistory extends AbstractExternalModule
         $rights["isSuperUser"] = $isSuperUser;
         $rights["possibleDags"] = $possibleDags;
 
-        return $rights;
+        return base64_encode(gzdeflate(json_encode($rights), 9));
     }
 
     function getLastUserPermissions($localProjectId, string $username)
@@ -432,7 +489,7 @@ class UserRightsHistory extends AbstractExternalModule
         $sql = "select rights where message = 'rights' and user_name = ? and project_id = ? order by timestamp desc limit 1";
         $result = $this->queryLogs($sql, [$username, $localProjectId]);
         $rights_gzip = $result->fetch_assoc()["rights"];
-        return json_decode(gzinflate(base64_decode($rights_gzip)), true);
+        return $rights_gzip;
     }
 
     function getName(string $username)
@@ -488,31 +545,59 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
-    function permissionsChanged(array $oldPermissions, array $newPermissions)
+    function getPermissionsChanges(?string $oldPermissions_gzip, ?string $newPermissions_gzip, $username)
     {
-        $difference1 = array_diff_assoc($oldPermissions, $newPermissions);
-        $difference2 = array_diff_assoc($newPermissions, $oldPermissions);
-        return count($difference1) > 0 || count($difference2) > 0;
+        $changes = array("any_changes" => false);
+        if ($oldPermissions_gzip !== $newPermissions_gzip) {
+            $changes["any_changes"] = true;
+            $oldPermissions = json_decode(gzinflate(base64_decode($oldPermissions_gzip)), true) ?? [];
+            $newPermissions = json_decode(gzinflate(base64_decode($newPermissions_gzip)), true) ?? [];
+
+            $changes["previous"] = array_diff_assoc($oldPermissions, $newPermissions);
+            $changes["current"] = array_diff_assoc($newPermissions, $oldPermissions);
+            if (empty($changes["previous"]["username"]) && empty($changes["current"]["username"])) {
+                $changes["previous"]["username"] = $username;
+                $changes["current"]["username"] = $username;
+            }
+
+            $possibleDagChanges_previous = array_diff_assoc($oldPermissions["possibleDags"], $newPermissions["possibleDags"]);
+            $possibleDagChanges_current = array_diff_assoc($newPermissions["possibleDags"], $oldPermissions["possibleDags"]);
+            if (count($possibleDagChanges_previous) > 0 || count($possibleDagChanges_current) > 0) {
+                $changes["previous"]["possibleDags"] = $possibleDagChanges_previous;
+                $changes["current"]["possibleDags"] = $possibleDagChanges_current;
+            }
+        }
+        return $changes;
     }
 
-    function savePermissions($localProjectId, array $newPermissions)
+    function savePermissions($localProjectId, string $newPermissions_gzip, array $permissionsChanges, $username)
     {
         $this->log('rights', [
-            "user_name" => $newPermissions["username"],
+            "user_name" => $username,
             "project_id" => $localProjectId,
-            "rights" => base64_encode(gzdeflate(json_encode($newPermissions), 9))
+            "rights" => $newPermissions_gzip,
+            "previous" => json_encode($permissionsChanges["previous"]),
+            "current" => json_encode($permissionsChanges["current"])
         ]);
     }
 
     function markUsersRemoved($localProjectId, $removed_users)
     {
         foreach ($removed_users as $username) {
-            $this->log('rights', [
-                "user_name" => $username,
-                "rights" => null,
-                "status" => "removed",
-                "project_id" => $localProjectId
-            ]);
+            try {
+                $lastPermissions_gzip = $this->getLastUserPermissions($localProjectId, $username);
+                $changes = $this->getPermissionsChanges($lastPermissions_gzip, null, $username);
+                $this->log('rights', [
+                    "user_name" => $username,
+                    "rights" => null,
+                    "status" => "removed",
+                    "project_id" => $localProjectId,
+                    "previous" => json_encode($changes["previous"]),
+                    "current" => json_encode($changes["current"])
+                ]);
+            } catch (\Exception $e) {
+                $this->log('Error marking user removed', ["username" => $username, "error" => $e]);
+            }
         }
     }
 
@@ -526,8 +611,9 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentDAGsGzip = $this->getCurrentDAGs($localProjectId);
         $lastDAGsGzip = $this->getLastDAGs($localProjectId);
-        if ($this->dagsChanged($lastDAGsGzip, $currentDAGsGzip)) {
-            $this->saveDAGs($localProjectId, $currentDAGsGzip);
+        $dagChanges = $this->getDAGsChanges($lastDAGsGzip, $currentDAGsGzip);
+        if ($dagChanges["any_changes"]) {
+            $this->saveDAGs($localProjectId, $currentDAGsGzip, $dagChanges);
         }
     }
 
@@ -556,16 +642,40 @@ class UserRightsHistory extends AbstractExternalModule
         return $result->fetch_assoc()["dags"];
     }
 
-    function dagsChanged($lastDAGsGzip, $currentDAGsGzip)
+    function getDAGsChanges($lastDAGsGzip, $currentDAGsGzip)
     {
-        return $lastDAGsGzip !== $currentDAGsGzip;
+        $changes = array("any_changes" => false);
+        if ($lastDAGsGzip !== $currentDAGsGzip) {
+            $changes["any_changes"] = true;
+            $lastDAGs = json_decode(gzinflate(base64_decode($lastDAGsGzip)), true) ?? [];
+            $currentDAGs = json_decode(gzinflate(base64_decode($currentDAGsGzip)), true) ?? [];
+            $changes["previous"] = array();
+            foreach ($lastDAGs as $index => $lastDAG) {
+                if (empty($currentDAGs[$index])) {
+                    $changes["previous"][$index] = $lastDAG;
+                } else {
+                    $changes["previous"][$index] = array_diff_assoc($lastDAG, $currentDAGs[$index]);
+                }
+            }
+            $changes["current"] = array();
+            foreach ($currentDAGs as $index => $currentDAG) {
+                if (empty($lastDAGs[$index])) {
+                    $changes["current"][$index] = $currentDAG;
+                } else {
+                    $changes["current"][$index] = array_diff_assoc($currentDAG, $lastDAGs[$index]);
+                }
+            }
+        }
+        return $changes;
     }
 
-    function saveDAGs($localProjectId, $dagsGzip)
+    function saveDAGs($localProjectId, $dagsGzip, $dagChanges)
     {
         $this->log('dags', [
             "project_id" => $localProjectId,
-            "dags" => $dagsGzip
+            "dags" => $dagsGzip,
+            "current" => json_encode($dagChanges["current"]),
+            "previous" => json_encode($dagChanges["previous"])
         ]);
     }
 
@@ -575,10 +685,17 @@ class UserRightsHistory extends AbstractExternalModule
 
     function updateAllSystem()
     {
-        $currentSystemGzip = $this->getCurrentSystem();
-        $lastSystemGzip = $this->getLastSystem();
-        if ($this->systemChanged($lastSystemGzip, $currentSystemGzip)) {
-            $this->saveSystem($currentSystemGzip);
+        try {
+            $currentSystemGzip = $this->getCurrentSystem();
+            $lastSystemGzip = $this->getLastSystem();
+            $systemChanges = $this->getSystemChanges($lastSystemGzip, $currentSystemGzip);
+            if (empty($lastSystemGzip) || $systemChanges["any_changes"]) {
+                $this->saveSystem($currentSystemGzip, $systemChanges);
+            }
+        } catch (\Exception $e) {
+            $this->log("Error updating system",  [
+                "error" => $e->getMessage()
+            ]);
         }
     }
 
@@ -596,7 +713,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return base64_encode(gzdeflate(json_encode($system_info), 9));
         } catch (\Exception $e) {
-            $this->log("Error updating system",  [
+            $this->log("Error getting current system",  [
                 "error" => $e->getMessage()
             ]);
         }
@@ -609,15 +726,25 @@ class UserRightsHistory extends AbstractExternalModule
         return $result->fetch_assoc()["info"];
     }
 
-    function systemChanged($lastSystemGzip, $currentSystemGzip)
+    function getSystemChanges($lastSystemGzip, $currentSystemGzip)
     {
-        return $lastSystemGzip !== $currentSystemGzip;
+        $changes = array("any_changes" => false);
+        if ($lastSystemGzip !== $currentSystemGzip) {
+            $changes["any_changes"] = true;
+            $lastSystem = json_decode(gzinflate(base64_decode($lastSystemGzip)), true) ?? [];
+            $currentSystem = json_decode(gzinflate(base64_decode($currentSystemGzip)), true) ?? [];
+            $changes["previous"] = array_diff_assoc($lastSystem, $currentSystem);
+            $changes["current"] = array_diff_assoc($currentSystem, $lastSystem);
+        }
+        return $changes;
     }
 
-    function saveSystem($system_gzip)
+    function saveSystem($system_gzip, $systemChanges)
     {
         $this->log('system', [
-            "info" => $system_gzip
+            "info" => $system_gzip,
+            "current" => json_encode($systemChanges["current"]),
+            "previous" => json_encode($systemChanges["previous"])
         ]);
     }
 
@@ -629,8 +756,9 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $currentInstrumentsGzip = $this->getCurrentInstruments($localProjectId);
         $lastInstrumentsGzip = $this->getLastInstruments($localProjectId);
-        if ($this->instrumentsChanged($lastInstrumentsGzip, $currentInstrumentsGzip)) {
-            $this->saveInstruments($localProjectId, $currentInstrumentsGzip);
+        $instrumentsChanges = $this->getInstrumentsChanges($lastInstrumentsGzip, $currentInstrumentsGzip);
+        if ($instrumentsChanges["any_changes"]) {
+            $this->saveInstruments($localProjectId, $currentInstrumentsGzip, $instrumentsChanges);
         }
     }
 
@@ -664,16 +792,26 @@ class UserRightsHistory extends AbstractExternalModule
         return $result->fetch_assoc()["instruments"];
     }
 
-    function instrumentsChanged($lastInstrumentsGzip, $currentInstrumentsGzip)
+    function getInstrumentsChanges($lastInstrumentsGzip, $currentInstrumentsGzip)
     {
-        return $lastInstrumentsGzip !== $currentInstrumentsGzip;
+        $changes = array("any_changes" => false);
+        if ($lastInstrumentsGzip !== $currentInstrumentsGzip) {
+            $changes["any_changes"] = true;
+            $lastInstruments = json_decode(gzinflate(base64_decode($lastInstrumentsGzip)), true) ?? [];
+            $currentInstruments = json_decode(gzinflate(base64_decode($currentInstrumentsGzip)), true) ?? [];
+            $changes["previous"] = array_diff_assoc($lastInstruments, $currentInstruments);
+            $changes["current"] = array_diff_assoc($currentInstruments, $lastInstruments);
+        }
+        return $changes;
     }
 
-    function saveInstruments($localProjectId, $instruments_gzip)
+    function saveInstruments($localProjectId, $instruments_gzip, $instrumentsChanges)
     {
         $this->log('instruments', [
             "project_id" => $localProjectId,
-            "instruments" => $instruments_gzip
+            "instruments" => $instruments_gzip,
+            "previous" => json_encode($instrumentsChanges["previous"]),
+            "current" => json_encode($instrumentsChanges["current"])
         ]);
     }
 
@@ -850,6 +988,187 @@ class UserRightsHistory extends AbstractExternalModule
         return $timestamp * 1000 + 60000;
     }
 
+    ///////////////////////////
+    // Logging Table Methods //
+    ///////////////////////////
+
+
+    function strposX($haystack, $needle, $number = 0)
+    {
+        return strpos(
+            $haystack,
+            $needle,
+            $number > 1 ?
+                $this->strposX($haystack, $needle, $number - 1) + strlen($needle) : 0
+        );
+    }
+
+    function syntaxHighlight($json)
+    {
+        $json = json_encode(json_decode($json), JSON_PRETTY_PRINT);
+        $json = preg_replace('/&/', '&amp;', $json);
+        $json = preg_replace('/</', '&lt;', $json);
+        $json = preg_replace('/>/', '&gt;', $json);
+        $result = preg_replace_callback(
+            '/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/',
+            function ($matches) {
+                $cls = "number";
+                if (preg_match('/^"/', $matches[1])) {
+                    if (preg_match('/:$/', $matches[1])) {
+                        $cls = "key";
+                    } else {
+                        $cls = "string";
+                    }
+                } else if (preg_match('/true|false/', $matches[1])) {
+                    $cls = "boolean";
+                } else if (preg_match('/null/', $matches[1])) {
+                    $cls = "null";
+                }
+                return '<span class="' . $cls . '">' . $matches[1] . '</span>';
+            },
+            $json
+        );
+        $lines = substr_count($result, "\n") + 1;
+        if ($lines > 10) {
+            $result_preview = substr($result, 0, $this->strposX($result, "\n", 9));
+            $result_tail = substr($result, $this->strposX($result, "\n", 9));
+            $final_result = '<pre class="preview" style="margin-bottom:0px !important;padding-bottom:0px !important;">' . $result_preview . '</pre><pre class="break">    ...</pre><pre class="tail" style="display:none; margin-top:0px !important;padding-top:0px !important;">' . $result_tail . '</pre><button type="button" class="btn btn-outline-primary btn-sm" onclick="$(this).siblings(\'pre.break\').toggle();$(this).siblings(\'pre.tail\').slideToggle(500);$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\')); $(this).toggleClass(\'btn-outline-primary\').toggleClass(\'btn-primary\');$(\'#history_logging_table\').DataTable().columns.adjust();">Show More</button>';
+        } else {
+            $final_result = '<pre>' . $result . '</pre>';
+        }
+        return $final_result;
+    }
+
+    function getTotalLogCount()
+    {
+        try {
+            $queryResult = $this->queryLogs("select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
+                'dags',
+                'instruments',
+                'module enabled by default status',
+                'module project status',
+                'module system status',
+                'module version',
+                'project_info',
+                'rights',
+                'roles',
+                'system',
+                'users'
+            )", [$this->getProjectId()]);
+            return $queryResult->fetch_assoc()["ts"];
+        } catch (\Exception $e) {
+            $this->log('Error getting total log count', ["error" => $e->getMessage()]);
+            return;
+        }
+    }
+
+    function getLogs(array $params)
+    {
+        try {
+            $start = intval($params["start"]);
+            $length = intval($params["length"]);
+            $limitTerm = ($length < 0) ? "" : " limit " . $start .  "," . $length;
+
+
+            $queryParameters = [$this->getProjectId()];
+
+            $generalSearchTerm = $params["search"]["value"] ?? "";
+            $generalSearchText = $generalSearchTerm === "" ? "" : " and (";
+            $generalSearchParameters = [];
+            $columnSearchText = "";
+            $columnSearchParameters = [];
+            foreach ($params["columns"] as $column) {
+
+                // Add column to general search if it is searchable
+                if ($generalSearchTerm !== "" && $column["searchable"] == "true") {
+                    if ($generalSearchText !== " and (") {
+                        $generalSearchText .= " or ";
+                    }
+                    $generalSearchText .= db_escape($column["data"]) . " like ?";
+                    array_push($queryParameters, sprintf("%%%s%%", $generalSearchTerm));
+                }
+
+                // Add any column-specific filtering
+                $searchVal = $column["search"]["value"];
+                if ($searchVal != "") {
+                    $columnSearchText .= " and " . db_escape($column["data"]) . " like ?";
+                    $searchVal = $column["search"]["regex"] == "true" ? $searchVal : sprintf("%%%s%%", $searchVal);
+                    array_push($columnSearchParameters, $searchVal);
+                }
+            }
+            $generalSearchText .= $generalSearchText === "" ? "" : ")";
+
+            // Timestamp filtering
+            $timestampFilterText = "";
+            $timestampFilterParameters = [];
+            if ($params["minDate"] != "") {
+                $timestampFilterText .= " and timestamp >= ?";
+                $timestampFilterParameters[] = $params["minDate"];
+            }
+            if ($params["maxDate"] != "") {
+                $timestampFilterText .= " and timestamp <= ?";
+                $timestampFilterParameters[] = $params["maxDate"];
+            }
+
+            $orderTerm = "";
+            foreach ($params["order"] as $index => $order) {
+                $column = db_escape($params["columns"][intval($order["column"])]["data"]);
+                $direction = $order["dir"] === "asc" ? "asc" : "desc";
+                if ($index === 0) {
+                    $orderTerm .= " order by ";
+                }
+                $orderTerm .= $column . " " . $direction;
+                if ($index !== sizeof($params["order"]) - 1) {
+                    $orderTerm .= ", ";
+                }
+            }
+            if ($orderTerm === "") {
+                $orderTerm = " order by timestamp desc";
+            }
+
+            $queryParameters = [...$queryParameters, ...$generalSearchParameters, ...$columnSearchParameters, ...$timestampFilterParameters];
+
+            $queryText =  "select timestamp, message, current, previous where (project_id = ? or project_id is null) and message in (
+                'dags',
+                'instruments',
+                'module enabled by default status',
+                'module project status',
+                'module system status',
+                'module version',
+                'project_info',
+                'rights',
+                'roles',
+                'system',
+                'users'
+            )" . $generalSearchText . $columnSearchText . $timestampFilterText . $orderTerm . $limitTerm;
+            $countText =  "select count(timestamp) ts where (project_id = ? or project_id is null) and message in (
+                'dags',
+                'instruments',
+                'module enabled by default status',
+                'module project status',
+                'module system status',
+                'module version',
+                'project_info',
+                'rights',
+                'roles',
+                'system',
+                'users'
+            )" . $generalSearchText . $columnSearchText . $timestampFilterText;
+
+            $queryResult = $this->queryLogs($queryText, $queryParameters);
+            $countResult = $this->queryLogs($countText, $queryParameters);
+            $rowsTotal = $countResult->fetch_assoc()["ts"];
+            $logs = array();
+            while ($row = $queryResult->fetch_assoc()) {
+                $row["previous"] = $this->syntaxHighlight($row["previous"]);
+                $row["current"] = $this->syntaxHighlight($row["current"]);
+                $logs[] = $row;
+            }
+            return [$logs, $rowsTotal];
+        } catch (\Exception $e) {
+            $this->log('Error getting logs', ["error" => $e->getMessage()]);
+        }
+    }
 
 
     /////////////////////
@@ -864,5 +1183,11 @@ class UserRightsHistory extends AbstractExternalModule
         } catch (\Exception $e) {
             $this->log('Error rendering table', ['message' => $e->getMessage()]);
         }
+    }
+
+    function showPageHeader(string $page)
+    {
+        $UI = new UI($this);
+        $UI->showPageHeader($page);
     }
 }

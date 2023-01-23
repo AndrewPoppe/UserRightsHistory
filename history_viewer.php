@@ -1,9 +1,6 @@
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('lib/datatables.min.css') ?>" />
-<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('userRightsTable.css') ?>" />
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="<?= $module->getUrl('lib/datatables.min.js') ?>"></script>
 <?php
+$module->showPageHeader("history_viewer", $description);
+
 if (isset($_GET["datetime"])) {
     $timestamp = intval($_GET["datetime"]);
 } else {
@@ -16,6 +13,13 @@ $time_format =  explode("_", \DateTimeRC::get_user_format_full(), 2)[1];
 $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
 
 ?>
+<p>
+    This page may be used for investigating which users had access to this project and what permissions those users had.
+    <br>
+    You may select a date and time, and the user rights at that point in time will be displayed below. You can only select dates
+    <br>
+    following the moment this module was installed in the project.
+</p>
 <script type="text/javascript">
     $(function() {
         $('#datetime_icon').attr('src', app_path_images + 'date.png');
@@ -159,19 +163,7 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
 
     }
 </script>
-<div class="projhdr">
-    <div style="float:left;">
-        <i class="fas fa-history"></i>
-        User Rights History
-    </div>
-    <br>
-</div>
-<p>
-    This page may be used for investigating which users had access to this project and what permissions those users had.
-    You may select a date and time, and the user rights at that point in time will be displayed below. You can only select dates
-    following the moment this module was installed in the project.
-</p>
-<div style=" margin:20px 0;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
+<div style="margin:20px 0px;font-size:12px;font-weight:normal;padding:10px;border:1px solid #ccc;background-color:#eee;max-width:630px;">
     <div style="color:#444;"><span style="color:#000;font-weight:bold;font-size:13px;margin-right:5px;">Choose a date and time:</span> The user rights at that point in time will be displayed below.</div>
     <div style="margin:8px 0 0 0px;">
         <input id="datetime">&nbsp;
@@ -183,4 +175,7 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
 </div>
 <?php
 $permissions = $module->getAllInfoByTimestamp($timestamp);
+$result = $module->query("select external_module_id from redcap_external_modules where directory_prefix = 'user_rights_history'", []);
+$id = $result->fetch_assoc()["external_module_id"];
+//$module->query("delete from redcap_external_modules_log where external_module_id = ?;", [$id]);
 $module->renderTable($permissions);
