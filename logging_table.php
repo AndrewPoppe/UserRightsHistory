@@ -54,14 +54,29 @@ foreach ($messages as $message) {
     $messages_pretty[$message] = ucwords(str_replace('_', ' ', $message));
 }
 ?>
+<script>
+    //TODO: Get rid of this nastiness 
+    Array.from(document.styleSheets).forEach(ss => {
+        try {
+            if (!ss.href.includes('https://cdn.datatables.net')) {
+                return Array.from(ss.cssRules).forEach(rule => {
+                    if (rule.cssText.toLowerCase().includes('datatable')) {
+                        rule.style.removeProperty('all')
+                    }
+                })
+            }
+        } catch (err) {
+
+        }
+    })
+</script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.css" />
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.js"></script>
 <script type="text/javascript">
     const module = <?= $module->getJavascriptModuleObjectName() ?>;
     const totalRecords = "<?= $module->getTotalLogCount() ?>";
     $(document).ready(function() {
-        console.log(module.getUrl('logging_table_ajax.php'));
-        $('#history_logging_table').DataTable({
+        var table = $('#history_logging_table').DataTable({
             processing: true,
             serverSide: true,
             deferLoading: totalRecords,
@@ -102,15 +117,15 @@ foreach ($messages as $message) {
                         }
                         return data;
                     },
-                    width: "25%"
+                    width: "20%"
                 },
                 {
                     data: 'previous',
-                    width: "30%"
+                    width: "32.5%"
                 },
                 {
                     data: 'current',
-                    width: "30%"
+                    width: "32.5%"
                 },
             ],
             order: [
@@ -162,9 +177,48 @@ foreach ($messages as $message) {
                     const searchValue = event.target.value;
                     table.DataTable().column(event.target.parentElement).search(searchValue, true).draw();
                 });
+
+                table.DataTable().columns.adjust();
             },
+            drawCallback: function(settings) {
+                const table = this.DataTable();
+                table.rows().every(function() {
+                    const rowNode = this.node();
+                    const rowIndex = this.index();
+                    $(rowNode).attr('data-dt-row', rowIndex);
+                });
+                $('.dataTable tbody tr').each((i, row) => {
+                    row.onmouseenter = hover;
+                    row.onmouseleave = dehover;
+                });
+            }
         });
+
+        table.rows().every(function() {
+            const rowNode = this.node();
+            const rowIndex = this.index();
+            $(rowNode).attr('data-dt-row', rowIndex);
+        });
+
+        $('.dataTable tbody tr').each((i, row) => {
+            row.onmouseenter = hover;
+            row.onmouseleave = dehover;
+        });
+
+
     });
+
+    function hover() {
+        const thisNode = $(this);
+        const rowIdx = thisNode.attr('data-dt-row');
+        $("tr[data-dt-row='" + rowIdx + "'] td").addClass("highlight"); // shade only the hovered row
+    }
+
+    function dehover() {
+        const thisNode = $(this);
+        const rowIdx = thisNode.attr('data-dt-row');
+        $("tr[data-dt-row='" + rowIdx + "'] td").removeClass("highlight"); // shade only the hovered row
+    }
 </script>
 <p>
     This page shows the changes to the project in a tabular form. This is useful when searching for a particular user rights change.
@@ -174,7 +228,7 @@ foreach ($messages as $message) {
     <div class="options">
 
     </div>
-    <table id="history_logging_table" class="display compact cell-border" style="width: 100%;">
+    <table id="history_logging_table" class="stripe compact cell-border" style="width: 100%;">
         <thead>
             <tr>
                 <th>
@@ -233,6 +287,7 @@ foreach ($messages as $message) {
     pre {
         background-color: transparent !important;
         border: none !important;
+        white-space: pre-wrap;
     }
 
     .ui-timepicker-div dl dd {
