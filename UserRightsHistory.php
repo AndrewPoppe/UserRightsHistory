@@ -58,25 +58,29 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_configuration_settings($project_id, $settings)
     {
-        // Get existing user access
-        $all_users = $this->getUsers();
-        foreach ($all_users as $user) {
-            $username = $user->getUsername();
-            $name = $this->getName($username);
-            $user_key = $username . "_access";
-            $existing_access = $this->getProjectSetting($user_key);
-            $settings[] = [
-                "key" => $user_key,
-                "name" => "<strong>" . ucwords($name) . "</strong> (" . $username . ")",
-                "type" => "checkbox",
-                "branchingLogic" => [
-                    "field" => "restrict-access",
-                    "value" => "1"
-                ]
-            ];
-        }
+        try {
+            // Get existing user access
+            $all_users = $this->getProject($project_id)->getUsers();
+            foreach ($all_users as $user) {
+                $username = $user->getUsername();
+                $name = $this->getName($username);
+                $user_key = $username . "_access";
+                $existing_access = $this->getProjectSetting($user_key, $project_id);
+                $settings[] = [
+                    "key" => $user_key,
+                    "name" => "<strong>" . ucwords($name) . "</strong> (" . $username . ")",
+                    "type" => "checkbox",
+                    "branchingLogic" => [
+                        "field" => "restrict-access",
+                        "value" => "1"
+                    ]
+                ];
+            }
 
-        return $settings;
+            return $settings;
+        } catch (\Exception $e) {
+            $this->log("Error creating configuration", ["error" => $e->getMessage()]);
+        }
     }
 
     function redcap_module_link_check_display($project_id, $link)
