@@ -33,6 +33,21 @@
             ]
         },
         {
+            "key": "prevent_logs_for_dags",
+            "name": "<strong>Restrict Logging for DAG Users</strong>: Choose whether to disable the logging feature for users currently in a Data Access Group<br>Default setting is to restrict access",
+            "type": "dropdown",
+            "choices": [
+                {
+                    "value": 0,
+                    "name": "Disable Logging access for users in a DAG"
+                },
+                {
+                    "value": 1,
+                    "name": "Allow all users to see all logging"
+                }
+            ]
+        },
+        {
             "key": "restrict-access",
             "name": "<strong>Restrict User Access</strong>: Choose whether to restrict access to certain users in the project or to allow access to all users.<br>If you choose to restrict access, you will be able to select which individual users have access to this module.<br>Default is to allow all users to access the module",
             "type": "dropdown",

@@ -2,6 +2,14 @@
 $module->showPageHeader("logging_table");
 $module->initializeJavascriptModuleObject();
 
+// If user is in a DAG and settings are appropriate, don't show the logging table.
+$current_dag = $module->getCurrentDag($module->getProject()->getProjectId(), $module->getUser()->getUsername());
+$prevent_dags_from_seeing_logs = $module->getProjectSetting("prevent_logs_for_dags");
+if ($current_dag != null && $prevent_dags_from_seeing_logs != "1") {
+    echo "<span style='color:#C00000; margin-bottom: 5px;'>Since you have been assigned to a Data Access Group, you are not able to view the User Rights History logs.</span><br>";
+    exit();
+}
+
 // Get User's Date Format
 $date_format = \DateTimeRC::get_user_format_php();
 $time_format =  explode("_", \DateTimeRC::get_user_format_full(), 2)[1];
