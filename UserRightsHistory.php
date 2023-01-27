@@ -58,6 +58,9 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_configuration_settings($project_id, $settings)
     {
+        if (empty($project_id)) {
+            return $settings;
+        }
         try {
             // Get existing user access
             $all_users = $this->getProject($project_id)->getUsers();
