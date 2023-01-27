@@ -38,11 +38,11 @@
             "type": "dropdown",
             "choices": [
                 {
-                    "value": 1,
+                    "value": 0,
                     "name": "Keep the logging table enabled"
                 },
                 {
-                    "value": 0,
+                    "value": 1,
                     "name": "Disable the logging table"
                 }
             ]
@@ -63,7 +63,7 @@
             ],
             "branchingLogic": {
                 "field": "disable-logging-table",
-                "value": "1"
+                "value": "0"
             }
         },
         {

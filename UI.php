@@ -27,7 +27,7 @@ class UI
             <br>
         </div>
 
-        <?php if (self::$module->getProjectSetting("disable-logging-table") != "0") { ?>
+        <?php if (self::$module->getProjectSetting("disable-logging-table") != "1") { ?>
             <div id="sub-nav" class="d-none d-sm-block" style="margin:5px 20px 15px 0px;">
                 <ul>
                     <li class="<?= $page === "history_viewer" ? "active" : "" ?>">

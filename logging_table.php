@@ -1,5 +1,5 @@
 <?php
-if ($module->getProjectSetting("disable-logging-table") != "1") {
+if ($module->getProjectSetting("disable-logging-table") == "1") {
     header("Location: " . $module->getUrl("history_viewer.php"));
     exit();
 }
