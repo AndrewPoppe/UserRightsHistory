@@ -996,53 +996,6 @@ class UserRightsHistory extends AbstractExternalModule
     // Logging Table Methods //
     ///////////////////////////
 
-
-    function strposX($haystack, $needle, $number = 0)
-    {
-        return strpos(
-            $haystack,
-            $needle,
-            $number > 1 ?
-                $this->strposX($haystack, $needle, $number - 1) + strlen($needle) : 0
-        );
-    }
-
-    function syntaxHighlight($json)
-    {
-        $json = json_encode(json_decode($json), JSON_PRETTY_PRINT);
-        $json = preg_replace('/&/', '&amp;', $json);
-        $json = preg_replace('/</', '&lt;', $json);
-        $json = preg_replace('/>/', '&gt;', $json);
-        $result = preg_replace_callback(
-            '/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/',
-            function ($matches) {
-                $cls = "number";
-                if (preg_match('/^"/', $matches[1])) {
-                    if (preg_match('/:$/', $matches[1])) {
-                        $cls = "key";
-                    } else {
-                        $cls = "string";
-                    }
-                } else if (preg_match('/true|false/', $matches[1])) {
-                    $cls = "boolean";
-                } else if (preg_match('/null/', $matches[1])) {
-                    $cls = "null";
-                }
-                return '<span class="' . $cls . '">' . $matches[1] . '</span>';
-            },
-            $json
-        );
-        $lines = substr_count($result, "\n") + 1;
-        if ($lines > 10) {
-            $result_preview = substr($result, 0, $this->strposX($result, "\n", 9));
-            $result_tail = substr($result, $this->strposX($result, "\n", 9));
-            $final_result = '<pre class="preview" style="margin-bottom:0px !important;padding-bottom:0px !important;">' . $result_preview . '</pre><pre class="break">    ...</pre><pre class="tail" style="display:none; margin-top:0px !important;padding-top:0px !important;">' . $result_tail . '</pre><button type="button" class="btn btn-outline-primary btn-sm" onclick="$(this).siblings(\'pre.break\').toggle();$(this).siblings(\'pre.tail\').slideToggle(500);$(this).text(($(this).text()==\'Show More\'?\'Show Less\':\'Show More\')); $(this).toggleClass(\'btn-outline-primary\').toggleClass(\'btn-primary\');$(\'#history_logging_table\').DataTable().columns.adjust();">Show More</button>';
-        } else {
-            $final_result = '<pre>' . $result . '</pre>';
-        }
-        return $final_result;
-    }
-
     function getTotalLogCount()
     {
         try {
@@ -1164,8 +1117,6 @@ class UserRightsHistory extends AbstractExternalModule
             $rowsTotal = $countResult->fetch_assoc()["ts"];
             $logs = array();
             while ($row = $queryResult->fetch_assoc()) {
-                $row["previous"] = $this->syntaxHighlight($row["previous"]);
-                $row["current"] = $this->syntaxHighlight($row["current"]);
                 $logs[] = $row;
             }
             return [$logs, $rowsTotal];

@@ -1,7 +1,5 @@
 <?php
 
-// TODO: Implement some kind of authentication - based on User Rights permissions?
-
 $params = [
     "search" => filter_input(INPUT_POST, "search", FILTER_DEFAULT, FILTER_REQUIRE_ARRAY),
     "start" => filter_input(INPUT_POST, "start", FILTER_VALIDATE_INT),
@@ -12,7 +10,6 @@ $params = [
     "maxDate" => filter_input(INPUT_POST, "maxDate", FILTER_DEFAULT)
 ];
 
-$module->log('params', ['params' => json_encode($params), "post" => json_encode($_POST)]);
 
 [$logs, $recordsFiltered] = $module->getLogs($params);
 $total = $module->getTotalLogCount();

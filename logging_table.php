@@ -129,11 +129,23 @@ foreach ($messages as $message) {
                 },
                 {
                     data: 'previous',
-                    width: "32.5%"
+                    width: "32.5%",
+                    render: function(data, type) {
+                        if (type === 'display') {
+                            return syntaxHighlight(data);
+                        }
+                        return data;
+                    }
                 },
                 {
                     data: 'current',
-                    width: "32.5%"
+                    width: "32.5%",
+                    render: function(data, type) {
+                        if (type === 'display') {
+                            return syntaxHighlight(data);
+                        }
+                        return data;
+                    }
                 },
             ],
             order: [
@@ -187,6 +199,7 @@ foreach ($messages as $message) {
                 });
 
                 table.DataTable().columns.adjust();
+                $('table').css('opacity', 1);
             },
             drawCallback: function(settings) {
                 const table = this.DataTable();
@@ -227,6 +240,52 @@ foreach ($messages as $message) {
         const rowIdx = thisNode.attr('data-dt-row');
         $("tr[data-dt-row='" + rowIdx + "'] td").removeClass("highlight"); // shade only the hovered row
     }
+
+    function getIndex(str, char, n) {
+        return str.split(char).slice(0, n).join(char).length;
+    }
+
+    function getClosestIndex(str, char, max_instances, max_chars = 500) {
+        let index = Infinity;
+        let instance = max_instances;
+        let result;
+        while (index > max_chars && instance > 0) {
+            index = getIndex(str, char, instance--);
+        }
+        return index;
+    }
+
+    function syntaxHighlight(json) {
+        if (json === "") json = null;
+        json = JSON.stringify(JSON.parse(json), undefined, 4);
+        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const result = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
+            var cls = 'number';
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    cls = 'key';
+                } else {
+                    cls = 'string';
+                }
+            } else if (/true|false/.test(match)) {
+                cls = 'boolean';
+            } else if (/null/.test(match)) {
+                cls = 'null';
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+        });
+
+        const lines = result.split("\n").length;
+        let final_result;
+        if (lines > 10 || result.length > 500) {
+            const result_preview = result.substring(0, getClosestIndex(result, '\n', 9));
+            const result_tail = result.substring(getClosestIndex(result, '\n', 9));
+            final_result = `<pre class="preview" style="margin-bottom:0px !important;padding-bottom:0px !important;">${result_preview}</pre><pre class="break">    ...</pre><pre class="tail" style="display:none; margin-top:0px !important;padding-top:0px !important;">${result_tail}</pre><button type="button" class="btn btn-outline-primary btn-sm" onclick="$(this).siblings('pre.break').toggle();$(this).siblings('pre.tail').slideToggle(500);$(this).text(($(this).text()=='Show More'?'Show Less':'Show More')); $(this).toggleClass('btn-outline-primary').toggleClass('btn-primary');$('#history_logging_table').DataTable().columns.adjust();">Show More</button>`;
+        } else {
+            final_result = `<pre>${result}</pre>`;
+        }
+        return final_result;
+    }
 </script>
 <p>
     This page shows the changes to the project in a tabular form. This is useful when searching for a particular user rights change.
@@ -236,7 +295,7 @@ foreach ($messages as $message) {
     <div class="options">
 
     </div>
-    <table id="history_logging_table" class="stripe compact cell-border" style="width: 100%;">
+    <table id="history_logging_table" class="stripe compact cell-border" style="opacity: 0; width: 100%;">
         <thead>
             <tr>
                 <th>
@@ -341,5 +400,3 @@ foreach ($messages as $message) {
     }
 </style>
 <?php
-$end = time();
-$module->log('total time', ["time" => $end - $start]);
