@@ -59,12 +59,12 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
 
         const table = $('table#userrights').DataTable({
             paging: false,
-            buttons: ['colvis'],
+            //buttons: ['colvis'],
             scrollX: true,
             fixedColumns: {
                 left: 2
             },
-            stateSave: true,
+            stateSave: false,
             dom: "t",
             "order": [
                 [0, 'asc'],
@@ -86,6 +86,10 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
             }],
             scrollY: 'calc(100vh - 220px)',
             scrollCollapse: true,
+            initComplete: function() {
+                $('.spinner-container').hide();
+                $('table').css('opacity', 1);
+            }
         });
 
         table.on('draw', function() {

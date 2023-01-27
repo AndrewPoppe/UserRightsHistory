@@ -22,7 +22,12 @@ class Renderer
             <div style="margin-bottom: 10px;">
                 <?= $this->getProjectStatus() ?>
             </div>
-            <table id="userrights" class="cell-border stripe compact noOrderIcon">
+            <div class="text-center spinner-container">
+                <div class="spinner-border text-primary m-8" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+            <table id="userrights" class="cell-border stripe compact noOrderIcon" style="opacity:0;">
                 <thead>
                     <tr>
                         <?php foreach ($columns as $column) {

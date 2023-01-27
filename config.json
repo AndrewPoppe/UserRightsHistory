@@ -33,8 +33,23 @@
             ]
         },
         {
+            "key": "disable-logging-table",
+            "name": "<strong>Disable the logging table for all users</strong>: Disable the logging table completely.<br>Default is to keep the logging table enabled",
+            "type": "dropdown",
+            "choices": [
+                {
+                    "value": 1,
+                    "name": "Keep the logging table enabled"
+                },
+                {
+                    "value": 0,
+                    "name": "Disable the logging table"
+                }
+            ]
+        },
+        {
             "key": "prevent_logs_for_dags",
-            "name": "<strong>Restrict Logging for DAG Users</strong>: Choose whether to disable the logging feature for users currently in a Data Access Group<br>Default setting is to restrict access",
+            "name": "<strong>Restrict Logging for DAG Users</strong>: Choose whether to disable the logging feature for users currently in a Data Access Group<br>Default is to restrict access",
             "type": "dropdown",
             "choices": [
                 {
@@ -45,7 +60,11 @@
                     "value": 1,
                     "name": "Allow all users to see all logging"
                 }
-            ]
+            ],
+            "branchingLogic": {
+                "field": "disable-logging-table",
+                "value": "1"
+            }
         },
         {
             "key": "restrict-access",
