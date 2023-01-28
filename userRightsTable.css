@@ -98,8 +98,8 @@
     }
 
     .popover td {
-        border-left: 1px solid #ddd;
-        border-top: 1px solid #ddd;
+        border-left: 1px solid #ddd !important;
+        border-top: 1px solid #ddd !important;
         border-collapse: collapse !important;
         width: 30px;
         text-align: center;
@@ -112,27 +112,27 @@
 
     .popover thead th {
         background-color: #ececec;
-        border-bottom: 1px solid #aaa;
-        border-top: 1px solid #aaa;
+        border-bottom: 1px solid #aaa !important;
+        border-top: 1px solid #aaa !important;
     }
 
     .popover th:nth-child(1) {
-        border-left: 1px solid #aaa;
+        border-left: 1px solid #aaa !important;
     }
 
     .popover tbody tr:nth-child(1) td,
     .popover tbody tr:nth-child(1) th {
-        border-top: none;
+        border-top: none !important;
     }
 
     .popover tbody tr:last-child td,
     .popover tbody tr:last-child th {
-        border-bottom: 1px solid #aaa;
+        border-bottom: 1px solid #aaa !important;
     }
 
     .popover td:last-child,
     .popover th:last-child {
-        border-right: 1px solid #aaa;
+        border-right: 1px solid #aaa !important;
     }
 
     .popover tbody tr:nth-child(even) td,
@@ -143,13 +143,14 @@
     .popover table {
         font-size: 12px;
         border-collapse: separate !important;
-        border-spacing: 0;
+        border-spacing: 0 !important;
         margin-right: 20px;
     }
 
     .popover th {
         padding: .25rem;
-        border-left: 1px solid #ddd;
+        border-left: 1px solid #ddd !important;
+        border-top: 1px solid #ddd !important;
     }
 
     .popover div.popover-table {

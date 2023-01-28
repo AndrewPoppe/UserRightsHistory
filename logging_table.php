@@ -361,14 +361,14 @@ foreach ($messages as $message) {
         white-space: pre-wrap;
     }
 
-    .ui-timepicker-div dl dd {
-        margin: 14px 10px 10px 40%;
-    }
-
     div.container {
         width: 100%;
         margin: 0;
         padding: 0;
+    }
+
+    table.dataTable#history_logging_table {
+        border-collapse: collapse !important;
     }
 
     .dataTables_processing {
@@ -395,7 +395,7 @@ foreach ($messages as $message) {
         border-left: 1px solid rgba(0, 0, 0, 0.15) !important;
     }
 
-    thead tr {
+    .dataTable thead tr {
         background-color: rgb(220, 220, 220) !important;
     }
 
