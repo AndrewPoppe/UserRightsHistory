@@ -81,7 +81,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
 
             return $settings;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error creating configuration", ["error" => $e->getMessage()]);
         }
     }
@@ -147,7 +147,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $project_ids[] = $row["project_id"];
             }
             return $project_ids;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error fetching all projects", ["error" => $e->getMessage()]);
         }
     }
@@ -208,7 +208,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             $this->updateAllSystem();
             return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error updating projects", ["error" => $e->getMessage()]);
             return "The \"{$cronInfo['cron_name']}\" cron job failed: " . $e->getMessage();
         }
@@ -236,7 +236,7 @@ class UserRightsHistory extends AbstractExternalModule
             $result_array = $result->fetch_assoc();
             unset($result_array["last_logged_event"]); // Prevent unncessary updates
             return $result_array;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log('Error fetching project info', ['error' => $e->getMessage()]);
         }
     }
@@ -372,7 +372,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $roles[$role["role_id"]] = $role;
             }
             return !empty($roles) ? base64_encode(gzdeflate(json_encode($roles), 9)) : null;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error updating roles",  [
                 "project_id" => $localProjectId,
                 "error" => $e->getMessage()
@@ -438,7 +438,7 @@ class UserRightsHistory extends AbstractExternalModule
             foreach ($users as $user) {
                 $this->updatePermissionsForUser($localProjectId, $user);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error updating users",  [
                 "project_id" => $localProjectId,
                 "error" => $e->getMessage()
@@ -507,7 +507,7 @@ class UserRightsHistory extends AbstractExternalModule
             where username = ?";
             $result = $this->query($sql, [$username]);
             return $result->fetch_assoc()["name"];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error fetching name", ["error" => $e->getMessage()]);
         }
     }
@@ -519,7 +519,7 @@ class UserRightsHistory extends AbstractExternalModule
             $result = $this->query($sql, [$localProjectId, $username]);
             $dag = $result->fetch_assoc()["group_id"];
             return $dag;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error fetching current dag", ["error" => $e->getMessage()]);
         }
     }
@@ -534,7 +534,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $possibleDags[] = $row["group_id"];
             }
             return $possibleDags;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error fetching possible dags", ["error" => $e->getMessage()]);
         }
     }
@@ -547,45 +547,54 @@ class UserRightsHistory extends AbstractExternalModule
             where username = ?";
             $result = $this->query($sql, [$username]);
             return $result->fetch_assoc()["suspended"] === 1;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error fetching status", ["error" => $e->getMessage()]);
         }
     }
 
     function getPermissionsChanges(?string $oldPermissions_gzip, ?string $newPermissions_gzip, $username)
     {
-        $changes = array("any_changes" => false);
-        if ($oldPermissions_gzip !== $newPermissions_gzip) {
-            $changes["any_changes"] = true;
-            $oldPermissions = json_decode(gzinflate(base64_decode($oldPermissions_gzip)), true) ?? [];
-            $newPermissions = json_decode(gzinflate(base64_decode($newPermissions_gzip)), true) ?? [];
+        try {
+            $changes = array("any_changes" => false);
+            if ($oldPermissions_gzip !== $newPermissions_gzip) {
+                $changes["any_changes"] = true;
+                $oldPermissions = json_decode(gzinflate(base64_decode($oldPermissions_gzip)), true) ?? [];
+                $newPermissions = json_decode(gzinflate(base64_decode($newPermissions_gzip)), true) ?? [];
 
-            $changes["previous"] = array_diff_assoc($oldPermissions, $newPermissions);
-            $changes["current"] = array_diff_assoc($newPermissions, $oldPermissions);
-            if (empty($changes["previous"]["username"]) && empty($changes["current"]["username"])) {
-                $changes["previous"]["username"] = $username;
-                $changes["current"]["username"] = $username;
-            }
+                $changes["previous"] = array_diff_assoc($oldPermissions, $newPermissions);
+                $changes["current"] = array_diff_assoc($newPermissions, $oldPermissions);
+                if (empty($changes["previous"]["username"]) && empty($changes["current"]["username"])) {
+                    $changes["previous"]["username"] = $username;
+                    $changes["current"]["username"] = $username;
+                }
 
-            $possibleDagChanges_previous = array_diff_assoc($oldPermissions["possibleDags"], $newPermissions["possibleDags"]);
-            $possibleDagChanges_current = array_diff_assoc($newPermissions["possibleDags"], $oldPermissions["possibleDags"]);
-            if (count($possibleDagChanges_previous) > 0 || count($possibleDagChanges_current) > 0) {
-                $changes["previous"]["possibleDags"] = $possibleDagChanges_previous;
-                $changes["current"]["possibleDags"] = $possibleDagChanges_current;
+                $possibleDagChanges_previous = array_diff_assoc($oldPermissions["possibleDags"] ?? [], $newPermissions["possibleDags"]);
+                $possibleDagChanges_current = array_diff_assoc($newPermissions["possibleDags"], $oldPermissions["possibleDags"] ?? []);
+
+                if (count($possibleDagChanges_previous) > 0 || count($possibleDagChanges_current) > 0) {
+                    $changes["previous"]["possibleDags"] = $possibleDagChanges_previous;
+                    $changes["current"]["possibleDags"] = $possibleDagChanges_current;
+                }
             }
+            return $changes;
+        } catch (\Throwable $e) {
+            $this->log('Error getting user permission changes', ["username" => $username, "error" => $e->getMessage()]);
         }
-        return $changes;
     }
 
     function savePermissions($localProjectId, string $newPermissions_gzip, array $permissionsChanges, $username)
     {
-        $this->log('rights', [
-            "user_name" => $username,
-            "project_id" => $localProjectId,
-            "rights" => $newPermissions_gzip,
-            "previous" => json_encode($permissionsChanges["previous"]),
-            "current" => json_encode($permissionsChanges["current"])
-        ]);
+        try {
+            $this->log('rights', [
+                "user_name" => $username,
+                "project_id" => $localProjectId,
+                "rights" => $newPermissions_gzip,
+                "previous" => json_encode($permissionsChanges["previous"]),
+                "current" => json_encode($permissionsChanges["current"])
+            ]);
+        } catch (\Throwable $e) {
+            $this->log('Error saving user permissions', ["username" => $username, "error" => $e->getMessage()]);
+        }
     }
 
     function markUsersRemoved($localProjectId, $removed_users)
@@ -602,8 +611,8 @@ class UserRightsHistory extends AbstractExternalModule
                     "previous" => json_encode($changes["previous"]),
                     "current" => json_encode($changes["current"])
                 ]);
-            } catch (\Exception $e) {
-                $this->log('Error marking user removed', ["username" => $username, "error" => $e]);
+            } catch (\Throwable $e) {
+                $this->log('Error marking user removed', ["username" => $username, "error" => $e->getMessage()]);
             }
         }
     }
@@ -634,7 +643,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $dags[$dag["group_id"]] = $dag;
             }
             return !empty($dags) ? base64_encode(gzdeflate(json_encode($dags), 9)) : null;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error updating dags",  [
                 "project_id" => $localProjectId,
                 "error" => $e->getMessage()
@@ -699,7 +708,7 @@ class UserRightsHistory extends AbstractExternalModule
             if (empty($lastSystemGzip) || $systemChanges["any_changes"]) {
                 $this->saveSystem($currentSystemGzip, $systemChanges);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error updating system",  [
                 "error" => $e->getMessage()
             ]);
@@ -719,7 +728,7 @@ class UserRightsHistory extends AbstractExternalModule
                 }
             }
             return base64_encode(gzdeflate(json_encode($system_info), 9));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error getting current system",  [
                 "error" => $e->getMessage()
             ]);
@@ -785,7 +794,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $instruments[$instrument["id"]] = $instrument;
             }
             return base64_encode(gzdeflate(json_encode($instruments), 9));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error updating instruments",  [
                 "error" => $e->getMessage()
             ]);
@@ -1016,7 +1025,7 @@ class UserRightsHistory extends AbstractExternalModule
                 'users'
             )", [$this->getProjectId()]);
             return intval($queryResult->fetch_assoc()["ts"]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log('Error getting total log count', ["error" => $e->getMessage()]);
             return;
         }
@@ -1123,7 +1132,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $logs[] = $row;
             }
             return [$logs, $rowsTotal];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log('Error getting logs', ["error" => $e->getMessage()]);
         }
     }
@@ -1138,7 +1147,7 @@ class UserRightsHistory extends AbstractExternalModule
         $Renderer = new Renderer($permissions);
         try {
             $Renderer->renderTable();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log('Error rendering table', ['message' => $e->getMessage()]);
         }
     }
