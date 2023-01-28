@@ -1,6 +1,6 @@
 <div class="module-container">
     <?php
-    if ($module->getProjectSetting("disable-logging-table") == "1") {
+    if ( $module->getProjectSetting("disable-logging-table") == "1" ) {
         header("Location: " . $module->getUrl("history_viewer.php"));
         exit();
     }
@@ -8,29 +8,29 @@
     $module->initializeJavascriptModuleObject();
 
     // If user is in a DAG and settings are appropriate, don't show the logging table.
-    $current_dag = $module->getCurrentDag($module->getProject()->getProjectId(), $module->getUser()->getUsername());
+    $current_dag                   = $module->getCurrentDag($module->getProject()->getProjectId(), $module->getUser()->getUsername());
     $prevent_dags_from_seeing_logs = $module->getProjectSetting("prevent_logs_for_dags");
-    if ($current_dag != null && $prevent_dags_from_seeing_logs != "1") {
+    if ( $current_dag != null && $prevent_dags_from_seeing_logs != "1" ) {
         echo "<span style='color:#C00000; margin-bottom: 5px;'>Since you have been assigned to a Data Access Group, you are not able to view the User Rights History logs.</span><br>";
         exit();
     }
 
     // Get User's Date Format
-    $date_format = \DateTimeRC::get_user_format_php();
-    $time_format =  explode("_", \DateTimeRC::get_user_format_full(), 2)[1];
+    $date_format     = \DateTimeRC::get_user_format_php();
+    $time_format     = explode("_", \DateTimeRC::get_user_format_full(), 2)[1];
     $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i:S" : "h:i:S K");
 
-    [$initialLogs, $recordsFiltered] = $module->getLogs([
-        "start" => 0,
-        "length" => 10,
-        "search" => [
+    [ $initialLogs, $recordsFiltered ] = $module->getLogs([
+        "start"   => 0,
+        "length"  => 10,
+        "search"  => [
             "value" => "",
             "regex" => false
         ],
-        "order" => [
+        "order"   => [
             [
                 "column" => 0,
-                "dir" => "desc"
+                "dir"    => "desc"
             ]
         ],
         "columns" => [
@@ -49,7 +49,7 @@
         "Add User(s) and Remove User(s)"
     ];
 
-    $messages = [
+    $messages        = [
         'dags',
         'instruments',
         'module enabled by default status',
@@ -63,7 +63,7 @@
         'users'
     ];
     $messages_pretty = [];
-    foreach ($messages as $message) {
+    foreach ( $messages as $message ) {
         $messages_pretty[$message] = ucwords(str_replace('_', ' ', $message));
     }
     ?>
@@ -83,12 +83,14 @@
             }
         })
     </script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.css" />
-    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.js"></script>
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.css" />
+    <script type="text/javascript"
+        src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.13.1/b-2.3.3/b-html5-2.3.3/b-print-2.3.3/date-1.2.0/rg-1.3.0/datatables.min.js"></script>
     <script type="text/javascript">
         const module = <?= $module->getJavascriptModuleObjectName() ?>;
         const totalRecords = "<?= $module->getTotalLogCount() ?>";
-        $(document).ready(function() {
+        $(document).ready(function () {
             var table = $('#history_logging_table').DataTable({
                 processing: true,
                 serverSide: true,
@@ -103,67 +105,67 @@
                 ajax: {
                     url: module.getUrl('logging_table_ajax.php'),
                     type: 'POST',
-                    data: function(dtParams) {
+                    data: function (dtParams) {
                         dtParams.minDate = $('.timestamp.min').val();
                         dtParams.maxDate = $('.timestamp.max').val();
                         return dtParams;
                     }
                 },
                 columns: [{
-                        data: 'timestamp',
-                        searchable: false,
-                        render: function(data, type) {
-                            if (type === 'display') {
-                                return flatpickr.formatDate(new Date(data), '<?= $datetime_format ?>');
-                            }
-                            return data;
-                        },
-                        width: "15%"
-                    },
-                    {
-                        data: 'message',
-                        render: function(data, type) {
-                            if (type === 'display') {
-                                return data.replace('_', ' ').replace(/\S+/gm, (match, offset) => {
-                                    return ((offset > 0 ? ' ' : '') + match[0].toUpperCase() + match.substr(1));
-                                })
-                            }
-                            return data;
-                        },
-                        width: "20%"
-                    },
-                    {
-                        data: 'previous',
-                        width: "32.5%",
-                        render: function(data, type) {
-                            if (type === 'display') {
-                                return syntaxHighlight(data);
-                            }
-                            return data;
+                    data: 'timestamp',
+                    searchable: false,
+                    render: function (data, type) {
+                        if (type === 'display') {
+                            return flatpickr.formatDate(new Date(data), '<?= $datetime_format ?>');
                         }
+                        return data;
                     },
-                    {
-                        data: 'current',
-                        width: "32.5%",
-                        render: function(data, type) {
-                            if (type === 'display') {
-                                return syntaxHighlight(data);
-                            }
-                            return data;
+                    width: "15%"
+                },
+                {
+                    data: 'message',
+                    render: function (data, type) {
+                        if (type === 'display') {
+                            return data.replace('_', ' ').replace(/\S+/gm, (match, offset) => {
+                                return ((offset > 0 ? ' ' : '') + match[0].toUpperCase() + match.substr(1));
+                            })
                         }
+                        return data;
                     },
+                    width: "20%"
+                },
+                {
+                    data: 'previous',
+                    width: "32.5%",
+                    render: function (data, type) {
+                        if (type === 'display') {
+                            return syntaxHighlight(data);
+                        }
+                        return data;
+                    }
+                },
+                {
+                    data: 'current',
+                    width: "32.5%",
+                    render: function (data, type) {
+                        if (type === 'display') {
+                            return syntaxHighlight(data);
+                        }
+                        return data;
+                    }
+                },
                 ],
                 order: [
                     [0, 'desc']
                 ],
-                initComplete: function() {
+                initComplete: function () {
                     // Apply the search
                     let table = this;
                     this.api()
                         .columns()
-                        .every(function() {
+                        .every(function () {
                             var that = this;
-                            $('input', this.header()).not('.timestamp').on('keyup change clear', function() {
+                            $('input', this.header()).not('.timestamp').on('keyup change clear', function () {
                                 if (that.search() !== this.value) {
                                     that.search(this.value).draw();
                                 }
@@ -180,7 +182,7 @@
                         time_24hr: <?= $time_format == 24 ? "true" : "false" ?>
                     };
                     $('input.timestamp.min').flatpickr(Object.assign(fp_opts, {
-                        onClose: function() {
+                        onClose: function () {
                             $('#history_logging_table').DataTable().search('').draw();
                             const fp_max = document.querySelector('input.timestamp.max')._flatpickr;
                             const fp_min = document.querySelector('input.timestamp.min')._flatpickr;
@@ -188,7 +190,7 @@
                         }
                     }));
                     $('input.timestamp.max').flatpickr(Object.assign(fp_opts, {
-                        onClose: function() {
+                        onClose: function () {
                             $('#history_logging_table').DataTable().search('').draw();
                             const fp_max = document.querySelector('input.timestamp.max')._flatpickr;
                             const fp_min = document.querySelector('input.timestamp.min')._flatpickr;
@@ -197,7 +199,7 @@
                     }));
                     $('input.timestamp').attr('onclick', "event.stopPropagation();");
 
-                    $('.message-select').on('change', function(event) {
+                    $('.message-select').on('change', function (event) {
                         $('.message-select').css('color', 'rgb(73, 80, 87)');
                         const searchValue = event.target.value;
                         table.DataTable().column(event.target.parentElement).search(searchValue, true).draw();
@@ -206,9 +208,9 @@
                     table.DataTable().columns.adjust();
                     $('table').css('opacity', 1);
                 },
-                drawCallback: function(settings) {
+                drawCallback: function (settings) {
                     const table = this.DataTable();
-                    table.rows().every(function() {
+                    table.rows().every(function () {
                         const rowNode = this.node();
                         const rowIndex = this.index();
                         $(rowNode).attr('data-dt-row', rowIndex);
@@ -220,7 +222,7 @@
                 }
             });
 
-            table.rows().every(function() {
+            table.rows().every(function () {
                 const rowNode = this.node();
                 const rowIndex = this.index();
                 $(rowNode).attr('data-dt-row', rowIndex);
@@ -264,7 +266,7 @@
             if (json === "") json = null;
             json = JSON.stringify(JSON.parse(json), undefined, 4);
             json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            const result = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
+            const result = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
                 var cls = 'number';
                 if (/^"/.test(match)) {
                     if (/:$/.test(match)) {
@@ -293,7 +295,8 @@
         }
     </script>
     <p>
-        This page shows the changes to the project in a tabular form. This is useful when searching for a particular user rights change.
+        This page shows the changes to the project in a tabular form. This is useful when searching for a particular
+        user rights change.
     </p>
     <br>
     <div class="container">
@@ -305,27 +308,42 @@
                 <tr>
                     <th>
                         Timestamp
-                        <br><input onclick="event.stopPropagation();" class="timestamp min form-control-sm" type="text" placeholder="Min Timestamp" />
-                        <input onclick="event.stopPropagation();" class="timestamp max form-control-sm" type="text" placeholder="Max Timestamp" />
+                        <br><input onclick="event.stopPropagation();" class="timestamp min form-control-sm" type="text"
+                            placeholder="Min Timestamp" />
+                        <input onclick="event.stopPropagation();" class="timestamp max form-control-sm" type="text"
+                            placeholder="Max Timestamp" />
                     </th>
-                    <th>Update Type<br><select class="message-select form-control form-control-sm" onclick="event.stopPropagation();">
+                    <th>Update Type<br><select class="message-select form-control form-control-sm"
+                            onclick="event.stopPropagation();">
                             <option hidden>Select Update Type</option>
                             <option value=""></option>
-                            <?php foreach ($messages_pretty as $value => $name) { ?>
-                                <option class="choice" value="<?= $value ?>"><?= $name ?></option>
+                            <?php foreach ( $messages_pretty as $value => $name ) { ?>
+                                <option class="choice" value="<?= $value ?>">
+                                    <?= $name ?>
+                                </option>
                             <?php } ?>
                         </select></th>
-                    <th>Previous Value<br><input onclick="event.stopPropagation();" class="form-control form-control-sm" type="text" placeholder="Search Previous Value"></th>
-                    <th>New Value<br><input onclick="event.stopPropagation();" class="form-control form-control-sm" type="text" placeholder="Search New Value"></th>
+                    <th>Previous Value<br><input onclick="event.stopPropagation();" class="form-control form-control-sm"
+                            type="text" placeholder="Search Previous Value"></th>
+                    <th>New Value<br><input onclick="event.stopPropagation();" class="form-control form-control-sm"
+                            type="text" placeholder="Search New Value"></th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($initialLogs as $log) { ?>
+                <?php foreach ( $initialLogs as $log ) { ?>
                     <tr>
-                        <td><?= $log["timestamp"] ?></td>
-                        <td><?= $log["message"] ?></td>
-                        <td><?= $log["previous"] ?></td>
-                        <td><?= $log["current"] ?></td>
+                        <td>
+                            <?= $log["timestamp"] ?>
+                        </td>
+                        <td>
+                            <?= $log["message"] ?>
+                        </td>
+                        <td>
+                            <?= $log["previous"] ?>
+                        </td>
+                        <td>
+                            <?= $log["current"] ?>
+                        </td>
                     </tr>
                 <?php } ?>
             </tbody>
@@ -372,6 +390,10 @@
             padding: 0;
         }
 
+        table.dataTable#history_logging_table {
+            border-collapse: collapse !important;
+        }
+
         .dataTables_processing {
             z-index: 9000 !important;
         }
@@ -396,7 +418,7 @@
             border-left: 1px solid rgba(0, 0, 0, 0.15) !important;
         }
 
-        thead tr {
+        .dataTable thead tr {
             background-color: rgb(220, 220, 220) !important;
         }
 
