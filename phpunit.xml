@@ -1,0 +1,11 @@
+<phpunit
+	stopOnFailure="true"
+	stopOnError="true"
+	colors="true"
+	>
+	<testsuites>
+		<testsuite name="tests">
+			<directory>tests</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>
