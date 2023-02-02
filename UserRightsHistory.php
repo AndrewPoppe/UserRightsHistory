@@ -6,21 +6,33 @@ use ExternalModules\AbstractExternalModule;
 
 include_once "Renderer.php";
 include_once "UI.php";
+include_once "Logger.php";
+include_once "Settings.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
+    public $Logger;
+    public $Settings;
+    public $UI;
+    public function __construct()
+    {
+        parent::__construct();
+        $this->Logger = new Logger($this);
+        $this->Settings = new Settings($this);
+    }
+
     //////////////////
     // REDCap Hooks //
     //////////////////
 
     function redcap_module_system_change_version($version, $old_version)
     {
-        $this->log('module version', ['previous' => json_encode($old_version), 'current' => json_encode($version), 'version' => $version]);
+        return $this->Logger->logEvent('module version', ['previous' => json_encode($old_version), 'current' => json_encode($version), 'version' => $version]);
     }
 
     function redcap_module_project_enable($version, $project_id)
     {
-        $this->log('module project status', [
+        $this->Logger->logEvent('module project status', [
             "version" => $version,
             "status" => 1,
             "project_id" => $project_id,
@@ -31,7 +43,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_project_disable($version, $project_id)
     {
-        $this->log('module project status', [
+        $this->Logger->logEvent('module project status', [
             "version" => $version,
             "status" => 0,
             "project_id" => $project_id,
@@ -42,7 +54,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_system_enable($version)
     {
-        $this->log('module system status', [
+        $this->Logger->logEvent('module system status', [
             "version" => $version,
             "status" => 1
         ]);
@@ -50,7 +62,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_system_disable($version)
     {
-        $this->log('module system status', [
+        $this->Logger->logEvent('module system status', [
             "version" => $version,
             "status" => 0
         ]);
@@ -82,7 +94,7 @@ class UserRightsHistory extends AbstractExternalModule
 
             return $settings;
         } catch (\Exception $e) {
-            $this->log("Error creating configuration", ["error" => $e->getMessage()]);
+            $this->Logger->logError("Error creating configuration", ["error" => $e->getMessage()]);
         }
     }
 
@@ -100,23 +112,7 @@ class UserRightsHistory extends AbstractExternalModule
         return $link;
     }
 
-    //////////////////////
-    // Settings Methods //
-    //////////////////////
 
-    function shouldDagsBeChecked()
-    {
-        $dags_setting = $this->getProjectSetting("restrict-dag");
-        $current_dag = $this->getCurrentDag($this->getProject()->getProjectId(), $this->getUser()->getUsername());
-        $superUser = $this->getUser()->isSuperUser();
-        return !$superUser && $dags_setting != "1" && !is_null($current_dag);
-    }
-
-    function isDagRestricted($dag)
-    {
-        $current_dag = $this->getCurrentDag($this->getProject()->getProjectId(), $this->getUser()->getUsername());
-        return $this->shouldDagsBeChecked() && $dag != $current_dag;
-    }
 
 
     //////////////////
@@ -128,11 +124,9 @@ class UserRightsHistory extends AbstractExternalModule
         $lastStatusResult = $this->queryLogs("select status where message = ? order by timestamp desc limit 1", ['module enabled by default status']);
         $lastStatus = $lastStatusResult->fetch_assoc()["status"];
         if ($currentStatus != $lastStatus) {
-            $this->log('module enabled by default status', ['status' => $currentStatus]);
+            $this->Logger->logEvent('module enabled by default status', ['status' => $currentStatus]);
         }
     }
-
-    public $UI;
 
     function getAllProjectIds()
     {
@@ -148,7 +142,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return $project_ids;
         } catch (\Exception $e) {
-            $this->log("Error fetching all projects", ["error" => $e->getMessage()]);
+            $this->Logger->logError("Error fetching all projects", ["error" => $e->getMessage()]);
         }
     }
 
@@ -159,7 +153,7 @@ class UserRightsHistory extends AbstractExternalModule
         $result = $this->queryLogs($sql, [$current_version]);
         $row = $result->fetch_assoc();
         if (empty($row)) {
-            $this->log('module version', ['version' => $current_version, 'current' => json_encode($current_version)]);
+            $this->Logger->logEvent('module version', ['version' => $current_version, 'current' => json_encode($current_version)]);
         }
     }
 
@@ -169,7 +163,7 @@ class UserRightsHistory extends AbstractExternalModule
         $result = $this->queryLogs($sql, [$localProjectId]);
         $row = $result->fetch_assoc();
         if (empty($row) && in_array($localProjectId, $this->getProjectsWithModuleEnabled())) {
-            $this->log('module project status', [
+            $this->Logger->logEvent('module project status', [
                 "project_id" => $localProjectId,
                 "status" => 1,
                 "current" => json_encode("Enabled")
@@ -209,7 +203,7 @@ class UserRightsHistory extends AbstractExternalModule
             $this->updateAllSystem();
             return "The \"{$cronInfo['cron_name']}\" cron job completed successfully.";
         } catch (\Exception $e) {
-            $this->log("Error updating projects", ["error" => $e->getMessage()]);
+            $this->Logger->logError("Error updating projects", ["error" => $e->getMessage()]);
             return "The \"{$cronInfo['cron_name']}\" cron job failed: " . $e->getMessage();
         }
     }
@@ -237,7 +231,7 @@ class UserRightsHistory extends AbstractExternalModule
             unset($result_array["last_logged_event"]); // Prevent unncessary updates
             return $result_array;
         } catch (\Exception $e) {
-            $this->log('Error fetching project info', ['error' => $e->getMessage()]);
+            $this->Logger->logError('Error fetching project info', ['error' => $e->getMessage()]);
         }
     }
 
@@ -265,7 +259,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function saveProjectInfo($localProjectId, array $newProjectInfo, array $changes)
     {
-        $this->log('project_info', [
+        $this->Logger->logEvent('project_info', [
             "project_id" => $localProjectId,
             "info" => base64_encode(gzdeflate(json_encode($newProjectInfo), 9)),
             "previous" => json_encode($changes["previous"]),
@@ -337,7 +331,7 @@ class UserRightsHistory extends AbstractExternalModule
         if (sizeof($changes["removed"]) > 0) {
             $event .= (sizeof($changes["added"]) > 0) ? "and Remove User(s)" : "Remove User(s)";
         }
-        $this->log('users', [
+        $this->Logger->logEvent('users', [
             "project_id" => $localProjectId,
             "users" => json_encode($users),
             "added" => json_encode($changes["added"]),
@@ -373,7 +367,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return !empty($roles) ? base64_encode(gzdeflate(json_encode($roles), 9)) : null;
         } catch (\Exception $e) {
-            $this->log("Error updating roles",  [
+            $this->Logger->logError("Error updating roles",  [
                 "project_id" => $localProjectId,
                 "error" => $e->getMessage()
             ]);
@@ -416,7 +410,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function saveRoles($localProjectId, $rolesGzip, $changes)
     {
-        $this->log('roles', [
+        $this->Logger->logEvent('roles', [
             "project_id" => $localProjectId,
             "roles" => $rolesGzip,
             "previous" => json_encode($changes["previous"]),
@@ -439,7 +433,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $this->updatePermissionsForUser($localProjectId, $user);
             }
         } catch (\Exception $e) {
-            $this->log("Error updating users",  [
+            $this->Logger->logError("Error updating users",  [
                 "project_id" => $localProjectId,
                 "error" => $e->getMessage()
             ]);
@@ -508,7 +502,7 @@ class UserRightsHistory extends AbstractExternalModule
             $result = $this->query($sql, [$username]);
             return $result->fetch_assoc()["name"];
         } catch (\Exception $e) {
-            $this->log("Error fetching name", ["error" => $e->getMessage()]);
+            $this->Logger->logError("Error fetching name", ["error" => $e->getMessage()]);
         }
     }
 
@@ -520,7 +514,7 @@ class UserRightsHistory extends AbstractExternalModule
             $dag = $result->fetch_assoc()["group_id"];
             return $dag;
         } catch (\Exception $e) {
-            $this->log("Error fetching current dag", ["error" => $e->getMessage()]);
+            $this->Logger->logError("Error fetching current dag", ["error" => $e->getMessage()]);
         }
     }
 
@@ -535,7 +529,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return $possibleDags;
         } catch (\Exception $e) {
-            $this->log("Error fetching possible dags", ["error" => $e->getMessage()]);
+            $this->Logger->logError("Error fetching possible dags", ["error" => $e->getMessage()]);
         }
     }
 
@@ -548,7 +542,7 @@ class UserRightsHistory extends AbstractExternalModule
             $result = $this->query($sql, [$username]);
             return $result->fetch_assoc()["suspended"] === 1;
         } catch (\Exception $e) {
-            $this->log("Error fetching status", ["error" => $e->getMessage()]);
+            $this->Logger->logError("Error fetching status", ["error" => $e->getMessage()]);
         }
     }
 
@@ -579,7 +573,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function savePermissions($localProjectId, string $newPermissions_gzip, array $permissionsChanges, $username)
     {
-        $this->log('rights', [
+        $this->Logger->logEvent('rights', [
             "user_name" => $username,
             "project_id" => $localProjectId,
             "rights" => $newPermissions_gzip,
@@ -594,7 +588,7 @@ class UserRightsHistory extends AbstractExternalModule
             try {
                 $lastPermissions_gzip = $this->getLastUserPermissions($localProjectId, $username);
                 $changes = $this->getPermissionsChanges($lastPermissions_gzip, null, $username);
-                $this->log('rights', [
+                $this->Logger->logEvent('rights', [
                     "user_name" => $username,
                     "rights" => null,
                     "status" => "removed",
@@ -603,7 +597,7 @@ class UserRightsHistory extends AbstractExternalModule
                     "current" => json_encode($changes["current"])
                 ]);
             } catch (\Exception $e) {
-                $this->log('Error marking user removed', ["username" => $username, "error" => $e]);
+                $this->Logger->logError('Error marking user removed', ["username" => $username, "error" => $e]);
             }
         }
     }
@@ -635,7 +629,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return !empty($dags) ? base64_encode(gzdeflate(json_encode($dags), 9)) : null;
         } catch (\Exception $e) {
-            $this->log("Error updating dags",  [
+            $this->Logger->logError("Error updating dags",  [
                 "project_id" => $localProjectId,
                 "error" => $e->getMessage()
             ]);
@@ -678,7 +672,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function saveDAGs($localProjectId, $dagsGzip, $dagChanges)
     {
-        $this->log('dags', [
+        $this->Logger->logEvent('dags', [
             "project_id" => $localProjectId,
             "dags" => $dagsGzip,
             "current" => json_encode($dagChanges["current"]),
@@ -700,7 +694,7 @@ class UserRightsHistory extends AbstractExternalModule
                 $this->saveSystem($currentSystemGzip, $systemChanges);
             }
         } catch (\Exception $e) {
-            $this->log("Error updating system",  [
+            $this->Logger->logError("Error updating system",  [
                 "error" => $e->getMessage()
             ]);
         }
@@ -720,7 +714,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return base64_encode(gzdeflate(json_encode($system_info), 9));
         } catch (\Exception $e) {
-            $this->log("Error getting current system",  [
+            $this->Logger->logError("Error getting current system",  [
                 "error" => $e->getMessage()
             ]);
         }
@@ -748,7 +742,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function saveSystem($system_gzip, $systemChanges)
     {
-        $this->log('system', [
+        $this->Logger->logEvent('system', [
             "info" => $system_gzip,
             "current" => json_encode($systemChanges["current"]),
             "previous" => json_encode($systemChanges["previous"])
@@ -786,7 +780,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return base64_encode(gzdeflate(json_encode($instruments), 9));
         } catch (\Exception $e) {
-            $this->log("Error updating instruments",  [
+            $this->Logger->logError("Error updating instruments",  [
                 "error" => $e->getMessage()
             ]);
         }
@@ -814,7 +808,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function saveInstruments($localProjectId, $instruments_gzip, $instrumentsChanges)
     {
-        $this->log('instruments', [
+        $this->Logger->logEvent('instruments', [
             "project_id" => $localProjectId,
             "instruments" => $instruments_gzip,
             "previous" => json_encode($instrumentsChanges["previous"]),
@@ -965,12 +959,14 @@ class UserRightsHistory extends AbstractExternalModule
     {
         $results = array();
         $results["timestamp"] = intval($timestamp) / 1000;
-
+        $projectId = $this->getProject()->getProjectId();
+        $currentUser = $this->getUser();
         $users = $this->getUsersByTimestamp($results["timestamp"]);
         $results["users"] = array();
         foreach ($users as $user) {
             $userInfo = $this->getUserPermissionsByTimestamp($user, $results["timestamp"]);
-            if (!$this->isDagRestricted($userInfo["group_id"])) {
+            $isDagRestricted = $this->Settings->isDagRestricted($userInfo["group_id"], $currentUser, $projectId);
+            if (!$isDagRestricted) {
                 $results["users"][$user] = $userInfo;
             }
         }
@@ -1017,7 +1013,7 @@ class UserRightsHistory extends AbstractExternalModule
             )", [$this->getProjectId()]);
             return intval($queryResult->fetch_assoc()["ts"]);
         } catch (\Exception $e) {
-            $this->log('Error getting total log count', ["error" => $e->getMessage()]);
+            $this->Logger->logError('Error getting total log count', ["error" => $e->getMessage()]);
             return;
         }
     }
@@ -1124,7 +1120,7 @@ class UserRightsHistory extends AbstractExternalModule
             }
             return [$logs, $rowsTotal];
         } catch (\Exception $e) {
-            $this->log('Error getting logs', ["error" => $e->getMessage()]);
+            $this->Logger->logError('Error getting logs', ["error" => $e->getMessage()]);
         }
     }
 
@@ -1139,7 +1135,7 @@ class UserRightsHistory extends AbstractExternalModule
         try {
             $Renderer->renderTable();
         } catch (\Exception $e) {
-            $this->log('Error rendering table', ['message' => $e->getMessage()]);
+            $this->Logger->logError('Error rendering table', ['message' => $e->getMessage()]);
         }
     }
 

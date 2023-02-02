@@ -12,6 +12,9 @@ $date_format = \DateTimeRC::get_user_format_php();
 $time_format =  explode("_", \DateTimeRC::get_user_format_full(), 2)[1];
 $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
 
+$User = $module->getUser();
+$projectId = $module->getProject()->getProjectId();
+$checkDAGs = $module->Settings->shouldDagsBeChecked($User, $projectId);
 ?>
 <p>
     This page may be used for investigating which users had access to this project and what permissions those users had.
@@ -174,7 +177,7 @@ $datetime_format = $date_format . " " . ($time_format == 24 ? "H:i" : "h:i K");
         <img id="datetime_icon" onclick="document.querySelector('#datetime')._flatpickr.toggle();" style="cursor:pointer">
     </div>
     <div id="warning" style="margin-top: 5px;">
-        <?= $module->shouldDagsBeChecked() ? "<span style='color:#C00000; margin-bottom: 5px;'>Note: Since you have been assigned to a Data Access Group, you are only able to view users from your group.</span><br>" : "" ?>
+        <?= $module->Settings->shouldDagsBeChecked($module->getUser(), $module->getProject()->getProjectId()) ? "<span style='color:#C00000; margin-bottom: 5px;'>Note: Since you have been assigned to a Data Access Group, you are only able to view users from your group.</span><br>" : "" ?>
     </div>
 </div>
 <?php
