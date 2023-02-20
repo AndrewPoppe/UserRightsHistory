@@ -1,11 +1,12 @@
-<phpunit
-	stopOnFailure="true"
-	stopOnError="true"
-	colors="true"
-	>
-	<testsuites>
-		<testsuite name="tests">
-			<directory>tests</directory>
-		</testsuite>
-	</testsuites>
+<?xml version="1.0"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" stopOnFailure="true" stopOnError="true" colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+  <php>
+    <ini name="memory_limit" value="-1"/>
+    <ini name="apc.enable_cli" value="1"/>
+  </php>
+  <testsuites>
+    <testsuite name="tests">
+      <directory>tests</directory>
+    </testsuite>
+  </testsuites>
 </phpunit>

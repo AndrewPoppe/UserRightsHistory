@@ -1,0 +1,39 @@
+<phpunit
+	stopOnFailure="true"
+	stopOnError="true"
+	colors="true"
+	>
+	<php>
+        <ini name="memory_limit" value="-1"/>
+        <ini name="apc.enable_cli" value="1"/>
+		<ini name="xdebug.mode" value="coverage"/>
+    </php>
+	<filter>
+        <!--
+        <blacklist>
+            <directory suffix=".php">/path/to/files</directory>
+            <file>/path/to/file</file>
+            <exclude>
+                <directory suffix=".php">/path/to/files</directory>
+                <file>/path/to/file</file>
+            </exclude>
+        </blacklist>
+        -->
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">.</directory>
+            <!--
+            <file>/path/to/file</file>
+            <exclude>
+                <directory suffix=".php">/path/to/files</directory>
+                <file>/path/to/file</file>
+            </exclude>
+            -->
+        </whitelist>
+    </filter>
+	<testsuites>
+		<testsuite name="tests">
+			<directory>tests</directory>
+		</testsuite>
+	</testsuites>
+	
+</phpunit>

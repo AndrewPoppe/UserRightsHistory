@@ -4,21 +4,25 @@ namespace YaleREDCap\UserRightsHistory;
 
 use ExternalModules\AbstractExternalModule;
 
-include_once "Renderer.php";
-include_once "UI.php";
 include_once "Logger.php";
+include_once "Project.php";
+include_once "Renderer.php";
 include_once "Settings.php";
+include_once "System.php";
+include_once "UI.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
     public $Logger;
     public $Settings;
+    public $System;
     public $UI;
     public function __construct()
     {
         parent::__construct();
         $this->Logger = new Logger($this);
         $this->Settings = new Settings($this);
+        $this->System = new System($this);
     }
 
     //////////////////
@@ -32,7 +36,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_project_enable($version, $project_id)
     {
-        $this->Logger->logEvent('module project status', [
+        return $this->Logger->logEvent('module project status', [
             "version" => $version,
             "status" => 1,
             "project_id" => $project_id,
@@ -43,7 +47,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_project_disable($version, $project_id)
     {
-        $this->Logger->logEvent('module project status', [
+        return $this->Logger->logEvent('module project status', [
             "version" => $version,
             "status" => 0,
             "project_id" => $project_id,
@@ -54,7 +58,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_system_enable($version)
     {
-        $this->Logger->logEvent('module system status', [
+        return $this->Logger->logEvent('module system status', [
             "version" => $version,
             "status" => 1
         ]);
@@ -62,7 +66,7 @@ class UserRightsHistory extends AbstractExternalModule
 
     function redcap_module_system_disable($version)
     {
-        $this->Logger->logEvent('module system status', [
+        return $this->Logger->logEvent('module system status', [
             "version" => $version,
             "status" => 0
         ]);
@@ -93,19 +97,19 @@ class UserRightsHistory extends AbstractExternalModule
             }
 
             return $settings;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->Logger->logError("Error creating configuration", ["error" => $e->getMessage()]);
         }
     }
 
     function redcap_module_link_check_display($project_id, $link)
     {
-        if ($this->getProjectSetting("restrict-access") != 1) {
+        if ($this->framework->getProjectSetting("restrict-access") != 1) {
             return $link;
         }
-        $user = $this->getUser();
+        $user = $this->framework->getUser();
         $user_access_key = $user->getUsername() . "_access";
-        $access = $this->getProjectSetting($user_access_key);
+        $access = $this->framework->getProjectSetting($user_access_key);
         if ($access != "1" && $user->isSuperUser() != true) {
             return null;
         }
@@ -119,79 +123,32 @@ class UserRightsHistory extends AbstractExternalModule
     // Main Methods //
     //////////////////
 
-    function updateEnabledByDefaultStatus($currentStatus)
-    {
-        $lastStatusResult = $this->queryLogs("select status where message = ? order by timestamp desc limit 1", ['module enabled by default status']);
-        $lastStatus = $lastStatusResult->fetch_assoc()["status"];
-        if ($currentStatus != $lastStatus) {
-            $this->Logger->logEvent('module enabled by default status', ['status' => $currentStatus]);
-        }
-    }
 
-    function getAllProjectIds()
-    {
-        try {
-            $query = "select project_id from redcap_projects
-            where created_by is not null
-            and completed_time is null
-            and date_deleted is null";
-            $result = $this->query($query, []);
-            $project_ids = [];
-            while ($row = $result->fetch_assoc()) {
-                $project_ids[] = $row["project_id"];
-            }
-            return $project_ids;
-        } catch (\Exception $e) {
-            $this->Logger->logError("Error fetching all projects", ["error" => $e->getMessage()]);
-        }
-    }
-
-    function logVersionIfNeeded()
-    {
-        $current_version = end(explode("_", $this->getModuleDirectoryName()));
-        $sql = "select version where message = 'module version' and version = ? order by timestamp desc";
-        $result = $this->queryLogs($sql, [$current_version]);
-        $row = $result->fetch_assoc();
-        if (empty($row)) {
-            $this->Logger->logEvent('module version', ['version' => $current_version, 'current' => json_encode($current_version)]);
-        }
-    }
-
-    function updateProjectStatusMessageIfNeeded($localProjectId)
-    {
-        $sql = "select timestamp where message = 'module project status' and project_id = ?";
-        $result = $this->queryLogs($sql, [$localProjectId]);
-        $row = $result->fetch_assoc();
-        if (empty($row) && in_array($localProjectId, $this->getProjectsWithModuleEnabled())) {
-            $this->Logger->logEvent('module project status', [
-                "project_id" => $localProjectId,
-                "status" => 1,
-                "current" => json_encode("Enabled")
-            ]);
-        }
-    }
 
     function updateAllProjects($cronInfo = array())
     {
         try {
             $enabledSystemwide = $this->getSystemSetting('enabled');
-            $this->updateEnabledByDefaultStatus($enabledSystemwide);
+            $this->System->updateEnabledByDefaultStatus($enabledSystemwide);
 
             // log new versions manually (in case version change hook doesn't work)
-            $this->logVersionIfNeeded();
+            $this->System->logVersionIfNeeded();
 
             if ($enabledSystemwide == true) {
-                $all_project_ids = $this->getAllProjectIds();
+                $all_project_ids = $this->System->getAllProjectIds();
                 $project_ids = array_filter($all_project_ids, function ($project_id) {
-                    return $this->isModuleEnabled('user_rights_history', $project_id);
+                    return $this->framework->isModuleEnabled('user_rights_history', $project_id);
                 });
             } else {
-                $project_ids = $this->getProjectsWithModuleEnabled();
+                $project_ids = $this->framework->getProjectsWithModuleEnabled();
             }
 
             foreach ($project_ids as $localProjectId) {
+
+                $project = new Project($this, $localProjectId);
+
                 // Ensure a project status message appears for this module.
-                $this->updateProjectStatusMessageIfNeeded($localProjectId);
+                $project->updateProjectStatusMessageIfNeeded();
 
                 $this->updateUserList($localProjectId);
                 $this->updateProjectInfo($localProjectId);

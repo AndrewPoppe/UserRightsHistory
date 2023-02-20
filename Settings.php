@@ -10,10 +10,6 @@ class Settings
         $this->module = $module;
     }
 
-    //////////////////////
-    // Settings Methods //
-    //////////////////////
-
     function shouldDagsBeChecked($User, $projectId)
     {
         $isSuperUser = $User->isSuperUser();
