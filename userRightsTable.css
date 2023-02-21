@@ -90,11 +90,12 @@
 
     a.popoverspan:hover {
         font-size: inherit;
-        font-family: inherit;
+        font-family: "Atkinson Hyperlegible" !important;
     }
 
     .popover {
         max-width: 1000px;
+        font-family: "Atkinson Hyperlegible" !important;
     }
 
     .popover td {
@@ -184,4 +185,84 @@
     .popover-table tbody tr:hover td,
     .popover-table tbody tr:hover th {
         background-color: #d9ebf5 !important;
+    }
+
+    @font-face {
+        font-family: "Atkinson Hyperlegible";
+        src: url("fonts/Atkinson-Hyperlegible/WOFF2/Atkinson-Hyperlegible-Regular-102a.woff2") format("woff2"),
+            url("fonts/Atkinson-Hyperlegible/WOFF/Atkinson-Hyperlegible-Regular-102.woff") format("woff");
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: "Atkinson Hyperlegible";
+        src: url("fonts/Atkinson-Hyperlegible/WOFF2/Atkinson-Hyperlegible-Bold-102a.woff2") format("woff2"),
+            url("fonts/Atkinson-Hyperlegible/WOFF/Atkinson-Hyperlegible-Bold-102.woff") format("woff");
+        font-weight: bold;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: "Atkinson Hyperlegible";
+        src: url("fonts/Atkinson-Hyperlegible/WOFF2/Atkinson-Hyperlegible-Italic-102a.woff2") format("woff2"),
+            url("fonts/Atkinson-Hyperlegible/WOFF/Atkinson-Hyperlegible-Italic-102.woff") format("woff");
+        font-weight: normal;
+        font-style: italic;
+    }
+
+    @font-face {
+        font-family: "Atkinson Hyperlegible";
+        src: url("fonts/Atkinson-Hyperlegible/WOFF2/Atkinson-Hyperlegible-BoldItalic-102a.woff2") format("woff2"),
+            url("fonts/Atkinson-Hyperlegible/WOFF/Atkinson-Hyperlegible-BoldItalic-102.woff") format("woff");
+        font-weight: bold;
+        font-style: italic;
+    }
+
+    @font-face {
+        font-family: "JetBrainsMono";
+        src: url("fonts/JetBrains-Mono/fonts/webfonts/JetBrainsMono-Regular.woff2");
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: "JetBrainsMono";
+        src: url("fonts/JetBrains-Mono/fonts/webfonts/JetBrainsMono-Bold.woff2");
+        font-weight: bold;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: "JetBrainsMono";
+        src: url("fonts/JetBrains-Mono/fonts/webfonts/JetBrainsMono-Italic.woff2");
+        font-weight: normal;
+        font-style: italic;
+    }
+
+    @font-face {
+        font-family: "JetBrainsMono";
+        src: url("fonts/JetBrains-Mono/fonts/webfonts/JetBrainsMono-BoldItalic.woff2");
+        font-weight: bold;
+        font-style: italic;
+    }
+
+    div.module-container,
+    div.module-container a,
+    div.flatpickr-calendar {
+        font-family: 'Atkinson Hyperlegible' !important;
+    }
+
+    div.module-container p,
+    div.module-container a {
+        font-size: 14px !important;
+    }
+
+    div.module-container pre {
+        font-family: "JetBrainsMono" !important;
+        font-size: 12px !important;
+    }
+
+    div.module-container tbody {
+        font-size: 14px !important;
     }
