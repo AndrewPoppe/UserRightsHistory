@@ -2,6 +2,7 @@
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=AndrewPoppe_UserRightsHistory&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AndrewPoppe_UserRightsHistory)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=AndrewPoppe_UserRightsHistory&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=AndrewPoppe_UserRightsHistory)
+
 ## Overview
 This REDCap External Module allows users to track user access, rights, and permissions in a project over time. 
 
@@ -13,64 +14,46 @@ whereas this image shows the same project's User Rights several days earlier:
 
 ![interface example](images/example_interface2.png)
 
+### History Viewer Page
 
+This is the primary page of the module. It shows a table with the User Rights for each user in the project at the selected time. The time can be changed using the date picker. The table can also be exported to a CSV file.
+
+### Logging Page
+
+There is a logging table that shows all changes to the User Rights in the project. This table can be disabled in the module's configuration.
+
+![logging example](images/logging_page.png)
 
 ## How does it work?
+
 The module runs a cron job every minute. When the module is enabled in a 
 project, that project is added to the cron job. An initial snapshot of the User 
 Rights is taken, and when changes are made to any aspect of the User Rights in 
 that project, another timestamped snapshot is taken. This produces a 
 point-in-time history with granularity to the minute. 
 
+### Why not just parse REDCap's logs?
+
+REDCap's logs are insufficient for tracking user rights. Without 100% ground truth at some point, it is impossible to know what state a user's rights are in at any given time. This is in addition to the issues with REDCap's logs not containing all changes to user rights.
+
 ## Installation
-The module may be installed from the REDCap Repo.
+The module may be installed from the REDCap Repo.                        |
 
-## Compatibility Table
+## Configuration
 
-This table represents informal, real-world use as opposed to systematic functional testing.
-Essentially, this table will tell you whether we have confirmed that the module generally
-installs and functions correctly given the combination of REDCap and PHP versions.
-<table style="text-align:center;">
-    <tr>
-        <th></th>
-        <th colspan="3">REDCap Version</th>
-    </tr>
-    <tr>
-        <th>PHP version</th>
-        <th>10.0.28</th>
-        <th>12.1.2</th>
-        <th>12.5.x</th>
-    </tr>
-    <tr>
-        <th>7.3.32</th>
-        <td><img src="lib/iconoir/check-circled-outline.png"></td>
-        <td><img src="lib/iconoir/check-circled-outline.png"></td>
-        <td><img src="lib/iconoir/question-mark.png"></td>
-    </tr>
-    <tr>
-        <th>7.4.5</th>
-        <td><img src="lib/iconoir/question-mark.png"></td>
-        <td><img src="lib/iconoir/question-mark.png"></td>
-        <td><img src="lib/iconoir/check-circled-outline.png"></td>
-    </tr>
-    <tr>
-        <th>8.1.3</th>
-        <td><img src="lib/iconoir/warning-circled-outline.png"></td>
-        <td><img src="lib/iconoir/warning-circled-outline.png"></td>
-        <td><img src="lib/iconoir/question-mark.png"></td>
-    </tr>
-</table>
+### System-level configuration
 
-#### Key
-|                    Symbol                    | Meaning                                                                    |
-| :------------------------------------------: | :------------------------------------------------------------------------- |
-|  ![](lib/iconoir/check-circled-outline.png)  | Module installs correctly and seems to function correctly                  |
-| ![](lib/iconoir/warning-circled-outline.png) | Module installs correctly but either has not been tested or has minor bugs |
-|       ![](lib/iconoir/prohibition.png)       | Module fails to install or has major bugs                                  |
-|      ![](lib/iconoir/question-mark.png)      | No attempt has been made to assess the module                              |
+None
 
-## Roadmap
+### Project-level configuration
 
-- Parse REDCap logs to track user rights prior to module's installation?
-- Include option to run for all projects?
-- Add system-level functionality, i.e., run for all projects in the system without needing to enable the module in all projects
+| Config                                  | Description                                                                                                                                                                                                   |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Restrict DAG User Display               | If enabled, only users in the same DAG as the current user will be displayed in the User Rights History table.                                                                                                |
+| Disable the logging table for all users | Whether to show a table with the module's logs that are used to build the history table. This is useful for searching specific pieces of information.                                                         |
+| Restrict Logging for DAG Users          | Whether to remove access to the Logging table for users currently assigned to a DAG.                                                                                                                          |
+| Restrict User Access                    | Whether to allow access to the User Rights table for all users or only allow specific users. If selected, a list of the project's users will be shown with the option to allow/disallow access for each user. |
+
+## Changelog
+
+Version descriptions can be found on the [Releases](https://github.com/AndrewPoppe/UserRightsHistory/releases) page.
