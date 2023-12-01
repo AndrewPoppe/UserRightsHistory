@@ -16,7 +16,9 @@ whereas this image shows the same project's User Rights several days earlier:
 
 ### History Viewer Page
 
-This is the primary page of the module. It shows a table with the User Rights for each user in the project at the selected time. The time can be changed using the date picker. The table can also be exported to a CSV file.
+This is the primary page of the module. It shows a table with the User Rights for each user in the project at the selected time. The time can be changed using the date picker.
+
+![interface example](images/interface.gif)
 
 ### Logging Page
 
