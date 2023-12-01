@@ -1,4 +1,6 @@
-    td.highlight {
+    td.highlight,
+    table.dataTable tbody tr.odd td.highlight,
+    table.dataTable tbody tr.even td.highlight {
         background-color: #d9ebf5 !important;
     }
 
@@ -56,7 +58,7 @@
     }
 
     table.dataTable tbody tr.odd td {
-        background-color: white;
+        background-color: white !important;
     }
 
     table.dataTable thead th {
