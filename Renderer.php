@@ -635,7 +635,7 @@ class Renderer
         $allInstruments = $this->permissions["instruments"];
         $instruments = $this->parseInstrumentRightsString($string);
         $surveysHeader = $this->getSurveyHeader();
-        $cell = "<a tabindex='0' style='color:#333; text-decoration:underline;' class='popoverspan' data-toggle='popover' data-trigger='focus' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $cell = "<a tabindex='0' style='color:#333; text-decoration:underline;' class='popoverspan' data-bs-toggle='popover' data-bs-trigger='focus' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
         $tdStart = "<td><i style=\"color:#666;\" class=\"";
         $tdEnd = " fa-circle\"></i></td>";
         foreach ($allInstruments as $thisInstrument) {
@@ -662,7 +662,7 @@ class Renderer
     {
         $instruments = $this->parseInstrumentRightsString($string);
         $allInstruments = $this->permissions["instruments"];
-        $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-trigger='focus' title='Data Export Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>De-Identified</th><th>Remove All Identifier Fields</th><th>Full Data Set</th></tr></thead><tbody>";
+        $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-bs-trigger='focus' title='Data Export Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>De-Identified</th><th>Remove All Identifier Fields</th><th>Full Data Set</th></tr></thead><tbody>";
         $tdStart = "<td><i style=\"color:#666;\" class=\"";
         $tdEnd = " fa-circle\"></i></td>";
         $instrumentArray = array();
@@ -708,7 +708,7 @@ class Renderer
         $instruments = $this->parseInstrumentRightsString($string);
         $allInstruments = $this->permissions["instruments"];
         $surveysHeader = $this->getSurveyHeader();
-        $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-trigger='focus' title='Data Viewing Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-bs-toggle='popover' data-bs-trigger='focus' title='Data Viewing Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
         $tdStart = "<td><i style=\"color:#666;\" class=\"";
         $tdEnd = " fa-circle\"></i></td>";
         $instrumentArray = array();
@@ -728,7 +728,7 @@ class Renderer
 
             $cell .= "</tr>";
         }
-        $cell .= "</tbody></table></div>'>";
+        $cell .= "</tbody></table></a>'>";
 
         $nNoAccess = count(array_intersect($instrumentArray, $instruments["by_permission"][0]));
         $nViewAndEdit = count(array_intersect($instrumentArray, $instruments["by_permission"][1]));

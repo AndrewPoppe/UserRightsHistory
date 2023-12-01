@@ -102,20 +102,19 @@
             {
                 "url": "logging_table.php",
                 "show-header-and-footer": true
-            },
-            {
-                "url": "logging_table_ajax.php",
-                "show-header-and-footer": false
             }
         ],
         "control-center": []
     },
     "no-auth-pages": [],
-    "framework-version": 9,
+    "auth-ajax-actions": [
+        "logging_table_ajax"
+    ],
+    "framework-version": 14,
     "compatibility": {
         "php-version-min": "7.4.00",
-        "php-version-max": "7.99.99",
-        "redcap-version-min": "12.0.4",
+        "php-version-max": "8.3.99",
+        "redcap-version-min": "12.7.24",
         "redcap-version-max": ""
     },
     "crons": [
