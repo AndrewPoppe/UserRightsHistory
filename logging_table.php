@@ -102,14 +102,25 @@
                 ],
                 scrollX: true,
                 scrollCollapse: true,
-                ajax: {
-                    url: module.getUrl('logging_table_ajax.php'),
-                    type: 'POST',
-                    data: function (dtParams) {
-                        dtParams.minDate = $('.timestamp.min').val();
-                        dtParams.maxDate = $('.timestamp.max').val();
-                        return dtParams;
-                    }
+                ajax: function(data, callback, settings) {
+                    const payload = {
+                        "draw": data.draw,
+                        "search": data.search,
+                        "start": data.start,
+                        "length": data.length,
+                        "order": data.order,
+                        "columns": data.columns,
+                        "minDate": $('.timestamp.min').val(),
+                        "maxDate": $('.timestamp.max').val()
+                    };
+                    module.ajax('logging_table_ajax', payload)
+                    .then(response => {
+                        console.log(response);
+                        callback(response);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
                 },
                 columns: [{
                     data: 'timestamp',

@@ -100,6 +100,34 @@ class UserRightsHistory extends AbstractExternalModule
         return $link;
     }
 
+    function redcap_module_ajax($action, $payload, $project_id, $record, $instrument, $event_id, $repeat_instance, $survey_hash, $response_id, $survey_queue_hash, $page, $page_full, $user_id, $group_id) {
+        if ($action == "logging_table_ajax") {
+            // Is the logging page enabled?
+            if ($this->getProjectSetting("disable-logging-table") == "1") {
+                return;
+            }
+
+            // If user is in a DAG and settings are appropriate, don't continue.
+            $current_dag                   = $this->getCurrentDag($project_id, $user_id);
+            $prevent_dags_from_seeing_logs = $this->getProjectSetting("prevent_logs_for_dags");
+            if ( $current_dag != null && $prevent_dags_from_seeing_logs != "1" ) {
+                return;
+            }
+
+            // Return logging data
+            [$logs, $recordsFiltered] = $this->getLogs($payload);
+            $total = $this->getTotalLogCount();
+
+            $response = array(
+                "data" => $logs,
+                "draw" => (int) $payload["draw"],
+                "recordsTotal" => $total,
+                "recordsFiltered" => $recordsFiltered
+            );
+            return $response;
+        }
+    }
+
     //////////////////////
     // Settings Methods //
     //////////////////////
@@ -1027,6 +1055,34 @@ class UserRightsHistory extends AbstractExternalModule
             $this->log('Error getting total log count', [ "error" => $e->getMessage() ]);
             return;
         }
+    }
+
+    function replaceMiddleChars(string $token) {
+        $len = strlen($token);
+        if ($len < 6) {
+            return "REDACTED";
+        }
+        $start = substr($token, 0, 3);
+        $end = substr($token, $len - 3, $len);
+        $middle = substr($token, 3, $len - 6);
+        $middle = str_repeat('*', strlen($middle));
+        return $start . $middle . $end;
+    }
+
+    function redactApiToken(array $data) {
+        $previous_str = $data['previous'] ?? '[]';
+        $current_str = $data['current'] ?? '[]';
+        $previous = json_decode($previous_str, true);
+        $current = json_decode($current_str, true);
+        if (!empty($previous['api_token'])) {
+            $previous['api_token'] = $this->replaceMiddleChars($previous['api_token']);
+        }
+        if (!empty($current['api_token'])) {
+            $current['api_token'] = $this->replaceMiddleChars($current['api_token']);
+        }
+        $data['previous'] = json_encode($previous);
+        $data['current'] = json_encode($current);
+        return $data;
     }
 
     function getLogs(array $params)
