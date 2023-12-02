@@ -100,10 +100,11 @@ class UserRightsHistory extends AbstractExternalModule
         return $link;
     }
 
-    function redcap_module_ajax($action, $payload, $project_id, $record, $instrument, $event_id, $repeat_instance, $survey_hash, $response_id, $survey_queue_hash, $page, $page_full, $user_id, $group_id) {
-        if ($action == "logging_table_ajax") {
+    function redcap_module_ajax($action, $payload, $project_id, $record, $instrument, $event_id, $repeat_instance, $survey_hash, $response_id, $survey_queue_hash, $page, $page_full, $user_id, $group_id)
+    {
+        if ( $action == "logging_table_ajax" ) {
             // Is the logging page enabled?
-            if ($this->getProjectSetting("disable-logging-table") == "1") {
+            if ( $this->getProjectSetting("disable-logging-table") == "1" ) {
                 return;
             }
 
@@ -115,13 +116,13 @@ class UserRightsHistory extends AbstractExternalModule
             }
 
             // Return logging data
-            [$logs, $recordsFiltered] = $this->getLogs($payload);
-            $total = $this->getTotalLogCount();
+            [ $logs, $recordsFiltered ] = $this->getLogs($payload);
+            $total                    = $this->getTotalLogCount();
 
             $response = array(
-                "data" => $logs,
-                "draw" => (int) $payload["draw"],
-                "recordsTotal" => $total,
+                "data"            => $logs,
+                "draw"            => (int) $payload["draw"],
+                "recordsTotal"    => $total,
                 "recordsFiltered" => $recordsFiltered
             );
             return $response;
@@ -611,12 +612,20 @@ class UserRightsHistory extends AbstractExternalModule
     function savePermissions($localProjectId, string $newPermissions_gzip, array $permissionsChanges, $username)
     {
         try {
+            $previous = $permissionsChanges["previous"];
+            if ( !empty($previous['api_token']) ) {
+                $previous['api_token'] = $this->replaceMiddleChars($previous['api_token']);
+            }
+            $current = $permissionsChanges["current"];
+            if ( !empty($current['api_token']) ) {
+                $current['api_token'] = $this->replaceMiddleChars($current['api_token']);
+            }
             $this->log('rights', [
                 "user_name"  => $username,
                 "project_id" => $localProjectId,
                 "rights"     => $newPermissions_gzip,
-                "previous"   => json_encode($permissionsChanges["previous"]),
-                "current"    => json_encode($permissionsChanges["current"])
+                "previous"   => json_encode($previous),
+                "current"    => json_encode($current)
             ]);
         } catch ( \Throwable $e ) {
             $this->log('Error saving user permissions', [ "username" => $username, "error" => $e->getMessage() ]);
@@ -1057,31 +1066,33 @@ class UserRightsHistory extends AbstractExternalModule
         }
     }
 
-    function replaceMiddleChars(string $token) {
+    function replaceMiddleChars(string $token)
+    {
         $len = strlen($token);
-        if ($len < 6) {
+        if ( $len < 6 ) {
             return "REDACTED";
         }
-        $start = substr($token, 0, 3);
-        $end = substr($token, $len - 3, $len);
+        $start  = substr($token, 0, 3);
+        $end    = substr($token, $len - 3, $len);
         $middle = substr($token, 3, $len - 6);
         $middle = str_repeat('*', strlen($middle));
         return $start . $middle . $end;
     }
 
-    function redactApiToken(array $data) {
+    function redactApiToken(array $data)
+    {
         $previous_str = $data['previous'] ?? '[]';
-        $current_str = $data['current'] ?? '[]';
-        $previous = json_decode($previous_str, true);
-        $current = json_decode($current_str, true);
-        if (!empty($previous['api_token'])) {
+        $current_str  = $data['current'] ?? '[]';
+        $previous     = json_decode($previous_str, true);
+        $current      = json_decode($current_str, true);
+        if ( !empty($previous['api_token']) ) {
             $previous['api_token'] = $this->replaceMiddleChars($previous['api_token']);
         }
-        if (!empty($current['api_token'])) {
+        if ( !empty($current['api_token']) ) {
             $current['api_token'] = $this->replaceMiddleChars($current['api_token']);
         }
         $data['previous'] = json_encode($previous);
-        $data['current'] = json_encode($current);
+        $data['current']  = json_encode($current);
         return $data;
     }
 
