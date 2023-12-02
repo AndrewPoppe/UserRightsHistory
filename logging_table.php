@@ -96,6 +96,24 @@
                 serverSide: true,
                 deferLoading: totalRecords,
                 searchDelay: 400,
+                buttons: [{
+                    text: '<i class="fas fa-file-excel"></i> Export to Excel',
+                    action: function ( e, dt, node, config ) {
+                        var myButton = this;
+                        var origLen = dt.page.len();
+                        dt.one( 'draw', function () {
+                            $.fn.dataTable.ext.buttons.excelHtml5.action.call(myButton, e, dt, node, config);                 
+                            dt.page.len(origLen).draw();
+                        });
+                        dt.page.len(-1).draw();      
+                    },
+                    className: 'btn btn-success btn-sm mr-2',
+                    init: function (api, node, config) {
+                        $(node).removeClass('dt-button');
+                    },
+                    filename:  `UserRightsHistory_PID${pid}_${new Date().toISOString().slice(0, 10)}`
+                }],
+                dom:'Blfrtip',
                 lengthMenu: [
                     [10, 25, 50, 100, -1],
                     [10, 25, 50, 100, 'All']
