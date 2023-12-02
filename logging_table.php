@@ -99,61 +99,58 @@
                 buttons: [{
                     extend: 'excel',
                     text: '<i class="fas fa-file-excel"></i> Export to Excel',
-                    action: function ( e, dt, node, config ) {
+                    action: function (e, dt, node, config) {
+                        console.log(config);
                         var origText = $(node).html();
                         $(node).html(`<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`);
                         var self = this;
                         var oldStart = dt.settings()[0]._iDisplayStart;
-        
                         dt.one('preXhr', function (e, s, data) {
-                            // Just this once, load all data from the server...
                             data.start = 0;
                             data.length = 2147483647;
-        
                             dt.one('preDraw', function (e, settings) {
-                                // Call the original action function
                                 $.fn.dataTable.ext.buttons.excelHtml5.action.call(self, e, dt, node, config);
-        
                                 dt.one('preXhr', function (e, s, data) {
-                                    // DataTables thinks the first item displayed is index 0, but we're not drawing that.
-                                    // Set the property to what it was before exporting.
                                     settings._iDisplayStart = oldStart;
                                     data.start = oldStart;
                                     $(node).html(origText);
                                 });
-        
-                                // Reload the grid with the original page. Otherwise, API functions like table.cell(this) don't work properly.
                                 setTimeout(dt.ajax.reload, 0);
-        
-                                // Prevent rendering of the full data to the DOM
                                 return false;
                             });
                         });
-        
-                        // Requery the server with the new one-time export settings
                         dt.ajax.reload();
-                        // var self = this;
-                        // var origLen = dt.page.len();
-                        // dt.one( 'draw', function () {
-                        //     $.fn.dataTable.ext.buttons.excelHtml5.action.call(self, e, dt, node, config);                 
-                        //     dt.page.len(origLen).draw();
-                        // });
-                        // dt.page.len(-1).draw();      
                     },
                     className: 'btn btn-success btn-sm mr-2',
                     init: function (api, node, config) {
                         $(node).removeClass('dt-button');
                     },
-                    filename:  `UserRightsHistory_PID${pid}_${new Date().toISOString().slice(0, 10)}`
+                    filename: `UserRightsHistory_PID${pid}_${new Date().toISOString().slice(0, 10)}`,
+                    exportOptions: {
+                        format: {
+                            header: function (data, columnIdx, node) {
+                                if (columnIdx == 0) {
+                                    return 'Timestamp';
+                                } else if (columnIdx == 1) {
+                                    return 'Update Type';
+                                } else if (columnIdx == 2) {
+                                    return 'Previous Value';
+                                } else if (columnIdx == 3) {
+                                    return 'New Value';
+                                }
+                                return data;
+                            }
+                        }
+                    }
                 }],
-                dom:'Blfrtip',
+                dom: 'Blfrtip',
                 lengthMenu: [
                     [10, 25, 50, 100, -1],
                     [10, 25, 50, 100, 'All']
                 ],
                 scrollX: true,
                 scrollCollapse: true,
-                ajax: function(data, callback, settings) {
+                ajax: function (data, callback, settings) {
                     const payload = {
                         "draw": data.draw,
                         "search": data.search,
@@ -165,13 +162,13 @@
                         "maxDate": $('.timestamp.max').val()
                     };
                     module.ajax('logging_table_ajax', payload)
-                    .then(response => {
-                        console.log(response);
-                        callback(response);
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    });
+                        .then(response => {
+                            console.log(response);
+                            callback(response);
+                        })
+                        .catch(error => {
+                            console.error(error);
+                        });
                 },
                 columns: [{
                     data: 'timestamp',
@@ -271,8 +268,8 @@
                     $('table').css('opacity', 1);
 
                     table.DataTable().rows().every(function () {
-                    const rowNode = this.node();
-                    const rowIndex = this.index();
+                        const rowNode = this.node();
+                        const rowIndex = this.index();
                         $(rowNode).attr('data-dt-row', rowIndex);
                     });
 
