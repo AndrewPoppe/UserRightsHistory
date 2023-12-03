@@ -104,7 +104,6 @@ namespace YaleREDCap\UserRightsHistory;
                     extend: 'excel',
                     text: '<i class="fas fa-file-excel"></i> Export to Excel',
                     action: function (e, dt, node, config) {
-                        console.log(config);
                         var origText = $(node).html();
                         $(node).html(`<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`);
                         var self = this;
@@ -129,7 +128,7 @@ namespace YaleREDCap\UserRightsHistory;
                     init: function (api, node, config) {
                         $(node).removeClass('dt-button');
                     },
-                    filename: `UserRightsHistory_PID${pid}_${new Date().toISOString().slice(0, 10)}`,
+                    filename: `UserRightsHistory_Logging_PID${pid}_${new Date().toISOString().slice(0, 10)}`,
                     exportOptions: {
                         format: {
                             header: function (data, columnIdx, node) {

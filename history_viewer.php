@@ -27,27 +27,16 @@ namespace YaleREDCap\UserRightsHistory;
         <br>
         following the moment this module was installed in the project.
     </p>
+    <link
+        href="https://cdn.datatables.net/v/dt/jszip-3.10.1/dt-1.13.8/b-2.4.2/b-html5-2.4.2/b-print-2.4.2/fc-4.3.0/datatables.min.css"
+        rel="stylesheet">
+    <script
+        src="https://cdn.datatables.net/v/dt/jszip-3.10.1/dt-1.13.8/b-2.4.2/b-html5-2.4.2/b-print-2.4.2/fc-4.3.0/datatables.min.js"></script>
     <script type="text/javascript">
-        function exportExcel() {
-            var table = $('table#userrights').DataTable();
-            table.buttons.exportData({
-                format: {
-                    body: function (data, ri, ci, node) {
-                        if (data.includes('tick.png')) {
-                            return 'Yes';
-                        } else if (data.includes('cross.png')) {
-                            return 'No';
-                        } else if (data.includes('minus.png')) {
-                            return '—';
-                        }
-                    }
-                }
-            });
-        }
-
+        var projectStatus;
+        var newDate = new Date(<?= $timestamp ?>);
         $(function () {
             $('#datetime_icon').attr('src', app_path_images + 'date.png');
-            const newDate = new Date(<?= $timestamp ?>);
             const fp = $('#datetime').flatpickr({
                 onClose: function () {
                     pageLoad()
@@ -88,7 +77,54 @@ namespace YaleREDCap\UserRightsHistory;
                     left: 2
                 },
                 stateSave: false,
-                dom: "t",
+                buttons: [
+                    {
+                        extend: 'excel',
+                        text: '<i class="fas fa-file-excel"></i> Export to Excel',
+                        className: 'btn btn-sm btn-success',
+                        className: 'btn btn-success btn-xs mb-1',
+                        init: function (api, node, config) {
+                            $(node).removeClass('dt-button');
+                        },
+                        filename: `UserRightsHistory_PID${pid}_${moment(newDate).format()}`,
+                        exportOptions: {
+                            format: {
+                                header: function (data, columnIdx, node) {
+                                    return $('<textarea>').html(data).text().trim();
+                                },
+                                body: function (data, ri, ci, node) {
+                                    if (data.includes('tick.png')) {
+                                        let result = 'Yes';
+                                        if (data.includes('Download all data')) {
+                                            result += ' (Download all data)';
+                                        }
+                                        return result;
+                                    } else if (data.includes('cross.png')) {
+                                        return 'No';
+                                    } else if (data.includes('tick_shield.png')) {
+                                        return 'Yes (with E-signature authority)';
+                                    } else if (data.includes('<div class="userRightsTableForms">')) {
+                                        return $(data.replaceAll('<div class="userRightsTableForms">', '<div class="userRightsTableForms">NEWLINE')).text().replaceAll('NEWLINE', '\n').trim()
+                                    } else if (data.includes('<hr>')) {
+                                        return $(data.replaceAll('<hr>', '<span>NEWLINE</span>')).text().replaceAll('NEWLINE', '\n\n').trim();
+                                    } else if (/\bImport\b|\bExport\b/.test(data)) {
+                                        return $(data).text().replaceAll('Import', '\nImport').replaceAll('Export', '\nExport').trim();
+                                    } else {
+                                        return $(data).text().trim();
+                                    }
+                                }
+                            }
+                        },
+                        customize: function (xlsx, button, api) {
+                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                            $('row:not([r="2"]) c', sheet).attr('s', '55');
+                            const projectInfo = `PID: ${pid} - Status: ${projectStatus} - ${newDate.toLocaleString()}`;
+                            $('row[r="1"] t', sheet).text(projectInfo);
+                            $('row[r="1"] c', sheet).attr('s', '32');
+                        }
+                    }
+                ],
+                dom: "Bt",
                 "order": [
                     [0, 'asc'],
                     [1, 'asc']
@@ -206,5 +242,10 @@ namespace YaleREDCap\UserRightsHistory;
     <?php
     $permissions = $module->getAllInfoByTimestamp($timestamp);
     $module->renderTable($permissions);
+    $renderer = new Renderer($permissions);
+    $status   = $module->getProjectStatus();
     ?>
+    <script>
+        projectStatus = <?= json_encode($status) ?>;
+    </script>
 </div>
