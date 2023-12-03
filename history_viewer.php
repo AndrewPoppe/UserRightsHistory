@@ -118,7 +118,7 @@ namespace YaleREDCap\UserRightsHistory;
                         customize: function (xlsx, button, api) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
                             $('row:not([r="2"]) c', sheet).attr('s', '55');
-                            const projectInfo = `PID: ${pid} - Status: ${projectStatus} - ${newDate.toLocaleString()}`;
+                            const projectInfo = `PID: ${pid} - ${projectStatus} - ${newDate.toLocaleString()}`;
                             $('row[r="1"] t', sheet).text(projectInfo);
                             $('row[r="1"] c', sheet).attr('s', '32');
                         }
@@ -243,9 +243,9 @@ namespace YaleREDCap\UserRightsHistory;
     $permissions = $module->getAllInfoByTimestamp($timestamp);
     $module->renderTable($permissions);
     $renderer = new Renderer($permissions);
-    $status   = $module->getProjectStatus();
+    $status   = $renderer->getProjectStatus();
     ?>
     <script>
-        projectStatus = <?= json_encode($status) ?>;
+        projectStatus = $(`<?= $status ?>`).text();
     </script>
 </div>

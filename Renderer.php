@@ -17,7 +17,7 @@ class Renderer
     {
         $columns = $this->getColumns();
         $this->parsePermissions();
-?>
+        ?>
         <div class="userrights-table-container" style="margin-right: 20px; margin-top:20px;">
             <div style="margin-bottom: 10px;">
                 <?= $this->getProjectStatus() ?>
@@ -30,7 +30,7 @@ class Renderer
             <table id="userrights" class="cell-border stripe compact noOrderIcon" style="opacity:0;">
                 <thead>
                     <tr>
-                        <?php foreach ($columns as $column) {
+                        <?php foreach ( $columns as $column ) {
                             $this->makeHeader($column);
                         }
                         ?>
@@ -38,13 +38,13 @@ class Renderer
                 </thead>
                 <tbody>
                     <?php
-                    $nonCentered = array("user", "expiration", "group", "randomization", "api", "mobile_app", "data_export_rights", "data_viewing_rights");
-                    foreach ($this->permissions["users"] as $user) {
+                    $nonCentered = array( "user", "expiration", "group", "randomization", "api", "mobile_app", "data_export_rights", "data_viewing_rights" );
+                    foreach ( $this->permissions["users"] as $user ) {
                         echo "<tr>";
-                        foreach ($columns as $column_id => $column) {
+                        foreach ( $columns as $column_id => $column ) {
                             $center = !in_array($column_id, $nonCentered, true);
-                            $data = $user["row"][$column_id];
-                            if (!$column["show"] || is_null($data)) {
+                            $data   = $user["row"][$column_id];
+                            if ( !$column["show"] || is_null($data) ) {
                                 continue;
                             }
                             $this->makeCell($data, $center);
@@ -52,12 +52,12 @@ class Renderer
                         echo "</tr>";
                     }
                     $roles = $this->permissions["roles"];
-                    foreach ($roles as $role) {
+                    foreach ( $roles as $role ) {
                         echo "<tr>";
-                        foreach ($columns as $column_id => $column) {
+                        foreach ( $columns as $column_id => $column ) {
                             $center = !in_array($column_id, $nonCentered, true);
-                            $data = $role["row"][$column_id];
-                            if (!$column["show"] || is_null($data)) {
+                            $data   = $role["row"][$column_id];
+                            if ( !$column["show"] || is_null($data) ) {
                                 continue;
                             }
                             $this->makeCell($data, $center);
@@ -67,7 +67,7 @@ class Renderer
                 </tbody>
             </table>
         </div>
-    <?php
+        <?php
 
         $this->getModuleStatus();
     }
@@ -77,41 +77,41 @@ class Renderer
     function getColumns()
     {
         return [
-            "role"                    => array("title" => "Role", "show" => true, "width" => 125),
-            "user"                    => array("title" => "User", "show" => true, "width" => 225),
-            "expiration"              => array("title" => "Expiration", "show" => true, "width" => 50),                                                     // maybe this should be status (expired, suspended, active?)
-            "group"                   => array("title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 100),
-            "design"                  => array("title" => "Project Design and Setup", "show" => true, "width" => 50),
-            "user_rights"             => array("title" => "User Rights", "show" => true, "width" => 50),
-            "data_access_groups"      => array("title" => "Data Access Groups", "show" => true, "width" => 50),
-            "data_viewing_rights"     => array("title" => "Data Viewing Rights", "show" => $this->hasGranularExportRights(), "width" => 50),
-            "data_export_rights"      => array("title" => "Data Export Rights", "show" => $this->hasGranularExportRights(), "width" => 50),
-            "export"                  => array("title" => "Data Export Tool", "show" => !$this->hasGranularExportRights(), "width" => 50),
-            "reports"                 => array("title" => "Reports & Report Builder", "show" => true, "width" => 50),
-            "graphical"               => array("title" => "Graphical Data View & Stats", "show" => $this->graphicalEnabled(), "width" => 50),
-            "surveys"                 => array("title" => "Survey Distribution Tools", "show" => $this->surveysEnabled(), "width" => 50),
-            "calendar"                => array("title" => "Calendar & Scheduling", "show" => true, "width" => 50),
-            "import"                  => array("title" => "Data Import Tool", "show" => true, "width" => 50),
-            "comparison"              => array("title" => "Data Comparison Tool", "show" => true, "width" => 50),
-            "logging"                 => array("title" => "Logging", "show" => true, "width" => 50),
-            "file_repository"         => array("title" => "File Repository", "show" => true, "width" => 50),
-            "dde"                     => array("title" => "Double Data Entry", "show" => $this->ddeEnabled(), "width" => 50),
-            "lock_record_customize"   => array("title" => "Record Locking Customization", "show" => true, "width" => 50),
-            "lock_record"             => array("title" => "Lock/Unlock Records", "show" => true, "width" => 50),
-            "randomization"           => array("title" => "Randomization", "show" => $this->randomizationEnabled(), "width" => 50),
-            "data_quality_design"     => array("title" => "Data Quality (create/edit rules)", "show" => true, "width" => 50),
-            "data_quality_execute"    => array("title" => "Data Quality (execute rules)", "show" => true, "width" => 50),
-            "data_quality_resolution" => array("title" => "Data Resolution Workflow", "show" => $this->dataResolutionWorkflowEnabled(), "width" => 50),
-            "api"                     => array("title" => "API", "show" => $this->apiEnabled(), "width" => 50),
-            "mobile_app"              => array("title" => "REDCap Mobile App", "show" => $this->mobileAppEnabled(), "width" => 50),
-            "cdp_mapping"             => array("title" => "Clinical Data Pull from EHR (Setup / Mapping)", "show" => $this->cdpEnabled(), "width" => 50),
-            "cdp_adjudicate"          => array("title" => "Clinical Data Pull from EHR (Adjudicate Data)", "show" => $this->cdpEnabled(), "width" => 50),
-            "dts"                     => array("title" => "DTS (Data Transfer Services)", "show" => $this->dtsEnabled(), "width" => 50),
-            "record_create"           => array("title" => "Create Records", "show" => true, "width" => 50),
-            "record_rename"           => array("title" => "Rename Records", "show" => true, "width" => 50),
-            "record_delete"           => array("title" => "Delete Records", "show" => true, "width" => 50),
-            "record_level_locking"    => array("title" => "Record-Level Locking", "show" => true, "width" => 50),
-            "data_entry_rights"       => array("title" => "Data Entry Rights", "show" => !$this->hasGranularExportRights(), "width" => 50)
+            "role"                    => array( "title" => "Role", "show" => true, "width" => 125 ),
+            "user"                    => array( "title" => "User", "show" => true, "width" => 225 ),
+            "expiration"              => array( "title" => "Expiration", "show" => true, "width" => 50 ),                                                     // maybe this should be status (expired, suspended, active?)
+            "group"                   => array( "title" => "Data Access Group", "show" => $this->hasDAGs(), "width" => 100 ),
+            "design"                  => array( "title" => "Project Design and Setup", "show" => true, "width" => 50 ),
+            "user_rights"             => array( "title" => "User Rights", "show" => true, "width" => 50 ),
+            "data_access_groups"      => array( "title" => "Data Access Groups", "show" => true, "width" => 50 ),
+            "data_viewing_rights"     => array( "title" => "Data Viewing Rights", "show" => $this->hasGranularExportRights(), "width" => 50 ),
+            "data_export_rights"      => array( "title" => "Data Export Rights", "show" => $this->hasGranularExportRights(), "width" => 50 ),
+            "export"                  => array( "title" => "Data Export Tool", "show" => !$this->hasGranularExportRights(), "width" => 50 ),
+            "reports"                 => array( "title" => "Reports & Report Builder", "show" => true, "width" => 50 ),
+            "graphical"               => array( "title" => "Graphical Data View & Stats", "show" => $this->graphicalEnabled(), "width" => 50 ),
+            "surveys"                 => array( "title" => "Survey Distribution Tools", "show" => $this->surveysEnabled(), "width" => 50 ),
+            "calendar"                => array( "title" => "Calendar & Scheduling", "show" => true, "width" => 50 ),
+            "import"                  => array( "title" => "Data Import Tool", "show" => true, "width" => 50 ),
+            "comparison"              => array( "title" => "Data Comparison Tool", "show" => true, "width" => 50 ),
+            "logging"                 => array( "title" => "Logging", "show" => true, "width" => 50 ),
+            "file_repository"         => array( "title" => "File Repository", "show" => true, "width" => 50 ),
+            "dde"                     => array( "title" => "Double Data Entry", "show" => $this->ddeEnabled(), "width" => 50 ),
+            "lock_record_customize"   => array( "title" => "Record Locking Customization", "show" => true, "width" => 50 ),
+            "lock_record"             => array( "title" => "Lock/Unlock Records", "show" => true, "width" => 50 ),
+            "randomization"           => array( "title" => "Randomization", "show" => $this->randomizationEnabled(), "width" => 50 ),
+            "data_quality_design"     => array( "title" => "Data Quality (create/edit rules)", "show" => true, "width" => 50 ),
+            "data_quality_execute"    => array( "title" => "Data Quality (execute rules)", "show" => true, "width" => 50 ),
+            "data_quality_resolution" => array( "title" => "Data Resolution Workflow", "show" => $this->dataResolutionWorkflowEnabled(), "width" => 50 ),
+            "api"                     => array( "title" => "API", "show" => $this->apiEnabled(), "width" => 50 ),
+            "mobile_app"              => array( "title" => "REDCap Mobile App", "show" => $this->mobileAppEnabled(), "width" => 50 ),
+            "cdp_mapping"             => array( "title" => "Clinical Data Pull from EHR (Setup / Mapping)", "show" => $this->cdpEnabled(), "width" => 50 ),
+            "cdp_adjudicate"          => array( "title" => "Clinical Data Pull from EHR (Adjudicate Data)", "show" => $this->cdpEnabled(), "width" => 50 ),
+            "dts"                     => array( "title" => "DTS (Data Transfer Services)", "show" => $this->dtsEnabled(), "width" => 50 ),
+            "record_create"           => array( "title" => "Create Records", "show" => true, "width" => 50 ),
+            "record_rename"           => array( "title" => "Rename Records", "show" => true, "width" => 50 ),
+            "record_delete"           => array( "title" => "Delete Records", "show" => true, "width" => 50 ),
+            "record_level_locking"    => array( "title" => "Record-Level Locking", "show" => true, "width" => 50 ),
+            "data_entry_rights"       => array( "title" => "Data Entry Rights", "show" => !$this->hasGranularExportRights(), "width" => 50 )
         ];
     }
 
@@ -159,21 +159,21 @@ class Renderer
 
     private function mobileAppEnabled()
     {
-        $apiEnabled = $this->apiEnabled();
+        $apiEnabled       = $this->apiEnabled();
         $mobileAppEnabled = $this->permissions["system"]["mobile_app_enabled"];
         return $apiEnabled && $mobileAppEnabled;
     }
 
     private function cdpEnabled()
     {
-        $enabledSystem = $this->permissions["system"]["fhir_ddp_enabled"];
+        $enabledSystem  = $this->permissions["system"]["fhir_ddp_enabled"];
         $enabledProject = $this->permissions["project_status"]["realtime_webservice_enabled"];
         return $enabledSystem && $enabledProject;
     }
 
     private function dtsEnabled()
     {
-        $enabledSystem = $this->permissions["system"]["dts_enabled_global"];
+        $enabledSystem  = $this->permissions["system"]["dts_enabled_global"];
         $enabledProject = $this->permissions["project_status"]["dts_enabled"];
         return $enabledSystem && $enabledProject;
     }
@@ -181,14 +181,14 @@ class Renderer
 
     private function makeHeader($column)
     {
-        if (!$column["show"]) {
+        if ( !$column["show"] ) {
             return;
         }
-    ?>
+        ?>
         <th style="min-width:<?= $column["width"] ?>px; text-align:center; vertical-align:middle;">
             <?= $column["title"] ?>
         </th>
-<?php
+        <?php
     }
 
     private function makeCell(array $content, bool $center = true)
@@ -196,12 +196,12 @@ class Renderer
         echo "<td style='vertical-align:middle;'>";
         echo !$center ? "" : "<div style='display:flex; align-items:center; justify-content:center;'>";
         $pCenter = $center ? "text-align:center;" : "";
-        foreach ($content as $item) {
-            if ($item === "check") {
+        foreach ( $content as $item ) {
+            if ( $item === "check" ) {
                 $this->insertCheck();
-            } elseif ($item === "X") {
+            } elseif ( $item === "X" ) {
                 $this->insertX();
-            } elseif ($item === "checkshield") {
+            } elseif ( $item === "checkshield" ) {
                 $this->insertCheckShield();
             } else {
                 echo "<p style='${pCenter}'>${item}</p>";
@@ -236,10 +236,10 @@ class Renderer
         $roles = &$this->permissions["roles"];
         $users = &$this->permissions["users"];
 
-        foreach ($users as &$user) {
+        foreach ( $users as &$user ) {
             $role_id = $user["role_id"];
-            if ($role_id != null) {
-                if ($roles[$role_id]["users"] == null) {
+            if ( $role_id != null ) {
+                if ( $roles[$role_id]["users"] == null ) {
                     $roles[$role_id]["users"] = array();
                 }
                 $roles[$role_id]["users"][$user["username"]] = $user;
@@ -249,7 +249,7 @@ class Renderer
             $user["row"] = $this->parseRow($user, true);
         }
 
-        foreach ($roles as &$role) {
+        foreach ( $roles as &$role ) {
             $role["row"] = $this->parseRow($role, false);
         }
     }
@@ -260,10 +260,10 @@ class Renderer
      * 
      * @return array parsed row for table
      */
-    private function parseRow(?array $data, bool $isUser): array
+    private function parseRow(?array $data, bool $isUser) : array
     {
 
-        $row = array();
+        $row  = array();
         $data = is_null($data) ? [] : $data;
 
         // Role
@@ -379,22 +379,22 @@ class Renderer
 
     private function getCheckOrX($test)
     {
-        return [$test ? "check" : "X"];
+        return [ $test ? "check" : "X" ];
     }
 
     private function getRoleText(array $data, bool $isUser)
     {
         $roleText = $isUser ? "<span style='color:lightgray;'>—</span>" : "<span style='font-weight:bold; color:#c00000;'>" . $data["role_name"] . "</span>&nbsp;[" . $data["role_id"] . "]";
-        return ['<div style="display:flex; align-items:center; justify-content:center;">' . $roleText . '</div>'];
+        return [ '<div style="display:flex; align-items:center; justify-content:center;">' . $roleText . '</div>' ];
     }
 
     private function getUserArray(array $data, bool $isUser)
     {
         $users = array();
-        if ($isUser) {
+        if ( $isUser ) {
             $users[] = new User($data, $this);
         } else {
-            foreach ($data["users"] as $thisUserData) {
+            foreach ( $data["users"] as $thisUserData ) {
                 $users[] = new User($thisUserData, $this);
             }
         }
@@ -404,13 +404,13 @@ class Renderer
     private function getUserText(array $users, bool $isUser)
     {
         $userData = array();
-        foreach ($users as $index => $user) {
-            if ($index !== array_key_first($users)) {
+        foreach ( $users as $index => $user ) {
+            if ( $index !== array_key_first($users) ) {
                 $userData[] = "<hr>";
             }
             $userData[] = $user->getUserText();
         }
-        if (!$isUser && empty($userData)) {
+        if ( !$isUser && empty($userData) ) {
             $userData[] = "<span style='color:#999; font-size:75%;'>[No users assigned]</span>";
         }
         return $userData;
@@ -419,12 +419,12 @@ class Renderer
     private function getExpirationText(array $users)
     {
         $expirationData = array();
-        foreach ($users as $index => $user) {
-            if ($index !== array_key_first($users)) {
+        foreach ( $users as $index => $user ) {
+            if ( $index !== array_key_first($users) ) {
                 $expirationData[] = "<hr>";
             }
             $expiration_string = $user->getExpirationDate();
-            $expirationData[] = $this->createExpirationDate($expiration_string);
+            $expirationData[]  = $this->createExpirationDate($expiration_string);
         }
         return $expirationData;
     }
@@ -432,8 +432,8 @@ class Renderer
     private function getDAGText(array $users)
     {
         $dagData = array();
-        foreach ($users as $index => $user) {
-            if ($index !== array_key_first($users)) {
+        foreach ( $users as $index => $user ) {
+            if ( $index !== array_key_first($users) ) {
                 $dagData[] = "<hr>";
             }
             $dagData[] = $user->getDagText();
@@ -444,13 +444,13 @@ class Renderer
     private function getRandomizationText(array $data)
     {
         $result = array();
-        if ($data["random_setup"]) {
+        if ( $data["random_setup"] ) {
             $result[] = "<div style='text-align:center;'>Setup</div>";
         }
-        if ($data["random_dashboard"]) {
+        if ( $data["random_dashboard"] ) {
             $result[] = "<div style='text-align:center;'>Dashboard</div>";
         }
-        if ($data["random_perform"]) {
+        if ( $data["random_perform"] ) {
             $result[] = "<div style='text-align:center;'>Randomize</div>";
         }
         return $result;
@@ -458,15 +458,15 @@ class Renderer
 
     private function createExpirationDate($date_string)
     {
-        if (!$date_string) {
+        if ( !$date_string ) {
             return "<div style='display:flex; align-items:center; justify-content:center;'>&nbsp;<span style='font-size:11px; color:#999;'>never</span>&nbsp;</div>";
         }
-        $date = date_create($date_string);
-        $now_string = date("Y-m-d", $this->permissions["timestamp"]);
-        $now = date_create($now_string);
-        $diff = date_diff($now, $date);
+        $date           = date_create($date_string);
+        $now_string     = date("Y-m-d", $this->permissions["timestamp"]);
+        $now            = date_create($now_string);
+        $diff           = date_diff($now, $date);
         $formatted_date = $date->format("m/d/Y");
-        $color = (!$diff->invert) ? "black" : "red";
+        $color          = (!$diff->invert) ? "black" : "red";
         return "<div style='display:flex; align-items:center; justify-content:center;'><span style='color:${color};'>${formatted_date}</span></div>";
     }
 
@@ -489,7 +489,7 @@ class Renderer
             default:
                 $result = "X";
         }
-        return [$result];
+        return [ $result ];
     }
 
     private function getDDEText($value)
@@ -508,7 +508,7 @@ class Renderer
             default:
                 $result = "X";
         }
-        return [$result];
+        return [ $result ];
     }
 
     private function getLockRecordText($value)
@@ -527,7 +527,7 @@ class Renderer
             default:
                 $result = "X";
         }
-        return [$result];
+        return [ $result ];
     }
 
     private function getDataResolutionText($value)
@@ -555,53 +555,53 @@ class Renderer
             default:
                 $result = "X";
         }
-        return [$result];
+        return [ $result ];
     }
 
-    private function getAPIText(array $data): array
+    private function getAPIText(array $data) : array
     {
-        $import = $data["api_import"];
-        $export = $data["api_export"];
+        $import     = $data["api_import"];
+        $export     = $data["api_export"];
         $exportText = "<div style='text-align:center;'>Export</div>";
         $importText = "<div style='text-align:center;'>Import</div>";
-        if ($import && $export) {
+        if ( $import && $export ) {
             $result = [
                 $exportText,
                 $importText,
             ];
-        } elseif ($import) {
-            $result = [$importText];
-        } elseif ($export) {
-            $result = [$exportText];
+        } elseif ( $import ) {
+            $result = [ $importText ];
+        } elseif ( $export ) {
+            $result = [ $exportText ];
         } else {
-            $result = ["X"];
+            $result = [ "X" ];
         }
         return $result;
     }
 
-    private function getMobileAppText(array $data): array
+    private function getMobileAppText(array $data) : array
     {
-        $app = $data["mobile_app"];
-        $download = $data["mobile_app_download_data"];
-        $appText = "check";
+        $app          = $data["mobile_app"];
+        $download     = $data["mobile_app_download_data"];
+        $appText      = "check";
         $downloadText = "<div style='text-align:center; white-space:nowrap;'>Download all data</div>";
-        if ($app && $download) {
-            $result = [$appText, $downloadText];
-        } else if ($app) {
-            $result = [$appText];
-        } else if ($download) {
-            $result = [$downloadText];
+        if ( $app && $download ) {
+            $result = [ $appText, $downloadText ];
+        } else if ( $app ) {
+            $result = [ $appText ];
+        } else if ( $download ) {
+            $result = [ $downloadText ];
         } else {
-            $result = ["X"];
+            $result = [ "X" ];
         }
         return $result;
     }
 
-    private function parseInstrumentRightsString(?string $string): array
+    private function parseInstrumentRightsString(?string $string) : array
     {
         $trimmed = substr(trim($string), 1, -1);
-        $forms = explode("][", $trimmed);
-        $result = [
+        $forms   = explode("][", $trimmed);
+        $result  = [
             "by_permission" => [
                 "0" => [],
                 "1" => [],
@@ -610,10 +610,10 @@ class Renderer
             ],
             "by_instrument" => []
         ];
-        foreach ($forms as $form) {
-            $split = explode(",", $form);
+        foreach ( $forms as $form ) {
+            $split                                        = explode(",", $form);
             $result["by_permission"][strval($split[1])][] = $split[0];
-            $result["by_instrument"][$split[0]] = $split[1];
+            $result["by_instrument"][$split[0]]           = $split[1];
         }
         return $result;
     }
@@ -621,29 +621,29 @@ class Renderer
     private function hasSurveys()
     {
         $hasSurveys = false;
-        foreach ($this->permissions["instruments"] as $instrument) {
-            if (!is_null($instrument["survey_id"])) {
+        foreach ( $this->permissions["instruments"] as $instrument ) {
+            if ( !is_null($instrument["survey_id"]) ) {
                 $hasSurveys = true;
             }
         }
         return $hasSurveys;
     }
 
-    private function getDataEntryRightsText(array $data): array
+    private function getDataEntryRightsText(array $data) : array
     {
-        $string = $data["data_entry"];
+        $string         = $data["data_entry"];
         $allInstruments = $this->permissions["instruments"];
-        $instruments = $this->parseInstrumentRightsString($string);
-        $surveysHeader = $this->getSurveyHeader();
-        $cell = "<a tabindex='0' style='color:#333; text-decoration:underline;' class='popoverspan' data-bs-toggle='popover' data-bs-trigger='focus' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
-        $tdStart = "<td><i style=\"color:#666;\" class=\"";
-        $tdEnd = " fa-circle\"></i></td>";
-        foreach ($allInstruments as $thisInstrument) {
-            $instrument = $thisInstrument["id"];
-            $permission = $instruments["by_instrument"][$instrument] ?? "1";
-            $isSurvey = !is_null($thisInstrument["survey_id"]);
+        $instruments    = $this->parseInstrumentRightsString($string);
+        $surveysHeader  = $this->getSurveyHeader();
+        $cell           = "<a tabindex='0' style='color:#333; text-decoration:underline;' class='popoverspan' data-bs-toggle='popover' data-bs-trigger='focus' title='Data Entry Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $tdStart        = "<td><i style=\"color:#666;\" class=\"";
+        $tdEnd          = " fa-circle\"></i></td>";
+        foreach ( $allInstruments as $thisInstrument ) {
+            $instrument      = $thisInstrument["id"];
+            $permission      = $instruments["by_instrument"][$instrument] ?? "1";
+            $isSurvey        = !is_null($thisInstrument["survey_id"]);
             $instrumentTitle = $thisInstrument["title"];
-            $instrumentText = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
+            $instrumentText  = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
             $cell .= "<tr><th>${instrumentText}</th>";
             $cell .= $tdStart . ($permission == 0 ? "fas" : "far") . $tdEnd;
             $cell .= $tdStart . ($permission == 2 ? "fas" : "far") . $tdEnd;
@@ -655,23 +655,23 @@ class Renderer
         }
         $cell .= "</tbody></table></div>'>Rights</a>";
 
-        return [$cell];
+        return [ $cell ];
     }
 
-    private function getDataExportRightsText(?string $string): array
+    private function getDataExportRightsText(?string $string) : array
     {
-        $instruments = $this->parseInstrumentRightsString($string);
-        $allInstruments = $this->permissions["instruments"];
-        $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-bs-trigger='focus' title='Data Export Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>De-Identified</th><th>Remove All Identifier Fields</th><th>Full Data Set</th></tr></thead><tbody>";
-        $tdStart = "<td><i style=\"color:#666;\" class=\"";
-        $tdEnd = " fa-circle\"></i></td>";
+        $instruments     = $this->parseInstrumentRightsString($string);
+        $allInstruments  = $this->permissions["instruments"];
+        $cell            = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-bs-trigger='focus' title='Data Export Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>De-Identified</th><th>Remove All Identifier Fields</th><th>Full Data Set</th></tr></thead><tbody>";
+        $tdStart         = "<td><i style=\"color:#666;\" class=\"";
+        $tdEnd           = " fa-circle\"></i></td>";
         $instrumentArray = array();
-        foreach ($allInstruments as $thisInstrument) {
+        foreach ( $allInstruments as $thisInstrument ) {
             $instrument = $thisInstrument["id"];
             array_push($instrumentArray, $instrument);
-            $permission = $instruments["by_instrument"][$instrument] ?? "1";
+            $permission      = $instruments["by_instrument"][$instrument] ?? "1";
             $instrumentTitle = $thisInstrument["title"];
-            $instrumentText = $instrumentTitle . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
+            $instrumentText  = $instrumentTitle . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
             $cell .= "<tr><th>${instrumentText}</th>";
             $cell .= $tdStart . ($permission == 0 ? "fas" : "far") . $tdEnd;
             $cell .= $tdStart . ($permission == 2 ? "fas" : "far") . $tdEnd;
@@ -681,44 +681,44 @@ class Renderer
         }
         $cell .= "</tbody></table></div>'>";
 
-        $nNoAccess = count(array_intersect($instrumentArray, $instruments["by_permission"][0]));
-        $nFullData = count(array_intersect($instrumentArray, $instruments["by_permission"][1]));
-        $nDeidentified = count(array_intersect($instrumentArray, $instruments["by_permission"][2]));
-        $nIdentRemoved = count(array_intersect($instrumentArray, $instruments["by_permission"][3]));
+        $nNoAccess        = count(array_intersect($instrumentArray, $instruments["by_permission"][0]));
+        $nFullData        = count(array_intersect($instrumentArray, $instruments["by_permission"][1]));
+        $nDeidentified    = count(array_intersect($instrumentArray, $instruments["by_permission"][2]));
+        $nIdentRemoved    = count(array_intersect($instrumentArray, $instruments["by_permission"][3]));
         $cell_line_prefix = "<div class='userRightsTableForms'><code>";
 
-        if ($nNoAccess > 0) {
+        if ( $nNoAccess > 0 ) {
             $cell .= $cell_line_prefix . $nNoAccess . "</code> No Access</div>";
         }
-        if ($nDeidentified > 0) {
+        if ( $nDeidentified > 0 ) {
             $cell .= $cell_line_prefix . $nDeidentified . "</code> De-Identified</div>";
         }
-        if ($nIdentRemoved > 0) {
+        if ( $nIdentRemoved > 0 ) {
             $cell .= $cell_line_prefix . $nIdentRemoved . "</code> Remove All Identifier Fields</div>";
         }
-        if ($nFullData > 0) {
+        if ( $nFullData > 0 ) {
             $cell .= $cell_line_prefix . $nFullData . "</code> Full Data Set</div>";
         }
         $cell .= "</div>";
-        return [$cell];
+        return [ $cell ];
     }
 
-    private function getDataViewingRightsText(?string $string): array
+    private function getDataViewingRightsText(?string $string) : array
     {
-        $instruments = $this->parseInstrumentRightsString($string);
-        $allInstruments = $this->permissions["instruments"];
-        $surveysHeader = $this->getSurveyHeader();
-        $cell = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-bs-toggle='popover' data-bs-trigger='focus' title='Data Viewing Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
-        $tdStart = "<td><i style=\"color:#666;\" class=\"";
-        $tdEnd = " fa-circle\"></i></td>";
+        $instruments     = $this->parseInstrumentRightsString($string);
+        $allInstruments  = $this->permissions["instruments"];
+        $surveysHeader   = $this->getSurveyHeader();
+        $cell            = "<div tabindex='0' class='popoverspan instrumentCell' style='cursor: pointer;' data-toggle='popover' data-bs-toggle='popover' data-bs-trigger='focus' title='Data Viewing Rights' data-content='<div class=\"popover-table\"><table class=\"table\"><thead><tr><th></th><th>No Access</th><th>Read Only</th><th>View & Edit</th>${surveysHeader}</tr></thead><tbody>";
+        $tdStart         = "<td><i style=\"color:#666;\" class=\"";
+        $tdEnd           = " fa-circle\"></i></td>";
         $instrumentArray = array();
-        foreach ($allInstruments as $thisInstrument) {
+        foreach ( $allInstruments as $thisInstrument ) {
             $instrument = $thisInstrument["id"];
             array_push($instrumentArray, $instrument);
-            $permission = $instruments["by_instrument"][$instrument] ?? "1";
-            $isSurvey = !is_null($thisInstrument["survey_id"]);
+            $permission      = $instruments["by_instrument"][$instrument] ?? "1";
+            $isSurvey        = !is_null($thisInstrument["survey_id"]);
             $instrumentTitle = $thisInstrument["title"];
-            $instrumentText = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
+            $instrumentText  = $instrumentTitle . ($isSurvey ? "<span style=\"font-weight:normal; font-size:10px; color:red;\"> [survey]</span>" : "") . "<br><span style=\"font-weight:normal;\">(${instrument})</span>";
             $cell .= "<tr><th>${instrumentText}</th>";
             $cell .= $tdStart . ($permission == 0 ? "fas" : "far") . $tdEnd;
             $cell .= $tdStart . ($permission == 2 ? "fas" : "far") . $tdEnd;
@@ -730,24 +730,24 @@ class Renderer
         }
         $cell .= "</tbody></table></a>'>";
 
-        $nNoAccess = count(array_intersect($instrumentArray, $instruments["by_permission"][0]));
+        $nNoAccess    = count(array_intersect($instrumentArray, $instruments["by_permission"][0]));
         $nViewAndEdit = count(array_intersect($instrumentArray, $instruments["by_permission"][1]));
-        $nReadOnly = count(array_intersect($instrumentArray, $instruments["by_permission"][2]));
-        $nEditSurvey = count(array_intersect($instrumentArray, $instruments["by_permission"][3]));
+        $nReadOnly    = count(array_intersect($instrumentArray, $instruments["by_permission"][2]));
+        $nEditSurvey  = count(array_intersect($instrumentArray, $instruments["by_permission"][3]));
 
         $cell_line_prefix = "<div class='userRightsTableForms'><code>";
 
-        if ($nNoAccess > 0) {
+        if ( $nNoAccess > 0 ) {
             $cell .= $cell_line_prefix . $nNoAccess . "</code> No Access (Hidden)</div>";
         }
-        if ($nReadOnly > 0) {
+        if ( $nReadOnly > 0 ) {
             $cell .= $cell_line_prefix . $nReadOnly . "</code> Read Only</div>";
         }
-        if ($nViewAndEdit > 0 || $nEditSurvey > 0) {
+        if ( $nViewAndEdit > 0 || $nEditSurvey > 0 ) {
             $cell .= $cell_line_prefix . ($nViewAndEdit + $nEditSurvey) . "</code> View & Edit</div>";
         }
         $cell .= "</div>";
-        return [$cell];
+        return [ $cell ];
     }
 
     private function getSurveyHeader()
@@ -758,19 +758,19 @@ class Renderer
     private function getSurveyTD($isSurvey, $permission)
     {
         $result = "";
-        if ($isSurvey) {
+        if ( $isSurvey ) {
             $result .= "<td><i style=\"color:#666;\" class=" . ($permission == 3 ? "\"fas fa-check-square\"" : "\"far fa-square\"") . "></i></td>";
-        } elseif ($this->hasSurveys()) {
+        } elseif ( $this->hasSurveys() ) {
             $result .= "<td></td>";
         }
         return $result;
     }
 
-    private function getProjectStatus(): string
+    public function getProjectStatus() : string
     {
         $project_data = $this->permissions["project_status"];
-        $status = $project_data["status"];
-        $statusText = "<span><span style='color:#000; font-weight: bold;'>Project Status:</span>&nbsp; ";
+        $status       = $project_data["status"];
+        $statusText   = "<span><span style='color:#000; font-weight: bold;'>Project Status:</span>&nbsp; ";
         switch ($status) {
             case 0:
                 $statusText .= "<span style='color:#666;'><i class='fas fa-wrench'></i> Development</span></span>";
@@ -779,9 +779,9 @@ class Renderer
                 $statusText .= "<span style='color:#00A000;'><i class='far fa-check-square'></i> Production</span></span>";
                 break;
             case 2:
-                if (!empty($project_data["completed_time"])) {
+                if ( !empty($project_data["completed_time"]) ) {
                     $statusText .= "<i class='fas fa-archive' style='color:#dc3545;'></i>&nbsp; <span style='color: #dc3545; background-color:#f0f0f0; border:1px solid #ddd; border-radius: 5px; border-collapse: collapse; font-family:Menlo,Monaco,Consolas,\"Courier New\",monospace; padding: 2px 3px 2px 3px;'>Completed</span></span>";
-                } elseif ($project_data["data_locked"]) {
+                } elseif ( $project_data["data_locked"] ) {
                     $statusText .= "<span style='color:#A00000; font-weight:bold;'>Analysis/Cleanup - </span> <span style='font-weight:bold; color: #C00000;'><i class='fas fa-lock'></i> Read-only / Locked</span></span>";
                 } else {
                     $statusText .= "<span style='color:#A00000; font-weight:bold;'>Analysis/Cleanup - </span> <span style='font-weight:bold; color: #05a005;'><i class='fas fa-edit'></i> Editable (existing records only)</span></span>";
@@ -796,10 +796,10 @@ class Renderer
     private function getModuleStatus()
     {
         $module_status = $this->permissions["module_status"];
-        $module_old = $this->permissions["old"];
-        if ($module_old == 1) {
+        $module_old    = $this->permissions["old"];
+        if ( $module_old == 1 ) {
             echo "<script>document.querySelector('#warning').innerHTML += \"<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> these records correspond with an older version of this module.<br>The permissions below may not be accurate.</span>\";</script>";
-        } else if ($module_status !== 1) {
+        } else if ( $module_status !== 1 ) {
             echo "<script>document.querySelector('#warning').innerHTML += \"<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> the module was not enabled at this point in time. The permissions below may not be accurate.</span>\";</script>";
         }
     }
