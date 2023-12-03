@@ -117,7 +117,7 @@ class UserRightsHistory extends AbstractExternalModule
 
             // Return logging data
             [ $logs, $recordsFiltered ] = $this->getLogs($payload);
-            $total                    = $this->getTotalLogCount();
+            $total                      = $this->getTotalLogCount();
 
             $response = array(
                 "data"            => $logs,
@@ -755,7 +755,7 @@ class UserRightsHistory extends AbstractExternalModule
         try {
             $sql         = "select * from redcap_config";
             $result      = $this->query($sql, []);
-            $fields      = [ "enable_plotting", "dts_enabled_global", "api_enabled", "mobile_app_enabled" ];
+            $fields      = [ "enable_plotting", "dts_enabled_global", "api_enabled", "mobile_app_enabled", "mycap_enabled_global" ];
             $system_info = array();
             while ( $row = $result->fetch_assoc() ) {
                 if ( in_array($row["field_name"], $fields, true) ) {

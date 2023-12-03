@@ -13,7 +13,7 @@ class Renderer
         $this->permissions = $permissions;
     }
 
-    function renderTable()
+    public function renderTable()
     {
         $columns = $this->getColumns();
         $this->parsePermissions();
@@ -74,7 +74,7 @@ class Renderer
 
     // TODO: instead of having methods in this class for determining whether features are enabled, should that happen elsewhere?
 
-    function getColumns()
+    public function getColumns()
     {
         return [
             "role"                    => array( "title" => "Role", "show" => true, "width" => 125 ),
@@ -87,6 +87,7 @@ class Renderer
             "data_viewing_rights"     => array( "title" => "Data Viewing Rights", "show" => $this->hasGranularExportRights(), "width" => 50 ),
             "data_export_rights"      => array( "title" => "Data Export Rights", "show" => $this->hasGranularExportRights(), "width" => 50 ),
             "export"                  => array( "title" => "Data Export Tool", "show" => !$this->hasGranularExportRights(), "width" => 50 ),
+            "alerts"                  => array( "title" => "Alerts & Notifications", "show" => true, "width" => 50 ),
             "reports"                 => array( "title" => "Reports & Report Builder", "show" => true, "width" => 50 ),
             "graphical"               => array( "title" => "Graphical Data View & Stats", "show" => $this->graphicalEnabled(), "width" => 50 ),
             "surveys"                 => array( "title" => "Survey Distribution Tools", "show" => $this->surveysEnabled(), "width" => 50 ),
@@ -104,6 +105,7 @@ class Renderer
             "data_quality_resolution" => array( "title" => "Data Resolution Workflow", "show" => $this->dataResolutionWorkflowEnabled(), "width" => 50 ),
             "api"                     => array( "title" => "API", "show" => $this->apiEnabled(), "width" => 50 ),
             "mobile_app"              => array( "title" => "REDCap Mobile App", "show" => $this->mobileAppEnabled(), "width" => 50 ),
+            "mycap_participants"      => array( "title" => "Manage MyCap Participants", "show" => $this->mycapEnabled(), "width" => 50 ),
             "cdp_mapping"             => array( "title" => "Clinical Data Pull from EHR (Setup / Mapping)", "show" => $this->cdpEnabled(), "width" => 50 ),
             "cdp_adjudicate"          => array( "title" => "Clinical Data Pull from EHR (Adjudicate Data)", "show" => $this->cdpEnabled(), "width" => 50 ),
             "dts"                     => array( "title" => "DTS (Data Transfer Services)", "show" => $this->dtsEnabled(), "width" => 50 ),
@@ -178,6 +180,12 @@ class Renderer
         return $enabledSystem && $enabledProject;
     }
 
+    private function mycapEnabled()
+    {
+        $enabledSystem  = $this->permissions["system"]["mycap_enabled_global"];
+        $enabledProject = $this->permissions["project_status"]["mycap_enabled"];
+        return $enabledSystem && $enabledProject;
+    }
 
     private function makeHeader($column)
     {
@@ -299,6 +307,9 @@ class Renderer
         // Data Export Tool
         $row["export"] = $this->getDataExportText($data["data_export_tool"]);
 
+        // Alerts & Notifications
+        $row["alerts"] = $this->getCheckOrX($data["alerts"]);
+
         // Reports & Report Builder
         $row["reports"] = $this->getCheckOrX($data["reports"]);
 
@@ -349,6 +360,9 @@ class Renderer
 
         // REDCap Mobile App
         $row["mobile_app"] = $this->getMobileAppText($data);
+
+        // Manage MyCap Participants
+        $row["mycap_participants"] = $this->getCheckOrX($data["mycap_participants"]);
 
         // Clinical Data Pull from EHR (Setup / Mapping)
         $row["cdp_mapping"] = $this->getCheckOrX($data["realtime_webservice_mapping"]);
@@ -802,5 +816,47 @@ class Renderer
         } else if ( $module_status !== 1 ) {
             echo "<script>document.querySelector('#warning').innerHTML += \"<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> the module was not enabled at this point in time. The permissions below may not be accurate.</span>\";</script>";
         }
+    }
+
+    /**
+     * Convert right name from column format to either CSV format (suitable for import) or internal storage format (user data)
+     * @param string $rightName
+     * @param bool $toCsv If true, converts from column format to CSV format. If false, converts from column format to internal storage format (user data).
+     * @return string Converted right name
+     */
+    public static function convertRightName(string $rightName, bool $toCsv = true)
+    {
+
+        $conversions = [
+            'role'                  => 'role',
+            'user'                  => 'username',
+            'group'                 => 'data_access_group',
+            'graphical'             => 'stats_and_charts',
+            'participants'          => 'manage_survey_participants',
+            'data_logging'          => 'logging',
+            'data_quality_design'   => 'data_quality_create',
+            'lock_record_multiform' => 'lock_records_all_forms',
+            'lock_record'           => 'lock_records',
+            'lock_record_customize' => 'lock_records_customization',
+            'data_viewing_rights'   => 'forms',
+            'data_export_rights'    => 'forms_export',
+        ];
+
+        return $conversions[$rightName] ?? $rightName;
+    }
+
+    public function createUsersCsv()
+    {
+        $allColumns = $this->getColumns();
+        $columns    = array();
+        foreach ( $allColumns as $column => $data ) {
+            if ( $data["show"] ) {
+                $columns[$column] = $this->convertRightName($column);
+            }
+            if ( $column == 'group' ) {
+                $columns['group_id'] = 'data_access_group_id';
+            }
+        }
+        var_dump($columns);
     }
 }
