@@ -1,3 +1,7 @@
+<?php
+namespace YaleREDCap\UserRightsHistory;
+
+?>
 <div class="module-container">
     <?php
     $module->showPageHeader("history_viewer", $description);
@@ -24,6 +28,23 @@
         following the moment this module was installed in the project.
     </p>
     <script type="text/javascript">
+        function exportExcel() {
+            var table = $('table#userrights').DataTable();
+            table.buttons.exportData({
+                format: {
+                    body: function (data, ri, ci, node) {
+                        if (data.includes('tick.png')) {
+                            return 'Yes';
+                        } else if (data.includes('cross.png')) {
+                            return 'No';
+                        } else if (data.includes('minus.png')) {
+                            return '—';
+                        }
+                    }
+                }
+            });
+        }
+
         $(function () {
             $('#datetime_icon').attr('src', app_path_images + 'date.png');
             const newDate = new Date(<?= $timestamp ?>);
@@ -62,7 +83,6 @@
 
             const table = $('table#userrights').DataTable({
                 paging: false,
-                //buttons: ['colvis'],
                 scrollX: true,
                 fixedColumns: {
                     left: 2
@@ -185,8 +205,6 @@
     </div>
     <?php
     $permissions = $module->getAllInfoByTimestamp($timestamp);
-    $result      = $module->query("select external_module_id from redcap_external_modules where directory_prefix = 'user_rights_history'", []);
-    $id          = $result->fetch_assoc()["external_module_id"];
     $module->renderTable($permissions);
     ?>
 </div>

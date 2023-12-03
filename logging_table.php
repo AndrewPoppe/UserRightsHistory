@@ -1,3 +1,7 @@
+<?php
+namespace YaleREDCap\UserRightsHistory;
+
+?>
 <div class="module-container">
     <?php
     if ( $module->getProjectSetting("disable-logging-table") == "1" ) {
