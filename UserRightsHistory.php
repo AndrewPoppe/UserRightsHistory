@@ -126,6 +126,15 @@ class UserRightsHistory extends AbstractExternalModule
                 "recordsFiltered" => $recordsFiltered
             );
             return $response;
+        } else if ( $action == "history_viewer_csv" ) {
+            try {
+                $timestamp   = $payload["timestamp"];
+                $permissions = $this->getAllInfoByTimestamp($timestamp);
+                $renderer    = new Renderer($permissions);
+                return $renderer->createUsersCsv();
+            } catch ( \Throwable $e ) {
+                $this->log("Error creating users csv", [ "error" => $e->getMessage() ]);
+            }
         }
     }
 

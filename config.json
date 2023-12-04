@@ -108,7 +108,8 @@
     },
     "no-auth-pages": [],
     "auth-ajax-actions": [
-        "logging_table_ajax"
+        "logging_table_ajax",
+        "history_viewer_csv"
     ],
     "framework-version": 14,
     "compatibility": {

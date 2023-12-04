@@ -4,6 +4,7 @@ namespace YaleREDCap\UserRightsHistory;
 ?>
 <div class="module-container">
     <?php
+    $module->initializeJavascriptModuleObject();
     $module->showPageHeader("history_viewer", $description);
 
     if ( isset($_GET["datetime"]) ) {
@@ -33,6 +34,7 @@ namespace YaleREDCap\UserRightsHistory;
     <script
         src="https://cdn.datatables.net/v/dt/jszip-3.10.1/dt-1.13.8/b-2.4.2/b-html5-2.4.2/b-print-2.4.2/fc-4.3.0/datatables.min.js"></script>
     <script type="text/javascript">
+        const module = <?= $module->getJavascriptModuleObjectName() ?>;
         var projectStatus;
         var newDate = new Date(<?= $timestamp ?>);
         $(function () {
@@ -77,6 +79,7 @@ namespace YaleREDCap\UserRightsHistory;
                     left: 2
                 },
                 stateSave: false,
+                ordering: false,
                 buttons: [
                     {
                         extend: 'excel',
