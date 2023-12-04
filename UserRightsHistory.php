@@ -4,8 +4,10 @@ namespace YaleREDCap\UserRightsHistory;
 
 use ExternalModules\AbstractExternalModule;
 
+include_once "User.php";
 include_once "Renderer.php";
 include_once "UI.php";
+include_once "CsvCreator.php";
 
 class UserRightsHistory extends AbstractExternalModule
 {
@@ -130,10 +132,17 @@ class UserRightsHistory extends AbstractExternalModule
             try {
                 $timestamp   = $payload["timestamp"];
                 $permissions = $this->getAllInfoByTimestamp($timestamp);
-                $renderer    = new Renderer($permissions);
-                return $renderer->createUsersCsv();
+                $csvCreator  = new CsvCreator($permissions);
+                switch ($payload["type"]) {
+                    case "users":
+                        return $csvCreator->createUsersArray();
+                    case "roles":
+                        return $csvCreator->createRolesArray();
+                    case "role_assignments":
+                        return $csvCreator->createRoleAssignmentsArray();
+                }
             } catch ( \Throwable $e ) {
-                $this->log("Error creating users csv", [ "error" => $e->getMessage() ]);
+                $this->log("Error creating csv", [ "error" => $e->getMessage() ]);
             }
         }
     }

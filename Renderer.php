@@ -2,8 +2,6 @@
 
 namespace YaleREDCap\UserRightsHistory;
 
-include_once "User.php";
-
 class Renderer
 {
     public $permissions;
@@ -84,8 +82,8 @@ class Renderer
             "design"                  => array( "title" => "Project Design and Setup", "show" => true, "width" => 50 ),
             "user_rights"             => array( "title" => "User Rights", "show" => true, "width" => 50 ),
             "data_access_groups"      => array( "title" => "Data Access Groups", "show" => true, "width" => 50 ),
-            "data_viewing_rights"     => array( "title" => "Data Viewing Rights", "show" => $this->hasGranularExportRights(), "width" => 50 ),
-            "data_export_rights"      => array( "title" => "Data Export Rights", "show" => $this->hasGranularExportRights(), "width" => 50 ),
+            "data_viewing_rights"     => array( "title" => "Data Viewing Rights", "show" => $this->hasGranularExportRights(), "width" => 100 ),
+            "data_export_rights"      => array( "title" => "Data Export Rights", "show" => $this->hasGranularExportRights(), "width" => 100 ),
             "export"                  => array( "title" => "Data Export Tool", "show" => !$this->hasGranularExportRights(), "width" => 50 ),
             "alerts"                  => array( "title" => "Alerts & Notifications", "show" => true, "width" => 50 ),
             "reports"                 => array( "title" => "Reports & Report Builder", "show" => true, "width" => 50 ),
@@ -816,129 +814,5 @@ class Renderer
         } else if ( $module_status !== 1 ) {
             echo "<script>document.querySelector('#warning').innerHTML += \"<span style='color: #990000;'><span style='font-weight: bold;'>Warning:</span> the module was not enabled at this point in time. The permissions below may not be accurate.</span>\";</script>";
         }
-    }
-
-    /**
-     * Convert right name from column format to either CSV format (suitable for import) or internal storage format (user data)
-     * @param string $rightName
-     * @param bool $toCsv If true, converts from column format to CSV format. If false, converts from column format to internal storage format (user data).
-     * @return string Converted right name
-     */
-    public static function convertRightName(string $rightName, bool $toCsv = true)
-    {
-
-        $csvConversions = [
-            'user'                  => 'username',
-            'group'                 => 'data_access_group',
-            'graphical'             => 'stats_and_charts',
-            'surveys'               => 'manage_survey_participants',
-            'import'                => 'data_import_tool',
-            'comparison'            => 'data_comparison_tool',
-            'data_quality_design'   => 'data_quality_create',
-            'record_level_locking'  => 'lock_records_all_forms',
-            'dde'                   => 'double_data',
-            'data_viewing_rights'   => 'forms',
-            'data_export_rights'    => 'forms_export',
-            'lock_record'           => 'lock_records',
-            'lock_record_customize' => 'lock_records_customization',
-        ];
-
-        $userConversions = [
-            'user'                 => 'username',
-            'role'                 => 'role_id',
-            'group'                => 'group_id',
-            'surveys'              => 'participants',
-            'import'               => 'data_import_tool',
-            'comparison'           => 'data_comparison_tool',
-            'logging'              => 'data_logging',
-            'record_level_locking' => 'lock_record_multiform',
-            'data_viewing_rights'  => 'data_entry',
-            'data_export_rights'   => 'data_export_instruments',
-            'dde'                  => 'double_data'
-        ];
-
-        return $toCsv ? $csvConversions[$rightName] ?? $rightName : $userConversions[$rightName] ?? $rightName;
-    }
-
-    public function createUsersCsv()
-    {
-        $allColumns = $this->getColumns();
-        $columns    = array();
-        foreach ( $allColumns as $column => $data ) {
-
-            $toInclude1 = $data["show"] && in_array($column, [ 'mycap_participants', 'data_quality_resolution', 'dde' ], true);
-            $toInclude2 = in_array($column, [
-                'user',
-                'expiration',
-                'design',
-                'alerts',
-                'user_rights',
-                'data_access_groups',
-                'reports',
-                'graphical',
-                'surveys',
-                'calendar',
-                'import',
-                'comparison',
-                'logging',
-                'file_repository',
-                'data_quality_design',
-                'data_quality_execute',
-                'record_create',
-                'record_rename',
-                'record_delete',
-                'record_level_locking',
-                'lock_record',
-                'lock_record_customize',
-                'data_viewing_rights',
-                'data_export_rights'
-            ], true);
-            if ( $toInclude1 || $toInclude2 ) {
-                $columns[$column] = $this->convertRightName($column);
-            }
-            if ( $column == 'group' ) {
-                $columns['group']    = 'data_access_group';
-                $columns['group_id'] = 'data_access_group_id';
-            }
-            if ( $column == 'api' ) {
-                $columns['api_export'] = 'api_export';
-                $columns['api_import'] = 'api_import';
-            }
-            if ( $column == 'mobile_app' ) {
-                $columns['mobile_app']               = 'mobile_app';
-                $columns['mobile_app_download_data'] = 'mobile_app_download_data';
-            }
-            if ( $column == 'randomization' && $data["show"] ) {
-                $columns['random_setup']     = 'random_setup';
-                $columns['random_dashboard'] = 'random_dashboard';
-                $columns['random_perform']   = 'random_perform';
-            }
-        }
-
-        $header = implode(",", $columns);
-        $rows   = array();
-        foreach ( $this->permissions["users"] as $user ) {
-            $row = array();
-            foreach ( $columns as $column => $csvColumn ) {
-                $val = (string) $user[$this->convertRightName($column, false)];
-                if ( $csvColumn == 'forms' || $csvColumn == 'forms_export' ) {
-                    $trimmed = substr(trim($val), 1, -1);
-                    $forms   = explode("][", $trimmed);
-                    $res     = [];
-                    foreach ( $forms as $form ) {
-                        $split = explode(",", $form);
-                        $res[] = $split[0] . ':' . $split[1];
-                    }
-                    $val = implode(",", $res);
-                }
-                if ( str_contains($val, ",") ) {
-                    $val = '"' . $val . '"';
-                }
-                $row[] = $val;
-            }
-            $rows[] = implode(",", $row);
-        }
-        $csv = $header . "\n" . implode("\n", $rows);
-        return $csv;
     }
 }

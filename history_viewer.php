@@ -37,6 +37,81 @@ namespace YaleREDCap\UserRightsHistory;
         const module = <?= $module->getJavascriptModuleObjectName() ?>;
         var projectStatus;
         var newDate = new Date(<?= $timestamp ?>);
+
+        module.join = function (a, separator, boundary, escapeChar, reBoundary) {
+            let s = '';
+            for (let i = 0, ien = a.length; i < ien; i++) {
+                if (i > 0) {
+                    s += separator;
+                }
+                s += boundary ?
+                    boundary + ('' + a[i]).replace(reBoundary, escapeChar + boundary) + boundary :
+                    a[i];
+            }
+            return s;
+        };
+
+        module.saveCsv = function (csvData, filename) {
+            const newLine = /Windows/.exec(navigator.userAgent) ? '\r\n' : '\n';
+            const escapeChar = '"';
+            const boundary = '"';
+            const separator = ',';
+            const reBoundary = new RegExp(boundary, 'g');
+            let charset = document.characterSet;
+            if (charset) {
+                charset = ';charset=' + charset;
+            }
+
+            const header = module.join(csvData.header, separator, boundary, escapeChar, reBoundary) + newLine;
+            const body = [];
+            for (let i = 0, ien = csvData.rows.length; i < ien; i++) {
+                body.push(module.join(csvData.rows[i], separator, boundary, escapeChar, reBoundary));
+            }
+
+            const result = {
+                str: header + body.join(newLine),
+                rows: body.length
+            };
+
+            const dataToSave = new Blob([result.str], {
+                type: 'text/csv' + charset
+            });
+            $.fn.dataTable.fileSave(dataToSave, filename, true);
+        }
+
+        module.exportUsers = function () {
+            module.ajax('history_viewer_csv', { timestamp: newDate.getTime(), type: 'users' })
+                .then(result => {
+                    const filename = `UserRightsHistory_PID${pid}_Users_${moment(newDate).format().replaceAll(':', '')}.csv`;
+                    module.saveCsv(result, filename);
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        module.exportRoles = function () {
+            module.ajax('history_viewer_csv', { timestamp: newDate.getTime(), type: 'roles' })
+                .then(result => {
+                    const filename = `UserRightsHistory_PID${pid}_Roles_${moment(newDate).format().replaceAll(':', '')}.csv`;
+                    module.saveCsv(result, filename);
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        module.exportRoleAssignments = function () {
+            module.ajax('history_viewer_csv', { timestamp: newDate.getTime(), type: 'role_assignments' })
+                .then(result => {
+                    const filename = `UserRightsHistory_PID${pid}_UserRoleAssignments_${moment(newDate).format().replaceAll(':', '')}.csv`;
+                    module.saveCsv(result, filename);
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
         $(function () {
             $('#datetime_icon').attr('src', app_path_images + 'date.png');
             const fp = $('#datetime').flatpickr({
@@ -80,54 +155,53 @@ namespace YaleREDCap\UserRightsHistory;
                 },
                 stateSave: false,
                 ordering: false,
-                buttons: [
-                    {
-                        extend: 'excel',
-                        text: '<i class="fas fa-file-excel"></i> Export to Excel',
-                        className: 'btn btn-sm btn-success',
-                        className: 'btn btn-success btn-xs mb-1',
-                        init: function (api, node, config) {
-                            $(node).removeClass('dt-button');
-                        },
-                        filename: `UserRightsHistory_PID${pid}_${moment(newDate).format()}`,
-                        exportOptions: {
-                            format: {
-                                header: function (data, columnIdx, node) {
-                                    return $('<textarea>').html(data).text().trim();
-                                },
-                                body: function (data, ri, ci, node) {
-                                    if (data.includes('tick.png')) {
-                                        let result = 'Yes';
-                                        if (data.includes('Download all data')) {
-                                            result += ' (Download all data)';
-                                        }
-                                        return result;
-                                    } else if (data.includes('cross.png')) {
-                                        return 'No';
-                                    } else if (data.includes('tick_shield.png')) {
-                                        return 'Yes (with E-signature authority)';
-                                    } else if (data.includes('<div class="userRightsTableForms">')) {
-                                        return $(data.replaceAll('<div class="userRightsTableForms">', '<div class="userRightsTableForms">NEWLINE')).text().replaceAll('NEWLINE', '\n').trim()
-                                    } else if (data.includes('<hr>')) {
-                                        return $(data.replaceAll('<hr>', '<span>NEWLINE</span>')).text().replaceAll('NEWLINE', '\n\n').trim();
-                                    } else if (/\bImport\b|\bExport\b/.test(data)) {
-                                        return $(data).text().replaceAll('Import', '\nImport').replaceAll('Export', '\nExport').trim();
-                                    } else {
-                                        return $(data).text().trim();
-                                    }
-                                }
-                            }
-                        },
-                        customize: function (xlsx, button, api) {
-                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
-                            $('row:not([r="2"]) c', sheet).attr('s', '55');
-                            const projectInfo = `PID: ${pid} - ${projectStatus} - ${newDate.toLocaleString()}`;
-                            $('row[r="1"] t', sheet).text(projectInfo);
-                            $('row[r="1"] c', sheet).attr('s', '32');
-                        }
-                    }
-                ],
-                dom: "Bt",
+                // buttons: [
+                //     {
+                //         extend: 'excel',
+                //         text: '<i class="fas fa-file-excel"></i> Export to Excel',
+                //         className: 'btn btn-success btn-xs mb-1',
+                //         init: function (api, node, config) {
+                //             $(node).removeClass('dt-button');
+                //         },
+                //         filename: `UserRightsHistory_PID${pid}_${moment(newDate).format()}`,
+                //         exportOptions: {
+                //             format: {
+                //                 header: function (data, columnIdx, node) {
+                //                     return $('<textarea>').html(data).text().trim();
+                //                 },
+                //                 body: function (data, ri, ci, node) {
+                //                     if (data.includes('tick.png')) {
+                //                         let result = 'Yes';
+                //                         if (data.includes('Download all data')) {
+                //                             result += ' (Download all data)';
+                //                         }
+                //                         return result;
+                //                     } else if (data.includes('cross.png')) {
+                //                         return 'No';
+                //                     } else if (data.includes('tick_shield.png')) {
+                //                         return 'Yes (with E-signature authority)';
+                //                     } else if (data.includes('<div class="userRightsTableForms">')) {
+                //                         return $(data.replaceAll('<div class="userRightsTableForms">', '<div class="userRightsTableForms">NEWLINE')).text().replaceAll('NEWLINE', '\n').trim()
+                //                     } else if (data.includes('<hr>')) {
+                //                         return $(data.replaceAll('<hr>', '<span>NEWLINE</span>')).text().replaceAll('NEWLINE', '\n\n').trim();
+                //                     } else if (/\bImport\b|\bExport\b/.test(data)) {
+                //                         return $(data).text().replaceAll('Import', '\nImport').replaceAll('Export', '\nExport').trim();
+                //                     } else {
+                //                         return $(data).text().trim();
+                //                     }
+                //                 }
+                //             }
+                //         },
+                //         customize: function (xlsx, button, api) {
+                //             var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                //             $('row:not([r="2"]) c', sheet).attr('s', '55');
+                //             const projectInfo = `PID: ${pid} - ${projectStatus} - ${newDate.toLocaleString()}`;
+                //             $('row[r="1"] t', sheet).text(projectInfo);
+                //             $('row[r="1"] c', sheet).attr('s', '32');
+                //         }
+                //     }
+                // ],
+                dom: "t",
                 "order": [
                     [0, 'asc'],
                     [1, 'asc']
@@ -238,6 +312,29 @@ namespace YaleREDCap\UserRightsHistory;
             <img id="datetime_icon" onclick="document.querySelector('#datetime')._flatpickr.toggle();"
                 style="cursor:pointer">
         </div>
+        <div class="d-flex justify-content-start align-items-center mt-2">
+            <div class="dropdown">
+                <button class="btn btn-success btn-xs dropdown-toggle" type="button" id="dropdownMenuButton"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item text-primaryrc" href="#" onclick="module.exportUsers()"><i
+                                class="fa-solid fa-fw fa-user"></i>
+                            Export Users (CSV)</a></li>
+                    <li><a class="dropdown-item text-info-emphasis" href="#" onclick="module.exportRoles()"><i
+                                class="fa-solid fa-fw fa-tag"></i>
+                            Export User Roles (CSV)</a></li>
+                    <li><a class="dropdown-item text-successrc" href="#" onclick="module.exportRoleAssignments()"><i
+                                class="fa-solid fa-fw fa-user-tag"></i> Export User Role
+                            Assignments (CSV)</a></li>
+                </ul>
+            </div>
+            <div style="cursor: help;" data-bs-toggle="tooltip" data-bs-html="true"
+                data-bs-title="These options allow CSV exports of the User Rights at the currently specified point in time. These should be equivalent to the CSV downloads REDCap allows on the User Rights page.">
+                <i class="fa-solid fa-circle-info fa-lg text-info ml-1"></i>
+            </div>
+        </div>
         <div id="warning" style="margin-top: 5px;">
             <?= $module->shouldDagsBeChecked() ? "<span style='color:#C00000; margin-bottom: 5px;'>Note: Since you have been assigned to a Data Access Group, you are only able to view users from your group.</span><br>" : "" ?>
         </div>
@@ -250,5 +347,7 @@ namespace YaleREDCap\UserRightsHistory;
     ?>
     <script>
         projectStatus = $(`<?= $status ?>`).text();
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
     </script>
 </div>

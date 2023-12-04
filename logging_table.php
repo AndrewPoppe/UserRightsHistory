@@ -166,7 +166,6 @@ namespace YaleREDCap\UserRightsHistory;
                     };
                     module.ajax('logging_table_ajax', payload)
                         .then(response => {
-                            console.log(response);
                             callback(response);
                         })
                         .catch(error => {
