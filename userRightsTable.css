@@ -65,6 +65,11 @@
         background-color: #ececec !important;
     }
 
+    div#userrights_wrapper {
+        border-left: 1px solid #ccc;
+        border-right: 1px solid #ccc;
+    }
+
     table.dataTable hr {
         height: 1px;
         border-width: 0;
