@@ -10,7 +10,7 @@ For example, this image shows the state of the User Rights at one point in time:
 
 ![interface example](images/example_interface.png)
 
-whereas this image shows the same project's User Rights several days earlier:
+whereas this image shows the state of the same project's User Rights on an earlier day:
 
 ![interface example](images/example_interface2.png)
 
