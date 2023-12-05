@@ -2,13 +2,6 @@
     "name": "User Rights History",
     "namespace": "YaleREDCap\\UserRightsHistory",
     "description": "Displays the user rights for a project at any point in time.",
-    "permissions": [
-        "redcap_module_project_enable",
-        "redcap_module_project_disable",
-        "redcap_module_system_enable",
-        "redcap_module_system_disable",
-        "redcap_module_system_change_version"
-    ],
     "authors": [
         {
             "name": "Andrew Poppe",
