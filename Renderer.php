@@ -291,7 +291,7 @@ class Renderer
         $row["design"] = $this->getCheckOrX($data["design"]);
 
         // User Rights
-        $row["user_rights"] = $this->getCheckOrX($data["user_rights"]);
+        $row["user_rights"] = $this->getUserRightsText($data["user_rights"]);
 
         // Data Access Groups
         $row["data_access_groups"] = $this->getCheckOrX($data["data_access_groups"]);
@@ -497,6 +497,25 @@ class Renderer
                 break;
             case "3":
                 $result = "Remove all tagged Identifier fields";
+                break;
+            default:
+                $result = "X";
+        }
+        return [ $result ];
+    }
+
+    private function getUserRightsText($value)
+    {
+        $result = "";
+        switch (strval($value)) {
+            case "0":
+                $result = "X";
+                break;
+            case "1":
+                $result = "check";
+                break;
+            case "2":
+                $result = "Read-only";
                 break;
             default:
                 $result = "X";
