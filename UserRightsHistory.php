@@ -223,7 +223,7 @@ class UserRightsHistory extends AbstractExternalModule
             $enabledSystemwide = $this->getSystemSetting('enabled');
             $this->updateEnabledByDefaultStatus($enabledSystemwide);
 
-            // log new versions manually (in case version change hook doesn't work)
+            // log new versions manually
             $this->logVersionIfNeeded();
 
             if ( $enabledSystemwide == true ) {
