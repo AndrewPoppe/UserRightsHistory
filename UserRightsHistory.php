@@ -15,11 +15,6 @@ class UserRightsHistory extends AbstractExternalModule
     // REDCap Hooks //
     //////////////////
 
-    function redcap_module_system_change_version($version, $old_version)
-    {
-        $this->log('module version', [ 'previous' => json_encode($old_version), 'current' => json_encode($version), 'version' => $version ]);
-    }
-
     function redcap_module_project_enable($version, $project_id)
     {
         $this->log('module project status', [
