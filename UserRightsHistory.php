@@ -275,6 +275,7 @@ class UserRightsHistory extends AbstractExternalModule
             $result       = $this->query($sql, [ $localProjectId ]);
             $result_array = $result->fetch_assoc();
             unset($result_array["last_logged_event"]); // Prevent unncessary updates
+            unset($result_array["last_logged_event_exclude_exports"]); // Prevent unncessary updates
             return $result_array;
         } catch ( \Throwable $e ) {
             $this->log('Error fetching project info', [ 'error' => $e->getMessage() ]);
