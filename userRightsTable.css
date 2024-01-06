@@ -11,7 +11,7 @@
     table.dataTable.cell-border tbody th,
     table.dataTable.cell-border tbody td {
         border-top: #f3f3f3 !important;
-        border-right: 1px solid #ddd;
+        border-right: 1px solid #ddd !important;
         border-left: none !important;
         border-bottom: none !important;
     }
@@ -60,6 +60,7 @@
 
     table.dataTable tbody tr.odd td {
         background-color: white !important;
+        box-shadow: none !important;
     }
 
     table.dataTable thead th {
