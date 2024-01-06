@@ -214,7 +214,7 @@ class Renderer
             } elseif ( $item === "eye" ) {
                 $this->insertEye();
             } else {
-                echo "<p style='${pCenter}'>${item}</p>";
+                echo "<p style='" . $pCenter . "'>" . $item . "</p>";
             }
         }
         echo ($center ? "</div>" : "") . "</td>";
@@ -223,27 +223,22 @@ class Renderer
 
     private function insertCheck()
     {
-        echo '<div class="text-center"><i class="fa-solid fa-check fs18 text-success" title="'.$this->lang['rights_440'].'"></i></div>';
+        echo '<div class="text-center"><i class="fa-solid fa-check fs18 text-success" title="' . $this->lang['rights_440'] . '"></i></div>';
     }
 
     private function insertX()
     {
-        echo '<div class="text-center"><i class="fa-solid fa-xmark text-danger fs18" title="'.$this->lang['rights_47'].'"></i></div>';
+        echo '<div class="text-center"><i class="fa-solid fa-xmark text-danger fs18" title="' . $this->lang['rights_47'] . '"></i></div>';
     }
 
     private function insertCheckShield()
     {
-        echo '<div class="text-center"><i class="fa-solid fa-shield fs18 text-success" title="'.$this->lang['rights_116'].'"></i></div>';
+        echo '<div class="text-center"><i class="fa-solid fa-shield fs18 text-success" title="' . $this->lang['rights_116'] . '"></i></div>';
     }
 
     private function insertEye()
     {
-        echo '<div class="text-center"><i class="fa-solid fa-eye text-secondary fs15" title="'.$this->lang['rights_61'].'"></i></div>';
-    }
-
-    private function insertImage(string $filename)
-    {
-        echo "<div style='text-align:center;'><img src='" . APP_PATH_IMAGES . $filename . "'></img></div>";
+        echo '<div class="text-center"><i class="fa-solid fa-eye text-secondary fs15" title="' . $this->lang['rights_61'] . '"></i></div>';
     }
 
     function parsePermissions()
