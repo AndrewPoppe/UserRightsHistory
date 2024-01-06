@@ -342,7 +342,7 @@ namespace YaleREDCap\UserRightsHistory;
     <?php
     $permissions = $module->getAllInfoByTimestamp($timestamp);
     $module->renderTable($permissions);
-    $renderer = new Renderer($permissions);
+    $renderer = new Renderer($permissions, $lang);
     $status   = $renderer->getProjectStatus();
     ?>
     <script>

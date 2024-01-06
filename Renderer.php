@@ -4,11 +4,13 @@ namespace YaleREDCap\UserRightsHistory;
 
 class Renderer
 {
-    public $permissions;
+    public array $permissions;
+    private $lang;
 
-    function __construct($permissions)
+    function __construct($permissions, $lang = [])
     {
         $this->permissions = $permissions;
+        $this->lang        = $lang;
     }
 
     public function renderTable()
@@ -209,6 +211,8 @@ class Renderer
                 $this->insertX();
             } elseif ( $item === "checkshield" ) {
                 $this->insertCheckShield();
+            } elseif ( $item === "eye" ) {
+                $this->insertEye();
             } else {
                 echo "<p style='${pCenter}'>${item}</p>";
             }
@@ -219,17 +223,22 @@ class Renderer
 
     private function insertCheck()
     {
-        $this->insertImage("tick.png");
+        echo '<div class="text-center"><i class="fa-solid fa-check fs18 text-success" title="'.$this->lang['rights_440'].'"></i></div>';
     }
 
     private function insertX()
     {
-        $this->insertImage("cross.png");
+        echo '<div class="text-center"><i class="fa-solid fa-xmark text-danger fs18" title="'.$this->lang['rights_47'].'"></i></div>';
     }
 
     private function insertCheckShield()
     {
-        $this->insertImage("tick_shield.png");
+        echo '<div class="text-center"><i class="fa-solid fa-shield fs18 text-success" title="'.$this->lang['rights_116'].'"></i></div>';
+    }
+
+    private function insertEye()
+    {
+        echo '<div class="text-center"><i class="fa-solid fa-eye text-secondary fs15" title="'.$this->lang['rights_61'].'"></i></div>';
     }
 
     private function insertImage(string $filename)
@@ -515,7 +524,7 @@ class Renderer
                 $result = "check";
                 break;
             case "2":
-                $result = "Read-only";
+                $result = "eye";
                 break;
             default:
                 $result = "X";

@@ -1222,7 +1222,8 @@ class UserRightsHistory extends AbstractExternalModule
 
     function renderTable(array $permissions)
     {
-        $Renderer = new Renderer($permissions);
+        global $lang;
+        $Renderer = new Renderer($permissions, $lang);
         try {
             $Renderer->renderTable();
         } catch ( \Throwable $e ) {
