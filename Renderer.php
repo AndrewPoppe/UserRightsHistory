@@ -95,6 +95,7 @@ class Renderer
             "import"                  => array( "title" => "Data Import Tool", "show" => true, "width" => 50 ),
             "comparison"              => array( "title" => "Data Comparison Tool", "show" => true, "width" => 50 ),
             "logging"                 => array( "title" => "Logging", "show" => true, "width" => 50 ),
+            "email_logging"           => array( "title" => "Email Logging", "show" => $this->emailLoggingExists(), "width" => 50),
             "file_repository"         => array( "title" => "File Repository", "show" => true, "width" => 50 ),
             "dde"                     => array( "title" => "Double Data Entry", "show" => $this->ddeEnabled(), "width" => 50 ),
             "lock_record_customize"   => array( "title" => "Record Locking Customization", "show" => true, "width" => 50 ),
@@ -185,6 +186,12 @@ class Renderer
         $enabledSystem  = $this->permissions["system"]["mycap_enabled_global"];
         $enabledProject = $this->permissions["project_status"]["mycap_enabled"];
         return $enabledSystem && $enabledProject;
+    }
+
+    private function emailLoggingExists()
+    {
+        $user = reset($this->permissions["users"]);
+        return isset($user["email_logging"]);
     }
 
     private function makeHeader($column)
@@ -332,6 +339,11 @@ class Renderer
 
         // Logging
         $row["logging"] = $this->getCheckOrX($data["data_logging"]);
+
+        // Email Logging
+        if ($this->emailLoggingExists()) {
+            $row["email_logging"] = $this->getCheckOrX($data["email_logging"]);
+        }
 
         // File Repository
         $row["file_repository"] = $this->getCheckOrX($data["file_repository"]);
